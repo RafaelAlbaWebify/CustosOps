@@ -15,6 +15,12 @@ type ModuleInfo = {
   description: string;
 };
 
+type EvidenceItem = {
+  source: string;
+  key: string;
+  value: string;
+};
+
 type Finding = {
   finding_id: string;
   title: string;
@@ -22,6 +28,7 @@ type Finding = {
   confidence: string;
   category: string;
   affected_asset: string;
+  evidence: EvidenceItem[];
   why_it_matters: string;
   limitations: string[];
   safe_next_steps: string[];
@@ -33,7 +40,8 @@ const API_BASE = "http://127.0.0.1:8000";
 export default function App() {
   const [health, setHealth] = useState<Health | null>(null);
   const [modules, setModules] = useState<ModuleInfo[]>([]);
-  const [findings, setFindings] = useState<Finding[]>([]);
+  const [foundationFindings, setFoundationFindings] = useState<Finding[]>([]);
+  const [endpointFindings, setEndpointFindings] = useState<Finding[]>([]);
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
@@ -41,15 +49,22 @@ export default function App() {
       try {
         const healthResponse = await fetch(`${API_BASE}/api/health`);
         const modulesResponse = await fetch(`${API_BASE}/api/modules`);
-        const findingsResponse = await fetch(`${API_BASE}/api/sample-findings`);
+        const foundationFindingsResponse = await fetch(`${API_BASE}/api/sample-findings`);
+        const endpointFindingsResponse = await fetch(`${API_BASE}/api/endpoint/sample-findings`);
 
-        if (!healthResponse.ok || !modulesResponse.ok || !findingsResponse.ok) {
+        if (
+          !healthResponse.ok ||
+          !modulesResponse.ok ||
+          !foundationFindingsResponse.ok ||
+          !endpointFindingsResponse.ok
+        ) {
           throw new Error("One or more backend endpoints failed.");
         }
 
         setHealth(await healthResponse.json());
         setModules((await modulesResponse.json()).modules);
-        setFindings((await findingsResponse.json()).findings);
+        setFoundationFindings((await foundationFindingsResponse.json()).findings);
+        setEndpointFindings((await endpointFindingsResponse.json()).findings);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unknown frontend error");
       }
@@ -99,37 +114,75 @@ export default function App() {
         </article>
 
         <article className="panel">
-          <h2>Sample Finding</h2>
-          {findings.map((finding) => (
-            <div className="finding-card" key={finding.finding_id}>
-              <p className="eyebrow">{finding.category}</p>
-              <h3>{finding.title}</h3>
-              <p>{finding.why_it_matters}</p>
-              <dl>
-                <div>
-                  <dt>Severity</dt>
-                  <dd>{finding.severity}</dd>
-                </div>
-                <div>
-                  <dt>Confidence</dt>
-                  <dd>{finding.confidence}</dd>
-                </div>
-                <div>
-                  <dt>Affected asset</dt>
-                  <dd>{finding.affected_asset}</dd>
-                </div>
-              </dl>
-
-              <h4>Safe next steps</h4>
-              <ul>
-                {finding.safe_next_steps.map((step) => (
-                  <li key={step}>{step}</li>
-                ))}
-              </ul>
-            </div>
+          <h2>Foundation Status</h2>
+          {foundationFindings.map((finding) => (
+            <FindingCard finding={finding} key={finding.finding_id} compact />
           ))}
         </article>
       </section>
+
+      <section className="panel wide-panel">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Endpoint Security Evidence v0.1</p>
+            <h2>Sample endpoint findings</h2>
+          </div>
+          <span className="count-pill">{endpointFindings.length} findings</span>
+        </div>
+
+        <div className="findings-grid">
+          {endpointFindings.map((finding) => (
+            <FindingCard finding={finding} key={finding.finding_id} />
+          ))}
+        </div>
+      </section>
     </main>
+  );
+}
+
+function FindingCard({ finding, compact = false }: { finding: Finding; compact?: boolean }) {
+  return (
+    <div className="finding-card">
+      <div className="finding-topline">
+        <p className="eyebrow">{finding.category}</p>
+        <span className={`severity severity-${finding.severity}`}>{finding.severity}</span>
+      </div>
+
+      <h3>{finding.title}</h3>
+      <p>{finding.why_it_matters}</p>
+
+      <dl>
+        <div>
+          <dt>Confidence</dt>
+          <dd>{finding.confidence}</dd>
+        </div>
+        <div>
+          <dt>Affected asset</dt>
+          <dd>{finding.affected_asset}</dd>
+        </div>
+        <div>
+          <dt>Finding ID</dt>
+          <dd>{finding.finding_id}</dd>
+        </div>
+      </dl>
+
+      {!compact && (
+        <>
+          <h4>Safe next steps</h4>
+          <ul>
+            {finding.safe_next_steps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ul>
+
+          <h4>Limitations</h4>
+          <ul>
+            {finding.limitations.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
   );
 }

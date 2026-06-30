@@ -112,6 +112,11 @@ p {
 
 .panel {
   padding: 24px;
+  margin-bottom: 24px;
+}
+
+.wide-panel {
+  margin-top: 24px;
 }
 
 .module-list {
@@ -139,7 +144,8 @@ p {
   line-height: 1.5;
 }
 
-.module-card span {
+.module-card span,
+.count-pill {
   height: fit-content;
   padding: 5px 10px;
   border-radius: 999px;
@@ -149,11 +155,32 @@ p {
   white-space: nowrap;
 }
 
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 18px;
+}
+
+.findings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
 .finding-card {
   padding: 18px;
   border-radius: 16px;
   background: rgba(30, 41, 59, 0.8);
   border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.finding-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .finding-card p,
@@ -177,11 +204,47 @@ dt {
 dd {
   margin: 4px 0 0;
   font-weight: 700;
+  word-break: break-word;
 }
 
-@media (max-width: 850px) {
+.severity {
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 800;
+}
+
+.severity-info {
+  background: rgba(125, 211, 252, 0.14);
+  color: #bae6fd;
+}
+
+.severity-low {
+  background: rgba(134, 239, 172, 0.14);
+  color: #bbf7d0;
+}
+
+.severity-medium {
+  background: rgba(250, 204, 21, 0.14);
+  color: #fef08a;
+}
+
+.severity-high,
+.severity-critical {
+  background: rgba(248, 113, 113, 0.16);
+  color: #fecaca;
+}
+
+@media (max-width: 950px) {
   .hero,
-  .grid {
+  .grid,
+  .findings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  dl {
     grid-template-columns: 1fr;
   }
 }
