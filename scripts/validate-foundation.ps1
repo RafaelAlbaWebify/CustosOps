@@ -15,7 +15,8 @@ if (-not (Test-Path -LiteralPath '.venv')) {
 
 Write-Host "Validating frontend..."
 Set-Location -LiteralPath (Join-Path $Root 'frontend')
-npm install
-npm run build
+
+& npm.cmd install
+& npm.cmd run build
 
 Write-Host "CustosOps foundation validation completed."
