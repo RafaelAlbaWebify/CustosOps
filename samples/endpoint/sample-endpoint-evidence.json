@@ -1,12 +1,125 @@
 {
-  "source": "sample",
-  "module": "endpoint-security",
-  "computer_name": "LAB-WIN11-01",
-  "os": "Windows 11 Pro",
-  "secure_boot": "enabled",
-  "tpm": "present_and_ready",
-  "bitlocker": "on",
-  "defender": "not_collected_yet",
-  "firewall": "not_collected_yet",
-  "note": "Synthetic placeholder evidence for CustosOps foundation."
+  "schema_version": "custosops.endpoint.v0.1",
+  "collected_at": "2026-06-30T00:00:00Z",
+  "collector": "sample",
+  "collector_mode": "read_only",
+  "computer": {
+    "computer_name": "LAB-WIN11-01",
+    "current_user": "labuser",
+    "manufacturer": "LabVendor",
+    "model": "LabModel",
+    "serial_number": "LAB-SERIAL-001",
+    "domain": "LAB.LOCAL"
+  },
+  "operating_system": {
+    "caption": "Windows 11 Pro",
+    "version": "10.0.26100",
+    "build_number": "26100",
+    "install_date": "2026-01-01",
+    "last_boot_time": "2026-06-29T08:00:00"
+  },
+  "firmware": {
+    "bios_version": "1.0.0",
+    "bios_date": "2026-01-01",
+    "secure_boot": "disabled",
+    "tpm": {
+      "Present": true,
+      "Ready": true,
+      "Enabled": true,
+      "Owned": true
+    }
+  },
+  "encryption": {
+    "bitlocker": {
+      "MountPoint": "C:",
+      "ProtectionStatus": "Off",
+      "VolumeStatus": "FullyDecrypted",
+      "EncryptionMethod": "None"
+    }
+  },
+  "protection": {
+    "defender": {
+      "AntivirusEnabled": true,
+      "RealTimeProtection": false,
+      "BehaviorMonitorEnabled": true,
+      "IoavProtectionEnabled": true,
+      "NISEnabled": true,
+      "AMServiceEnabled": true,
+      "AntispywareEnabled": true
+    },
+    "firewall_profiles": [
+      {
+        "Name": "Domain",
+        "Enabled": true,
+        "DefaultInboundAction": "Block",
+        "DefaultOutboundAction": "Allow"
+      },
+      {
+        "Name": "Private",
+        "Enabled": false,
+        "DefaultInboundAction": "Block",
+        "DefaultOutboundAction": "Allow"
+      },
+      {
+        "Name": "Public",
+        "Enabled": true,
+        "DefaultInboundAction": "Block",
+        "DefaultOutboundAction": "Allow"
+      }
+    ]
+  },
+  "access_surface": {
+    "local_administrators": [
+      {
+        "Name": "LAB-WIN11-01\\Administrator",
+        "ObjectClass": "User",
+        "PrincipalSource": "Local"
+      },
+      {
+        "Name": "LAB\\Endpoint Admins",
+        "ObjectClass": "Group",
+        "PrincipalSource": "ActiveDirectory"
+      }
+    ],
+    "rdp": {
+      "Enabled": true,
+      "RegistryValue": 0
+    },
+    "smbv1": {
+      "EnableSMB1Protocol": false
+    },
+    "listening_ports": [
+      {
+        "LocalAddress": "0.0.0.0",
+        "LocalPort": 3389,
+        "ProcessId": 1000,
+        "ProcessName": "svchost"
+      }
+    ]
+  },
+  "maintenance": {
+    "pending_reboot": {
+      "IsPending": true,
+      "Checks": {
+        "ComponentBasedServicing": false,
+        "WindowsUpdate": true,
+        "PendingFileRename": false
+      }
+    }
+  },
+  "software": {
+    "installed_software": [
+      {
+        "DisplayName": "Example App",
+        "DisplayVersion": "1.0.0",
+        "Publisher": "Example Publisher",
+        "InstallDate": "20260101"
+      }
+    ]
+  },
+  "safety": {
+    "changed_configuration": false,
+    "collected_credentials": false,
+    "remediation_performed": false
+  }
 }

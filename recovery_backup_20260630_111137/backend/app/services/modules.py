@@ -14,15 +14,14 @@ def get_modules() -> list[ModuleInfo]:
             id="endpoint-security",
             name="Endpoint Security Evidence",
             group="Endpoint",
-            status="foundation",
+            status="planned",
             description="Read-only Windows endpoint security posture evidence.",
         ),
         ModuleInfo(
             id="dns-hygiene",
             name="DNS and Infrastructure Hygiene",
             group="Infrastructure",
-            status="foundation",
-            description="Read-only DNS and infrastructure hygiene evidence.",
+            status="foundation",`r`n            description="Read-only DNS and infrastructure hygiene evidence.",
         ),
         ModuleInfo(
             id="identity-m365",
@@ -42,7 +41,7 @@ def get_modules() -> list[ModuleInfo]:
             id="reports",
             name="Reports and Runbooks",
             group="Evidence",
-            status="foundation",
+            status="planned",
             description="HTML, JSON, CSV, and Markdown report generation.",
         ),
     ]

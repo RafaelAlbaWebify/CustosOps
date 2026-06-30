@@ -1,0 +1,66 @@
+{
+  "schema_version": "custosops.dns.v0.1",
+  "collected_at": "2026-06-30T00:00:00Z",
+  "collector": "sample",
+  "collector_mode": "read_only",
+  "source_file": "sample-dns-evidence.json",
+  "records": [
+    {
+      "host_name": "app-old",
+      "record_type": "A",
+      "ip_address": "10.10.10.25",
+      "zone": "lab.local",
+      "dns_server": "LAB-DC01",
+      "forward_status": "OK",
+      "ptr_status": "NO_PTR",
+      "ping_status": "Failed",
+      "age_days": 180,
+      "is_duplicate_ip": false,
+      "notes": "Synthetic stale app host."
+    },
+    {
+      "host_name": "app-current",
+      "record_type": "A",
+      "ip_address": "10.10.10.26",
+      "zone": "lab.local",
+      "dns_server": "LAB-DC01",
+      "forward_status": "OK",
+      "ptr_status": "PTR_OK",
+      "ping_status": "Success",
+      "age_days": 4,
+      "is_duplicate_ip": false,
+      "notes": "Synthetic current app host."
+    },
+    {
+      "host_name": "legacy-alias-01",
+      "record_type": "A",
+      "ip_address": "10.10.10.40",
+      "zone": "lab.local",
+      "dns_server": "LAB-DC01",
+      "forward_status": "FORWARD_MISMATCH",
+      "ptr_status": "PTR_MISMATCH",
+      "ping_status": "Failed",
+      "age_days": 220,
+      "is_duplicate_ip": true,
+      "notes": "Synthetic mismatch."
+    },
+    {
+      "host_name": "legacy-alias-02",
+      "record_type": "A",
+      "ip_address": "10.10.10.40",
+      "zone": "lab.local",
+      "dns_server": "LAB-DC01",
+      "forward_status": "OK",
+      "ptr_status": "PTR_MISMATCH",
+      "ping_status": "Failed",
+      "age_days": 220,
+      "is_duplicate_ip": true,
+      "notes": "Synthetic shared IP."
+    }
+  ],
+  "safety": {
+    "changed_configuration": false,
+    "collected_credentials": false,
+    "remediation_performed": false
+  }
+}
