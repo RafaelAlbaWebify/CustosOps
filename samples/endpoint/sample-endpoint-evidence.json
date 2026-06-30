@@ -1,0 +1,12 @@
+{
+  "source": "sample",
+  "module": "endpoint-security",
+  "computer_name": "LAB-WIN11-01",
+  "os": "Windows 11 Pro",
+  "secure_boot": "enabled",
+  "tpm": "present_and_ready",
+  "bitlocker": "on",
+  "defender": "not_collected_yet",
+  "firewall": "not_collected_yet",
+  "note": "Synthetic placeholder evidence for CustosOps foundation."
+}

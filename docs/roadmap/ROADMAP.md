@@ -1,0 +1,223 @@
+# CustosOps Roadmap
+
+## Product Goal
+
+Build a local-first cybersecurity evidence and posture platform for Microsoft and Windows environments.
+
+CustosOps should collect read-only evidence, classify findings, explain risk, document limitations, and generate remediation-ready reports.
+
+## Phase 0 - Foundation
+
+Goal:
+Create the clean project structure, product scope, safety boundaries, and migration plan.
+
+Deliverables:
+- Local project folder
+- README
+- Roadmap
+- Scope and safety boundaries
+- Initial architecture decision
+- Git initialized locally
+
+Status:
+Planned
+
+## Phase 1 - Platform Shell
+
+Goal:
+Create the first working CustosOps shell.
+
+Deliverables:
+- FastAPI backend skeleton
+- Frontend shell
+- Health endpoint
+- Module registry
+- Sample evidence import placeholder
+- Findings model placeholder
+
+Do not migrate old tools yet.
+
+## Phase 2 - Evidence and Finding Model
+
+Goal:
+Define the core evidence and finding model before adding many checks.
+
+Finding fields:
+- finding_id
+- title
+- severity
+- confidence
+- category
+- affected_asset
+- evidence
+- why_it_matters
+- limitations
+- safe_next_steps
+- non_actions
+- status
+
+Deliverables:
+- Pydantic schemas
+- Sample evidence files
+- Sample findings
+- Basic HTML report output
+
+## Phase 3 - Endpoint Security Evidence
+
+Goal:
+Fuse the useful endpoint support checklist logic into CustosOps.
+
+Source:
+endpoint-support-checklist-powershell
+
+Checks:
+- OS version and build
+- BIOS version and date
+- TPM status
+- Secure Boot status
+- BitLocker status
+- Defender status
+- Firewall profile status
+- Local administrators
+- RDP status
+- SMBv1 status
+- Pending reboot
+- Listening ports
+- Installed software inventory
+
+Deliverables:
+- PowerShell endpoint collector
+- Endpoint evidence schema
+- Endpoint analyzer rules
+- Endpoint sample report
+
+Old repo status after phase:
+Legacy standalone reference. Do not delete yet.
+
+## Phase 4 - DNS and Infrastructure Hygiene
+
+Goal:
+Fuse the useful DNS audit logic into CustosOps.
+
+Source:
+dns-audit-tool
+
+Checks:
+- Missing PTR
+- PTR mismatch
+- Multiple PTR records
+- Shared IP usage
+- Stale-looking records
+- Forward drift
+- Alias concentration
+- Validation-needed cleanup findings
+
+Deliverables:
+- DNS evidence collector or import path
+- DNS evidence schema
+- DNS analyzer rules
+- DNS sample report
+
+Old repo status after phase:
+Legacy standalone reference. Do not delete yet.
+
+## Phase 5 - Identity and M365 Security Posture
+
+Goal:
+Add Microsoft 365 and Entra security evidence.
+
+Start with sample data first. Add real Graph collection later.
+
+Checks:
+- Global admins
+- Privileged roles
+- Stale users
+- Guest users
+- MFA evidence
+- Disabled users with licenses
+- Mailbox forwarding risks
+- Conditional Access evidence where available
+- Device compliance summary where available
+
+Deliverables:
+- Sample M365 evidence
+- Identity analyzer rules
+- Security posture report section
+
+## Phase 6 - Risk and Vulnerability Prioritization
+
+Goal:
+Prioritize what should be fixed first.
+
+Inputs:
+- Endpoint evidence
+- Installed software
+- Windows version/build
+- Exposure indicators
+- Manual asset criticality
+- Known exploited vulnerability data later
+
+Deliverables:
+- Risk scoring model
+- Fix first / fix next / monitor / verify manually workflow
+- Executive summary section
+
+## Phase 7 - Reporting
+
+Goal:
+Create business-readable reports.
+
+Report sections:
+- Executive summary
+- Top risks
+- Evidence table
+- Affected assets and users
+- Recommended remediation
+- Validation steps
+- Before and after proof
+- Limitations
+- Appendix with raw evidence
+
+Export targets:
+- HTML
+- JSON
+- CSV
+- Markdown runbook
+
+PDF can come later.
+
+## Phase 8 - Public Release
+
+Goal:
+Publish CustosOps as the cybersecurity flagship.
+
+Publication criteria:
+- Clean README
+- Screenshots
+- Sanitized sample data
+- Demo workflow
+- Safety boundaries
+- Architecture diagram
+- Three realistic case studies
+- No internal company data
+- No misleading claims
+
+## Phase 9 - Repository Consolidation
+
+Goal:
+Remove fragmentation after CustosOps is stronger than the old standalone tools.
+
+Candidate repos to eliminate after migration:
+- endpoint-support-checklist-powershell
+- dns-audit-tool
+
+Process:
+1. Confirm code migrated.
+2. Confirm screenshots migrated.
+3. Confirm sample outputs migrated.
+4. Confirm lessons learned migrated.
+5. Confirm website no longer links to old repo.
+6. Confirm GitHub profile points to CustosOps.
+7. Archive or delete old repo.
+
+JOLT remains separate.

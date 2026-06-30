@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
+
+# Node
+node_modules/
+dist/
+build/
+
+# Generated data
+data/
+exports/
+reports/
+history/
+*.log
+
+# Local evidence
+*.local.json
+*.local.csv
+*.local.html
+*.local.md
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
