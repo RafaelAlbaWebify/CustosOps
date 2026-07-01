@@ -424,3 +424,8 @@ CustosOps now allows Windows Event report export after a valid local collection 
 CustosOps is adding durable local evidence run history so collections, imports, reports, and review workflows can be tracked over time.
 
 Slice 25A adds the backend run history store and API.
+
+
+## In Progress Milestone 25 - Run History Workspace UI
+
+CustosOps now exposes the backend evidence run history through a Run History workspace. Automatic workflow recording is the next slice.

@@ -51,3 +51,20 @@ It does not upload evidence externally.
 It does not change endpoint configuration.
 
 It does not remediate findings.
+
+
+## Slice 25B-1 - Run History Workspace UI
+
+### Added
+
+- Run History workspace in the frontend sidebar.
+- GET /api/runs integration.
+- DELETE /api/runs integration.
+- Summary cards for run count, finding count, warnings, and failures.
+- Run history table with timestamp, module, source, asset, status, counts, and run ID.
+
+### Notes
+
+Automatic workflow recording is intentionally left for the next slice.
+
+This slice verifies that the frontend can display and manage backend run-history records safely.
