@@ -344,3 +344,7 @@ CustosOps local launch/stop behavior was hardened with a process guard. The App 
 ## Completed Milestone - Module Workspaces v0.1
 
 CustosOps now separates the overview dashboard from operational module workspaces for Endpoint, DNS Hygiene, Application Logs, Reports, and Archive. Each evidence module has a full finding table and detail review panel.
+
+## Completed Milestone - Evidence State and Persistence v0.1
+
+CustosOps now preserves loaded evidence state in local browser storage, restores current module findings after refresh, and treats visible findings as report-ready evidence with safe fallback metadata when needed.

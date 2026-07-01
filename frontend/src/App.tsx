@@ -2,8 +2,23 @@ import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import "./styles.css";
 
 const API_BASE = "http://127.0.0.1:8000";
+const SESSION_STORAGE_KEY = "custosops.sessionEvidence.v1";
 
 type Severity = "critical" | "high" | "medium" | "low" | "info";
+
+type PersistedModuleEvidence = {
+  evidence: unknown | null;
+  findings: Finding[];
+  source: string;
+  warnings?: string[];
+  saved_at: string;
+};
+
+type PersistedEvidenceState = {
+  endpoint?: PersistedModuleEvidence;
+  dns?: PersistedModuleEvidence;
+  appLog?: PersistedModuleEvidence;
+};
 
 type Workspace = "overview" | "endpoint" | "dns" | "app-log" | "reports" | "archive";
 
@@ -126,12 +141,111 @@ function App() {
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
+  useEffect(() => {
+    if (endpointFindings.length === 0 && dnsFindings.length === 0 && appLogFindings.length === 0) {
+      return;
+    }
+
+    const payload: PersistedEvidenceState = {
+      endpoint: {
+        evidence: endpointEvidence,
+        findings: endpointFindings,
+        source: endpointSource,
+        saved_at: new Date().toISOString()
+      },
+      dns: {
+        evidence: dnsEvidence,
+        findings: dnsFindings,
+        source: dnsSource,
+        warnings: dnsWarnings,
+        saved_at: new Date().toISOString()
+      },
+      appLog: {
+        evidence: appLogEvidence,
+        findings: appLogFindings,
+        source: appLogSource,
+        warnings: appLogWarnings,
+        saved_at: new Date().toISOString()
+      }
+    };
+
+    try {
+      window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(payload));
+    } catch {
+      // Session persistence is helpful but not required for operation.
+    }
+  }, [
+    endpointEvidence,
+    endpointFindings,
+    endpointSource,
+    dnsEvidence,
+    dnsFindings,
+    dnsSource,
+    dnsWarnings,
+    appLogEvidence,
+    appLogFindings,
+    appLogSource,
+    appLogWarnings
+  ]);
+
+  function restoreSessionEvidence(): { endpoint: boolean; dns: boolean; appLog: boolean } {
+    const restored = {
+      endpoint: false,
+      dns: false,
+      appLog: false
+    };
+
+    try {
+      const raw = window.localStorage.getItem(SESSION_STORAGE_KEY);
+
+      if (!raw) {
+        return restored;
+      }
+
+      const parsed = JSON.parse(raw) as PersistedEvidenceState;
+
+      if (parsed.endpoint?.findings?.length) {
+        const findings = normalizeFindings(parsed.endpoint.findings);
+        setEndpointEvidence(parsed.endpoint.evidence ?? null);
+        setEndpointFindings(findings);
+        setEndpointSelectedId(findings[0]?.finding_id ?? "");
+        setEndpointSource(parsed.endpoint.source || "Restored endpoint evidence");
+        restored.endpoint = true;
+      }
+
+      if (parsed.dns?.findings?.length) {
+        const findings = normalizeFindings(parsed.dns.findings);
+        setDnsEvidence(parsed.dns.evidence ?? null);
+        setDnsFindings(findings);
+        setDnsSelectedId(findings[0]?.finding_id ?? "");
+        setDnsSource(parsed.dns.source || "Restored DNS evidence");
+        setDnsWarnings(parsed.dns.warnings ?? []);
+        restored.dns = true;
+      }
+
+      if (parsed.appLog?.findings?.length) {
+        const findings = normalizeFindings(parsed.appLog.findings);
+        setAppLogEvidence(parsed.appLog.evidence ?? null);
+        setAppLogFindings(findings);
+        setAppLogSelectedId(findings[0]?.finding_id ?? "");
+        setAppLogSource(parsed.appLog.source || "Restored application log evidence");
+        setAppLogWarnings(parsed.appLog.warnings ?? []);
+        restored.appLog = true;
+      }
+    } catch {
+      window.localStorage.removeItem(SESSION_STORAGE_KEY);
+    }
+
+    return restored;
+  }
   async function loadInitialData() {
+    const restored = restoreSessionEvidence();
+
     await Promise.allSettled([
       checkBackend(),
       loadModules(),
-      loadEndpointSample(),
-      loadDnsSample(),
+      restored.endpoint ? Promise.resolve() : loadEndpointSample(),
+      restored.dns ? Promise.resolve() : loadDnsSample(),
       loadReportArchive()
     ]);
   }
@@ -462,10 +576,12 @@ function App() {
           ? dnsFindings
           : appLogFindings;
 
-    if (!evidence || findings.length === 0) {
-      setReportError(`No ${reportType} evidence is loaded.`);
+    if (findings.length === 0) {
+      setReportError(`No ${reportType} findings are loaded.`);
       return;
     }
+
+    const reportEvidence = evidence ?? buildEvidenceFallback(reportType, findings);
 
     try {
       const response = await fetch(`${API_BASE}/api/reports/${route}`, {
@@ -474,7 +590,7 @@ function App() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          evidence,
+          evidence: reportEvidence,
           findings,
           format,
           archive: true
@@ -676,9 +792,9 @@ function App() {
 
         {activeWorkspace === "reports" && (
           <ReportsWorkspace
-            endpointReady={Boolean(endpointEvidence && endpointFindings.length)}
-            dnsReady={Boolean(dnsEvidence && dnsFindings.length)}
-            appLogReady={Boolean(appLogEvidence && appLogFindings.length)}
+            endpointReady={endpointFindings.length > 0}
+            dnsReady={dnsFindings.length > 0}
+            appLogReady={appLogFindings.length > 0}
             onDownload={handleReportDownload}
           />
         )}
@@ -1225,6 +1341,15 @@ function getWorkspaceTitle(workspace: Workspace): string {
   return WORKSPACES.find((item) => item.id === workspace)?.label ?? "Overview";
 }
 
+function buildEvidenceFallback(reportType: "endpoint" | "dns" | "app-log", findings: Finding[]): Record<string, unknown> {
+  return {
+    source_type: `${reportType}_session_evidence`,
+    source_file: "custosops-session",
+    generated_from: "loaded findings",
+    finding_count: findings.length,
+    note: "Raw evidence was not available in frontend state, so CustosOps generated a minimal evidence metadata object for report continuity."
+  };
+}
 function downloadTextFile(filename: string, content: string, contentType: string) {
   const blob = new Blob([content], { type: contentType });
   const url = URL.createObjectURL(blob);
