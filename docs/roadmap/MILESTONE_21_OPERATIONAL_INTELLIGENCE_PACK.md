@@ -109,3 +109,19 @@ No live Windows Event collection is performed in this slice.
 The executive summary pack only summarizes evidence already loaded into CustosOps.
 
 No remediation is performed and no evidence is uploaded externally.
+
+
+## Slice 21D UI - Executive Summary Pack
+
+### Added
+
+- Executive Summary Pack card in the Reports workspace.
+- Combined report generation from currently loaded Endpoint, DNS, App Log, and Windows Event findings.
+- Operator review status and notes are carried into the executive report.
+- Executive Summary Pack is archive-compatible.
+
+### Safety
+
+The Executive Summary Pack summarizes only evidence already loaded into CustosOps.
+
+No remediation is performed and no evidence leaves the local environment.

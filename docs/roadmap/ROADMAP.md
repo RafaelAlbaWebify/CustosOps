@@ -377,3 +377,8 @@ CustosOps now exposes Windows Event evidence in the frontend workspace navigatio
 ## Completed Milestone Slice - Executive Summary Pack v0.1
 
 CustosOps now supports a combined executive summary report across loaded evidence modules, including severity counts, review status counts, top risks, recommended actions, and evidence limitations.
+
+
+## Completed Milestone Slice - Executive Summary Pack UI v0.1
+
+CustosOps now exposes the Executive Summary Pack in the Reports workspace and can generate a combined operational report from loaded evidence modules.

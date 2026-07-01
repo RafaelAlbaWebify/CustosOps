@@ -723,6 +723,125 @@ function App() {
     }
   }
 
+  function buildExecutiveSummaryModules(): Array<{
+    module_id: string;
+    module_name: string;
+    source: string;
+    evidence: Record<string, unknown>;
+    findings: Finding[];
+  }> {
+    const modules: Array<{
+      module_id: string;
+      module_name: string;
+      source: string;
+      evidence: Record<string, unknown>;
+      findings: Finding[];
+    }> = [];
+
+    const reviewedEndpointFindings = applyReviewsToFindingsForReport(endpointFindings, reviewRecords);
+    const reviewedDnsFindings = applyReviewsToFindingsForReport(dnsFindings, reviewRecords);
+    const reviewedAppLogFindings = applyReviewsToFindingsForReport(appLogFindings, reviewRecords);
+    const reviewedWindowsEventFindings = applyReviewsToFindingsForReport(windowsEventFindings, reviewRecords);
+
+    if (reviewedEndpointFindings.length > 0) {
+      modules.push({
+        module_id: "endpoint",
+        module_name: "Endpoint Security",
+        source: endpointSource || "Endpoint evidence",
+        evidence: buildReportEvidence("endpoint", endpointEvidence, reviewedEndpointFindings),
+        findings: reviewedEndpointFindings
+      });
+    }
+
+    if (reviewedDnsFindings.length > 0) {
+      modules.push({
+        module_id: "dns",
+        module_name: "DNS Hygiene",
+        source: dnsSource || "DNS evidence",
+        evidence: buildReportEvidence("dns", dnsEvidence, reviewedDnsFindings),
+        findings: reviewedDnsFindings
+      });
+    }
+
+    if (reviewedAppLogFindings.length > 0) {
+      modules.push({
+        module_id: "app-log",
+        module_name: "Application Logs",
+        source: appLogSource || "Application log evidence",
+        evidence: buildReportEvidence("app-log", appLogEvidence, reviewedAppLogFindings),
+        findings: reviewedAppLogFindings
+      });
+    }
+
+    if (reviewedWindowsEventFindings.length > 0) {
+      modules.push({
+        module_id: "windows-events",
+        module_name: "Windows Event Evidence",
+        source: windowsEventSource || "Windows Event evidence",
+        evidence: buildReportEvidence("windows-events", windowsEventEvidence, reviewedWindowsEventFindings),
+        findings: reviewedWindowsEventFindings
+      });
+    }
+
+    return modules;
+  }
+
+  function applyReviewsToFindingsForReport(findings: Finding[], records: Record<string, ReviewRecord>): Finding[] {
+    return findings.map((finding) => {
+      const review = records[getFindingReviewKey(finding)];
+
+      if (!review) {
+        return finding;
+      }
+
+      return {
+        ...finding,
+        status: review.status,
+        review_notes: review.notes,
+        reviewed_at: review.reviewed_at,
+        reviewed_by: review.reviewed_by
+      };
+    });
+  }
+
+  async function handleExecutiveSummaryDownload(format: ReportFormat) {
+    resetMessages();
+
+    const modules = buildExecutiveSummaryModules();
+
+    if (modules.length === 0) {
+      setReportError("No evidence findings are currently loaded for the executive summary.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/api/reports/executive-summary`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          modules,
+          format,
+          archive: true
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      const data = await response.json();
+
+      downloadTextFile(data.filename, data.content, data.content_type);
+      setStatusMessage(`Executive Summary Pack generated: ${data.filename}`);
+
+      await loadReportArchive();
+    } catch (err) {
+      setReportError(err instanceof Error ? err.message : "Unable to generate Executive Summary Pack.");
+    }
+  }
+
   async function handleReportDownload(reportType: ReportModule, format: ReportFormat) {
     resetMessages();
 
@@ -999,7 +1118,9 @@ function App() {
             dnsReady={dnsFindings.length > 0}
             appLogReady={appLogFindings.length > 0}
             windowsEventReady={windowsEventFindings.length > 0}
+            executiveReady={endpointFindings.length > 0 || dnsFindings.length > 0 || appLogFindings.length > 0 || windowsEventFindings.length > 0}
             onDownload={handleReportDownload}
+            onExecutiveDownload={handleExecutiveSummaryDownload}
           />
         )}
 
@@ -1189,7 +1310,9 @@ function ReportsWorkspace(props: {
   dnsReady: boolean;
   appLogReady: boolean;
   windowsEventReady: boolean;
+  executiveReady: boolean;
   onDownload: (reportType: ReportModule, format: ReportFormat) => void;
+  onExecutiveDownload: (format: ReportFormat) => void;
 }) {
   return (
     <div className="workspace-content">
