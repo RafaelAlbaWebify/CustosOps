@@ -1135,7 +1135,7 @@ function App() {
                   <input type="file" accept=".json,.csv,application/json,text/csv" onChange={handleWindowsEventImport} />
                   Import JSON/CSV
                 </label>
-                <ReportButtons disabled={windowsEventFindings.length === 0} onDownload={(format) => handleReportDownload("windows-events", format)} />
+                <ReportButtons disabled={!windowsEventEvidence} onDownload={(format) => handleReportDownload("windows-events", format)} />
               </>
             }
           />
@@ -1146,8 +1146,8 @@ function App() {
             endpointReady={endpointFindings.length > 0}
             dnsReady={dnsFindings.length > 0}
             appLogReady={appLogFindings.length > 0}
-            windowsEventReady={windowsEventFindings.length > 0}
-            executiveReady={endpointFindings.length > 0 || dnsFindings.length > 0 || appLogFindings.length > 0 || windowsEventFindings.length > 0}
+            windowsEventReady={Boolean(windowsEventEvidence)}
+            executiveReady={Boolean(endpointEvidence) || Boolean(dnsEvidence) || Boolean(appLogEvidence) || Boolean(windowsEventEvidence)}
             onDownload={handleReportDownload}
             onExecutiveDownload={handleExecutiveSummaryDownload}
           />

@@ -64,3 +64,15 @@ This milestone changes classification logic only.
 No remediation is performed.
 No Windows Event logs are modified.
 No endpoint configuration is changed.
+
+# Milestone 24B UI Fix - Evidence-Based Report Readiness
+
+## Problem
+
+After a valid Windows Event local collection with zero matching events or zero findings, the report buttons stayed disabled until browser refresh.
+
+## Fix
+
+Windows Event report readiness is now based on loaded evidence, not finding count.
+
+This allows operators to export a report for a valid collection even when no findings are detected.

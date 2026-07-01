@@ -408,3 +408,7 @@ This expands the Windows Event module beyond sample/import workflows while prese
 CustosOps now uses provider-aware Windows Event classification to reduce false positives from local collection.
 
 The analyzer no longer treats unrelated Winlogon 7001 events as service failure evidence.
+
+## Completed Milestone 24B UI Fix - Evidence-Based Report Readiness
+
+CustosOps now enables Windows Event report export after a valid local evidence collection, even when the collection produces zero findings.
