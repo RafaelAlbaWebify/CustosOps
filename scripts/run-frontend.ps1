@@ -1,23 +1,19 @@
-Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
 
-$Root = Split-Path -Parent $PSScriptRoot
-$FrontendRoot = Join-Path $Root 'frontend'
+$ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$Root = Split-Path -Parent $ScriptRoot
+$FrontendPath = Join-Path $Root "frontend"
 
-Set-Location -LiteralPath $FrontendRoot
+Set-Location -LiteralPath $FrontendPath
 
 Write-Host ""
 Write-Host "Starting CustosOps frontend..."
-Write-Host "Frontend path: $FrontendRoot"
+Write-Host "Frontend path: $FrontendPath"
 Write-Host ""
 
-if (-not (Test-Path -LiteralPath 'node_modules')) {
+if (-not (Test-Path -LiteralPath (Join-Path $FrontendPath "node_modules"))) {
     Write-Host "Installing frontend dependencies..."
     & npm.cmd install
-
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "Frontend dependency installation failed."
-        exit 1
-    }
 }
 else {
     Write-Host "Frontend dependencies already installed. Skipping npm install."
@@ -28,4 +24,4 @@ Write-Host "Frontend URL: http://localhost:5173"
 Write-Host "Press CTRL+C in this window to stop the frontend."
 Write-Host ""
 
-& npm.cmd run dev
+& npm.cmd run dev -- --host 127.0.0.1

@@ -332,3 +332,11 @@ CustosOps passed a local audit checkpoint. Backend tests and frontend build pass
 ## Completed Milestone - DNS CSV Compatibility Lab v0.1
 
 CustosOps now includes synthetic DNS CSV compatibility fixtures, a downloadable CSV template, and tests proving the importer handles multiple common DNS audit CSV shapes without using real company data.
+
+## Completed Milestone - Application Log Evidence v0.1
+
+CustosOps now supports imported application/API log evidence, detects common runtime and support failure patterns, warns about sensitive data indicators, and exports archived app-log evidence reports.
+
+## Completed Milestone - Process Guard and App Log Repair
+
+CustosOps local launch/stop behavior was hardened with a process guard. The App Log report backend import issue was repaired, and startup now checks backend import and health before opening the frontend.

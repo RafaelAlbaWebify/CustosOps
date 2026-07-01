@@ -84,6 +84,11 @@ export default function App() {
   const [dnsIgnoredRowCount, setDnsIgnoredRowCount] = useState<number | null>(null);
   const [dnsWarnings, setDnsWarnings] = useState<string[]>([]);
 
+  const [appLogFindings, setAppLogFindings] = useState<Finding[]>([]);
+  const [appLogEvidence, setAppLogEvidence] = useState<unknown | null>(null);
+  const [appLogFileName, setAppLogFileName] = useState<string>("");
+  const [appLogWarnings, setAppLogWarnings] = useState<string[]>([]);
+
   const [reportArchive, setReportArchive] = useState<ArchiveEntry[]>([]);
 
   const [importError, setImportError] = useState<string>("");
@@ -95,6 +100,7 @@ export default function App() {
 
   const endpointSeverityCounts = useMemo(() => getSeverityCounts(endpointFindingsToShow), [endpointFindingsToShow]);
   const dnsSeverityCounts = useMemo(() => getSeverityCounts(dnsFindingsToShow), [dnsFindingsToShow]);
+  const appLogSeverityCounts = useMemo(() => getSeverityCounts(appLogFindings), [appLogFindings]);
 
   const endpointHighestSeverity = getHighestSeverity(endpointFindingsToShow);
   const dnsHighestSeverity = getHighestSeverity(dnsFindingsToShow);
@@ -303,6 +309,86 @@ export default function App() {
     }
   }
 
+  async function handleAppLogImport(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    setImportError("");
+    setReportError("");
+    setAppLogFindings([]);
+    setAppLogEvidence(null);
+    setAppLogFileName("");
+    setAppLogWarnings([]);
+
+    if (!file) {
+      return;
+    }
+
+    try {
+      const text = await file.text();
+
+      const response = await fetch(`${API_BASE}/api/app-log/import`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          filename: file.name,
+          content: text
+        })
+      });
+
+      if (!response.ok) {
+        const responseText = await response.text();
+        throw new Error(`Backend rejected the app log file: ${response.status} ${responseText}`);
+      }
+
+      const data = await response.json();
+
+      setAppLogFileName(file.name);
+      setAppLogEvidence(data.evidence);
+      setAppLogFindings(data.findings);
+      setAppLogWarnings(data.warnings ?? []);
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : "Unable to import application log.");
+    } finally {
+      event.target.value = "";
+    }
+  }
+
+  async function handleAppLogReportDownload(format: ReportFormat) {
+    setReportError("");
+
+    if (!appLogEvidence || appLogFindings.length === 0) {
+      setReportError("Import an application log before generating an app log report.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/api/reports/app-log`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          evidence: appLogEvidence,
+          findings: appLogFindings,
+          format,
+          archive: true
+        })
+      });
+
+      if (!response.ok) {
+        const responseText = await response.text();
+        throw new Error(`Application log report generation failed: ${response.status} ${responseText}`);
+      }
+
+      const data: ReportResponse = await response.json();
+      downloadTextFile(data.filename, data.content, data.content_type);
+      await loadReportArchive();
+    } catch (err) {
+      setReportError(err instanceof Error ? err.message : "Unable to generate application log report.");
+    }
+  }
   function resetDnsImportState() {
     setImportError("");
     setImportedDnsFindings([]);
@@ -428,6 +514,7 @@ export default function App() {
           <a className="active" href="#overview"><span>OV</span>Overview</a>
           <a href="#endpoint"><span>EP</span>Endpoint</a>
           <a href="#dns"><span>DN</span>DNS Hygiene</a>
+          <a href="#app-log"><span>LG</span>App Logs</a>
           <a href="#reports"><span>RP</span>Reports</a>
           <a href="#archive"><span>AR</span>Archive</a>
         </nav>
@@ -465,7 +552,7 @@ export default function App() {
           <section className="kpi-row">
             <KpiCard icon="EP" label="Endpoint Findings" value={String(endpointFindingsToShow.length)} note={endpointAsset === "n/a" ? "Awaiting import" : `Asset ${endpointAsset}`} />
             <KpiCard icon="DN" label="DNS Max Severity" value={capitalize(dnsHighestSeverity)} note={`${dnsFindingsToShow.length} DNS findings`} highlight />
-            <KpiCard icon="MO" label="Active Modules" value={`${activeModuleCount} / ${modules.length}`} note="Foundation enabled" />
+            <KpiCard icon="LG" label="App Log Findings" value={String(appLogFindings.length)} note={appLogFileName || "Awaiting log import"} />
             <KpiCard icon="AR" label="Archived Reports" value={String(reportArchive.length)} note="In local archive" />
           </section>
 
@@ -631,6 +718,54 @@ export default function App() {
                 )}
               </section>
 
+              <section className="card app-log-card" id="app-log">
+                <div className="card-header">
+                  <div>
+                    <p className="eyebrow">Application Evidence</p>
+                    <h2>App Log Evidence</h2>
+                  </div>
+                  <label className="button import-button">
+                    <input type="file" accept=".log,.txt,.csv,.json,.ndjson,text/plain,application/json" onChange={handleAppLogImport} />
+                    Import Log
+                  </label>
+                </div>
+
+                <SeverityStrip counts={appLogSeverityCounts} />
+
+                <div className="action-row">
+                  <button disabled={!appLogEvidence || appLogFindings.length === 0} onClick={() => handleAppLogReportDownload("html")}>Download HTML</button>
+                  <button disabled={!appLogEvidence || appLogFindings.length === 0} onClick={() => handleAppLogReportDownload("markdown")}>Download Markdown</button>
+                  <button disabled={!appLogEvidence || appLogFindings.length === 0} onClick={() => handleAppLogReportDownload("json")}>Download JSON</button>
+                </div>
+
+                {appLogFileName && <p className="loaded-file">Loaded: {appLogFileName}</p>}
+                {appLogWarnings.length > 0 && <p className="warning-text">{appLogWarnings.join(" | ")}</p>}
+
+                <div className="table-panel">
+                  <div className="table-title">
+                    <strong>Runtime Evidence</strong>
+                    <span>{appLogFindings.length} findings</span>
+                  </div>
+
+                  <div className="finding-table app-log-table">
+                    <div className="table-head">
+                      <span>Severity</span>
+                      <span>Issue</span>
+                      <span>Count</span>
+                    </div>
+
+                    {appLogFindings.slice(0, 5).map((finding) => (
+                      <div className="table-row" key={`${finding.finding_id}-${finding.affected_asset}`}>
+                        <SeverityDot severity={finding.severity} />
+                        <span>{getAppLogIssue(finding)}</span>
+                        <span>{getAppLogCount(finding)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <a className="card-link" href="#app-log">Review app log evidence</a>
+              </section>
               <section className="card module-card" id="reports">
                 <div className="card-header">
                   <div>
@@ -814,6 +949,32 @@ function getEndpointStatus(finding: Finding): string {
   return truncate(firstEvidence.value, 18);
 }
 
+function getAppLogIssue(finding: Finding): string {
+  const id = finding.finding_id.toLowerCase();
+
+  if (id.includes("5xx")) return "HTTP server errors";
+  if (id.includes("auth")) return "Auth failures";
+  if (id.includes("404")) return "Repeated 404";
+  if (id.includes("timeout")) return "Timeouts";
+  if (id.includes("dns")) return "DNS resolution";
+  if (id.includes("tls")) return "TLS/certificate";
+  if (id.includes("database")) return "Database dependency";
+  if (id.includes("exception")) return "Exceptions";
+  if (id.includes("slow")) return "Slow requests";
+  if (id.includes("sensitive")) return "Sensitive data risk";
+
+  return finding.title;
+}
+
+function getAppLogCount(finding: Finding): string {
+  const countEvidence = finding.evidence.find((item) =>
+    item.key.includes("count") ||
+    item.key.includes("error_count") ||
+    item.key.includes("failure_count")
+  );
+
+  return countEvidence ? truncate(countEvidence.value, 10) : "n/a";
+}
 function getDnsIssue(finding: Finding): string {
   const id = finding.finding_id.toLowerCase();
 

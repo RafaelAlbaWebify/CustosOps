@@ -1,40 +1,40 @@
-Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
 
-$Root = Split-Path -Parent $PSScriptRoot
-$BackendRoot = Join-Path $Root 'backend'
+$ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$Root = Split-Path -Parent $ScriptRoot
+$BackendPath = Join-Path $Root "backend"
+$VenvPath = Join-Path $BackendPath ".venv"
+$PythonPath = Join-Path $VenvPath "Scripts\python.exe"
 
-Set-Location -LiteralPath $BackendRoot
+Set-Location -LiteralPath $BackendPath
 
 Write-Host ""
 Write-Host "Starting CustosOps backend..."
-Write-Host "Backend path: $BackendRoot"
+Write-Host "Backend path: $BackendPath"
 Write-Host ""
 
-if (-not (Test-Path -LiteralPath '.venv')) {
-    Write-Host "Creating Python virtual environment..."
+if (-not (Test-Path -LiteralPath $PythonPath)) {
+    Write-Host "Creating backend virtual environment..."
     python -m venv .venv
 }
 
-$Python = Join-Path $BackendRoot '.venv\Scripts\python.exe'
-
-if (-not (Test-Path -LiteralPath $Python)) {
-    Write-Host "Python virtual environment was not created correctly."
-    exit 1
-}
-
-if (-not (Test-Path -LiteralPath '.deps_installed')) {
+if (-not (Test-Path -LiteralPath (Join-Path $BackendPath ".deps_installed"))) {
     Write-Host "Installing backend dependencies..."
-    & $Python -m pip install -r requirements.txt
-
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "Backend dependency installation failed."
-        exit 1
-    }
-
-    Get-Date -Format 'yyyy-MM-dd HH:mm:ss' | Set-Content -LiteralPath '.deps_installed' -Encoding UTF8
+    & $PythonPath -m pip install -r requirements.txt
+    New-Item -ItemType File -Path (Join-Path $BackendPath ".deps_installed") -Force | Out-Null
 }
 else {
     Write-Host "Backend dependencies already installed. Skipping pip install."
+}
+
+Write-Host ""
+Write-Host "Checking backend import..."
+& $PythonPath -c "from app.main import app; print('backend import ok')"
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Host ""
+    Write-Host "Backend import failed. Fix the traceback above before launching."
+    exit 1
 }
 
 Write-Host ""
@@ -42,4 +42,4 @@ Write-Host "Backend URL: http://127.0.0.1:8000"
 Write-Host "Press CTRL+C in this window to stop the backend."
 Write-Host ""
 
-& $Python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+& $PythonPath -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload

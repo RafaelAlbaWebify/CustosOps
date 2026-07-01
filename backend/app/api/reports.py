@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException, Response
 
+from app.schemas.app_log_report import AppLogReportRequest
 from app.schemas.report import DnsReportRequest, EndpointReportRequest
+from app.services.app_log_report import build_app_log_report
 from app.services.dns_report import build_dns_report
 from app.services.endpoint_report import build_endpoint_report
 from app.services.report_archive import (
@@ -102,6 +104,31 @@ def create_dns_report(request: DnsReportRequest) -> dict:
     if request.archive:
         entry = save_archived_report(
             report_type="dns",
+            report_format=response.format,
+            filename=response.filename,
+            content_type=response.content_type,
+            content=response.content,
+        )
+        payload["archived"] = True
+        payload["archived_path"] = entry["relative_path"]
+        payload["archive_entry_id"] = entry["id"]
+
+    return payload
+
+
+@router.post("/app-log")
+def create_app_log_report(request: AppLogReportRequest) -> dict:
+    response = build_app_log_report(
+        evidence=request.evidence,
+        findings=request.findings,
+        report_format=request.format,
+    )
+
+    payload = response.model_dump()
+
+    if request.archive:
+        entry = save_archived_report(
+            report_type="app_log",
             report_format=response.format,
             filename=response.filename,
             content_type=response.content_type,
