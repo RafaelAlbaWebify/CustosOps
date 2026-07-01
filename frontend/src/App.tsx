@@ -3,6 +3,7 @@ import "./styles.css";
 
 const API_BASE = "http://127.0.0.1:8000";
 const SESSION_STORAGE_KEY = "custosops.sessionEvidence.v1";
+const REVIEW_STORAGE_KEY = "custosops.findingReviews.v1";
 
 type Severity = "critical" | "high" | "medium" | "low" | "info";
 
@@ -24,6 +25,15 @@ type Workspace = "overview" | "endpoint" | "dns" | "app-log" | "reports" | "arch
 
 type ReportFormat = "html" | "markdown" | "json";
 
+type ReviewStatus = "open" | "reviewed" | "needs_follow_up" | "accepted_risk" | "false_positive";
+
+type ReviewRecord = {
+  status: ReviewStatus;
+  notes: string;
+  reviewed_at?: string;
+  reviewed_by?: string;
+};
+
 type EvidenceItem = {
   source?: string;
   key: string;
@@ -42,6 +52,10 @@ type Finding = {
   limitations?: string[];
   safe_next_steps?: string[];
   non_actions?: string[];
+  status?: ReviewStatus | string;
+  review_notes?: string;
+  reviewed_at?: string;
+  reviewed_by?: string;
 };
 
 type ModuleStatus = {
@@ -92,6 +106,14 @@ const DEFAULT_MODULES: ModuleStatus[] = [
 
 const SEVERITY_ORDER: Severity[] = ["critical", "high", "medium", "low", "info"];
 
+const REVIEW_OPTIONS: { value: ReviewStatus; label: string }[] = [
+  { value: "open", label: "Open" },
+  { value: "reviewed", label: "Reviewed" },
+  { value: "needs_follow_up", label: "Needs follow-up" },
+  { value: "accepted_risk", label: "Accepted risk" },
+  { value: "false_positive", label: "False positive" }
+];
+
 function App() {
   const [activeWorkspace, setActiveWorkspace] = useState<Workspace>(getWorkspaceFromHash());
   const [backendOnline, setBackendOnline] = useState(false);
@@ -118,6 +140,7 @@ function App() {
   const [importError, setImportError] = useState("");
   const [reportError, setReportError] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
+  const [reviewRecords, setReviewRecords] = useState<Record<string, ReviewRecord>>(() => loadStoredReviewRecords());
 
   const endpointCounts = useMemo(() => getSeverityCounts(endpointFindings), [endpointFindings]);
   const dnsCounts = useMemo(() => getSeverityCounts(dnsFindings), [dnsFindings]);
@@ -140,6 +163,14 @@ function App() {
 
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(REVIEW_STORAGE_KEY, JSON.stringify(reviewRecords));
+    } catch {
+      // Finding review persistence is local-only and optional.
+    }
+  }, [reviewRecords]);
 
   useEffect(() => {
     if (endpointFindings.length === 0 && dnsFindings.length === 0 && appLogFindings.length === 0) {
@@ -334,6 +365,45 @@ function App() {
   function navigateTo(workspace: Workspace) {
     setActiveWorkspace(workspace);
     window.location.hash = workspace;
+  }
+
+  function getReviewRecord(finding: Finding): ReviewRecord {
+    const key = getFindingReviewKey(finding);
+
+    return reviewRecords[key] ?? {
+      status: normalizeReviewStatus(finding.status),
+      notes: finding.review_notes ?? "",
+      reviewed_at: finding.reviewed_at,
+      reviewed_by: finding.reviewed_by
+    };
+  }
+
+  function updateFindingReview(finding: Finding, status: ReviewStatus, notes: string) {
+    const key = getFindingReviewKey(finding);
+
+    setReviewRecords((current) => ({
+      ...current,
+      [key]: {
+        status,
+        notes,
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: "local-operator"
+      }
+    }));
+  }
+
+  function applyReviewsToFindings(findings: Finding[]): Finding[] {
+    return findings.map((finding) => {
+      const review = getReviewRecord(finding);
+
+      return {
+        ...finding,
+        status: review.status,
+        review_notes: review.notes,
+        reviewed_at: review.reviewed_at,
+        reviewed_by: review.reviewed_by
+      };
+    });
   }
 
   async function handleEndpointImport(event: ChangeEvent<HTMLInputElement>) {
@@ -581,7 +651,8 @@ function App() {
       return;
     }
 
-    const reportEvidence = buildReportEvidence(reportType, evidence, findings);
+    const reportFindings = applyReviewsToFindings(findings);
+    const reportEvidence = buildReportEvidence(reportType, evidence, reportFindings);
 
     try {
       const response = await fetch(`${API_BASE}/api/reports/${route}`, {
@@ -591,7 +662,7 @@ function App() {
         },
         body: JSON.stringify({
           evidence: reportEvidence,
-          findings,
+          findings: reportFindings,
           format,
           archive: true
         })
@@ -724,6 +795,8 @@ function App() {
             selectedFinding={endpointSelectedFinding}
             selectedId={endpointSelectedId}
             onSelect={setEndpointSelectedId}
+            reviewRecord={endpointSelectedFinding ? getReviewRecord(endpointSelectedFinding) : undefined}
+            onReviewChange={updateFindingReview}
             actions={
               <>
                 <button type="button" onClick={handleEndpointLocalCollect}>Collect Local</button>
@@ -748,6 +821,8 @@ function App() {
             selectedFinding={dnsSelectedFinding}
             selectedId={dnsSelectedId}
             onSelect={setDnsSelectedId}
+            reviewRecord={dnsSelectedFinding ? getReviewRecord(dnsSelectedFinding) : undefined}
+            onReviewChange={updateFindingReview}
             warnings={dnsWarnings}
             actions={
               <>
@@ -777,6 +852,8 @@ function App() {
             selectedFinding={appLogSelectedFinding}
             selectedId={appLogSelectedId}
             onSelect={setAppLogSelectedId}
+            reviewRecord={appLogSelectedFinding ? getReviewRecord(appLogSelectedFinding) : undefined}
+            onReviewChange={updateFindingReview}
             warnings={appLogWarnings}
             actions={
               <>
@@ -924,6 +1001,8 @@ function EvidenceWorkspace(props: {
   selectedFinding?: Finding;
   selectedId: string;
   onSelect: (id: string) => void;
+  reviewRecord?: ReviewRecord;
+  onReviewChange?: (finding: Finding, status: ReviewStatus, notes: string) => void;
   actions: React.ReactNode;
   warnings?: string[];
 }) {
@@ -972,7 +1051,7 @@ function EvidenceWorkspace(props: {
           />
         </section>
 
-        <FindingDetails finding={props.selectedFinding} />
+        <FindingDetails finding={props.selectedFinding} reviewRecord={props.reviewRecord} onReviewChange={props.onReviewChange} />
       </section>
     </div>
   );
@@ -1128,7 +1207,7 @@ function FindingTable(props: {
   );
 }
 
-function FindingDetails(props: { finding?: Finding }) {
+function FindingDetails(props: { finding?: Finding; reviewRecord?: ReviewRecord; onReviewChange?: (finding: Finding, status: ReviewStatus, notes: string) => void }) {
   if (!props.finding) {
     return (
       <section className="card finding-detail-card">
@@ -1138,6 +1217,12 @@ function FindingDetails(props: { finding?: Finding }) {
   }
 
   const finding = props.finding;
+  const review = props.reviewRecord ?? {
+    status: normalizeReviewStatus(finding.status),
+    notes: finding.review_notes ?? "",
+    reviewed_at: finding.reviewed_at,
+    reviewed_by: finding.reviewed_by
+  };
 
   return (
     <section className="card finding-detail-card">
@@ -1154,6 +1239,36 @@ function FindingDetails(props: { finding?: Finding }) {
         <span>Category: {finding.category ?? "unknown"}</span>
         <span>Asset: {finding.affected_asset ?? "unknown"}</span>
         <span>Confidence: {finding.confidence ?? "unknown"}</span>
+      </div>
+
+      <div className="review-panel">
+        <h3>Operator review</h3>
+        <div className="review-grid">
+          <label>
+            Status
+            <select
+              value={review.status}
+              onChange={(event) => props.onReviewChange?.(finding, normalizeReviewStatus(event.target.value), review.notes)}
+            >
+              {REVIEW_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            Notes
+            <textarea
+              value={review.notes}
+              onChange={(event) => props.onReviewChange?.(finding, review.status, event.target.value)}
+              placeholder="Add local review notes for this finding."
+              rows={3}
+            />
+          </label>
+        </div>
+        <p className="review-meta">
+          {review.reviewed_at ? `Last reviewed: ${review.reviewed_at}` : "Not reviewed yet"}
+        </p>
       </div>
 
       <DetailBlock title="Why it matters" items={finding.why_it_matters ? [finding.why_it_matters] : []} />
@@ -1325,6 +1440,36 @@ function getMaxSeverity(findings: Finding[]): Severity {
 
 function getTopAsset(findings: Finding[]): string {
   return findings.find((finding) => finding.affected_asset)?.affected_asset ?? "";
+}
+
+function getFindingReviewKey(finding: Finding): string {
+  return `${finding.finding_id}::${finding.affected_asset ?? "unknown"}`;
+}
+
+function loadStoredReviewRecords(): Record<string, ReviewRecord> {
+  try {
+    const raw = window.localStorage.getItem(REVIEW_STORAGE_KEY);
+
+    if (!raw) {
+      return {};
+    }
+
+    const parsed = JSON.parse(raw) as Record<string, ReviewRecord>;
+
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function normalizeReviewStatus(value: unknown): ReviewStatus {
+  const raw = String(value ?? "open");
+
+  if (raw === "reviewed" || raw === "needs_follow_up" || raw === "accepted_risk" || raw === "false_positive") {
+    return raw;
+  }
+
+  return "open";
 }
 
 function getWorkspaceFromHash(): Workspace {

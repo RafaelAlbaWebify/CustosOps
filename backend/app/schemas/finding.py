@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 Severity = Literal["info", "low", "medium", "high", "critical"]
 Confidence = Literal["low", "medium", "high"]
-FindingStatus = Literal["open", "verify", "accepted", "fixed", "not_applicable"]
+FindingStatus = Literal["open", "verify", "accepted", "fixed", "not_applicable", "reviewed", "needs_follow_up", "accepted_risk", "false_positive"]
 
 
 class EvidenceItem(BaseModel):
@@ -27,3 +27,6 @@ class SecurityFinding(BaseModel):
     safe_next_steps: list[str] = Field(default_factory=list)
     non_actions: list[str] = Field(default_factory=list)
     status: FindingStatus = "open"
+    review_notes: str | None = None
+    reviewed_at: str | None = None
+    reviewed_by: str | None = None

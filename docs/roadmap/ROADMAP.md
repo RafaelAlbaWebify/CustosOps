@@ -352,3 +352,8 @@ CustosOps now preserves loaded evidence state in local browser storage, restores
 ## Completed Milestone - Report Fidelity v0.1
 
 CustosOps reports now preserve evidence fidelity better when generated from restored session findings. Endpoint reports infer endpoint names from affected assets, DNS reports derive record counts from loaded findings when raw records are missing, and App Log HTML reports render as proper styled HTML.
+
+
+## Completed Milestone Slice - Finding Review Workflow v0.1
+
+CustosOps now supports local operator review status, review notes, review timestamps, and reviewed-by metadata for findings. Report exports include review metadata.

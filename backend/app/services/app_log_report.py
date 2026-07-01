@@ -132,6 +132,9 @@ def _build_markdown_report(findings: list[dict[str, Any]], summary: dict[str, An
         lines.append(f"- Category: `{finding.get('category', 'unknown')}`")
         lines.append(f"- Affected asset: `{finding.get('affected_asset', 'unknown')}`")
         lines.append(f"- Finding ID: `{finding.get('finding_id', 'unknown')}`")
+    lines.append(f"- Review status: `{finding.get('status', 'open')}`")
+    if finding.get("review_notes"):
+        lines.append(f"- Review notes: `{finding.get('review_notes')}`")
         lines.append("")
         lines.append(str(finding.get("why_it_matters", "")))
         lines.append("")
@@ -267,8 +270,10 @@ def _html_finding(finding: dict[str, Any]) -> str:
     <div><dt>Finding ID</dt><dd>{html.escape(str(finding.get('finding_id', 'unknown')))}</dd></div>
     <div><dt>Confidence</dt><dd>{html.escape(str(finding.get('confidence', 'unknown')))}</dd></div>
     <div><dt>Affected asset</dt><dd>{html.escape(str(finding.get('affected_asset', 'unknown')))}</dd></div>
-    <div><dt>Status</dt><dd>open</dd></div>
+    <div><dt>Status</dt><dd>{html.escape(str(finding.get("status", "open")))}</dd></div>
   </dl>
+
+  {_html_review(finding)}
 
   <h3>Evidence</h3>
   <ul>{evidence}</ul>
@@ -305,6 +310,28 @@ def _report_limitations() -> list[str]:
         "No application, API, or infrastructure changes were made by CustosOps.",
         "Sensitive values should be redacted before sharing externally.",
     ]
+
+
+def _html_review(finding: dict[str, Any]) -> str:
+    notes = str(finding.get("review_notes") or "").strip()
+    reviewed_at = str(finding.get("reviewed_at") or "").strip()
+    reviewed_by = str(finding.get("reviewed_by") or "").strip()
+
+    if not notes and not reviewed_at and not reviewed_by:
+        return ""
+
+    items: list[str] = []
+
+    if notes:
+        items.append(f"<li><strong>Notes:</strong> {html.escape(notes)}</li>")
+
+    if reviewed_at:
+        items.append(f"<li><strong>Reviewed at:</strong> {html.escape(reviewed_at)}</li>")
+
+    if reviewed_by:
+        items.append(f"<li><strong>Reviewed by:</strong> {html.escape(reviewed_by)}</li>")
+
+    return f"<h3>Operator review</h3><ul>{''.join(items)}</ul>"
 
 
 def _safe_stem(filename: str) -> str:

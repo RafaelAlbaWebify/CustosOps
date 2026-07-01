@@ -662,3 +662,55 @@ input[type="file"] {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.review-panel {
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  background: rgba(14, 165, 233, 0.07);
+  border-radius: 16px;
+  padding: 14px;
+  margin: 16px 0;
+}
+
+.review-panel h3 {
+  margin: 0 0 10px;
+}
+
+.review-grid {
+  display: grid;
+  grid-template-columns: minmax(160px, 220px) 1fr;
+  gap: 12px;
+}
+
+.review-grid label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.review-grid select,
+.review-grid textarea {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.84);
+  color: var(--text);
+  padding: 10px 12px;
+  font: inherit;
+}
+
+.review-grid textarea {
+  resize: vertical;
+}
+
+.review-meta {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+@media (max-width: 800px) {
+  .review-grid {
+    grid-template-columns: 1fr;
+  }
+}
