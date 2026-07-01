@@ -367,3 +367,8 @@ CustosOps App Log evidence now includes API operational summary metadata and red
 ## Completed Milestone Slice - Windows Event Log Evidence v0.1
 
 CustosOps now supports imported Windows Event evidence with findings for service failures, failed logons, application errors, DNS client events, and reboot/update timeline signals.
+
+
+## Completed Milestone Slice - Windows Event Workspace UI v0.1
+
+CustosOps now exposes Windows Event evidence in the frontend workspace navigation, supports JSON/CSV import, and generates Windows Event reports from the Reports workspace.

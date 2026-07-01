@@ -71,3 +71,20 @@ Raw evidence remains local. Redaction should not be treated as a guarantee that 
 This slice uses imported evidence only.
 
 No Windows Event logs are collected live and no host changes are made.
+
+
+## Slice 21C UI - Windows Event Workspace
+
+### Added
+
+- Windows Events workspace in the frontend sidebar.
+- Sample Windows Event findings are loaded from the backend.
+- Windows Event JSON/CSV import from the browser UI.
+- Windows Event findings use the standard Evidence Review workspace.
+- Windows Event reports can be generated from the Reports workspace.
+
+### Safety
+
+The frontend imports user-selected JSON/CSV evidence only.
+
+No live Windows Event collection is performed in this slice.

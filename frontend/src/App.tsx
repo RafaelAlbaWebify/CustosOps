@@ -19,11 +19,14 @@ type PersistedEvidenceState = {
   endpoint?: PersistedModuleEvidence;
   dns?: PersistedModuleEvidence;
   appLog?: PersistedModuleEvidence;
+  windowsEvents?: PersistedModuleEvidence;
 };
 
-type Workspace = "overview" | "endpoint" | "dns" | "app-log" | "reports" | "archive";
+type Workspace = "overview" | "endpoint" | "dns" | "app-log" | "windows-events" | "reports" | "archive";
 
 type ReportFormat = "html" | "markdown" | "json";
+
+type ReportModule = "endpoint" | "dns" | "app-log" | "windows-events";
 
 type ReviewStatus = "open" | "reviewed" | "needs_follow_up" | "accepted_risk" | "false_positive";
 
@@ -92,6 +95,7 @@ const WORKSPACES: { id: Workspace; label: string; short: string }[] = [
   { id: "endpoint", label: "Endpoint", short: "EP" },
   { id: "dns", label: "DNS Hygiene", short: "DN" },
   { id: "app-log", label: "App Logs", short: "LG" },
+  { id: "windows-events", label: "Windows Events", short: "WE" },
   { id: "reports", label: "Reports", short: "RP" },
   { id: "archive", label: "Archive", short: "AR" }
 ];
@@ -100,6 +104,7 @@ const DEFAULT_MODULES: ModuleStatus[] = [
   { name: "Endpoint Evidence", status: "active", description: "Local endpoint posture evidence." },
   { name: "DNS Hygiene", status: "active", description: "DNS audit JSON and CSV evidence." },
   { name: "Application Logs", status: "active", description: "Application and API runtime log evidence." },
+  { name: "Windows Event Evidence", status: "active", description: "Imported Windows Event operational evidence." },
   { name: "Reports", status: "active", description: "HTML, Markdown, and JSON evidence reports." },
   { name: "Archive", status: "active", description: "Local report archive." }
 ];
@@ -136,6 +141,12 @@ function App() {
   const [appLogWarnings, setAppLogWarnings] = useState<string[]>([]);
   const [appLogSelectedId, setAppLogSelectedId] = useState("");
 
+  const [windowsEventFindings, setWindowsEventFindings] = useState<Finding[]>([]);
+  const [windowsEventEvidence, setWindowsEventEvidence] = useState<unknown | null>(null);
+  const [windowsEventSource, setWindowsEventSource] = useState("Sample Windows Event evidence");
+  const [windowsEventWarnings, setWindowsEventWarnings] = useState<string[]>([]);
+  const [windowsEventSelectedId, setWindowsEventSelectedId] = useState("");
+
   const [archiveEntries, setArchiveEntries] = useState<ArchiveEntry[]>([]);
   const [importError, setImportError] = useState("");
   const [reportError, setReportError] = useState("");
@@ -145,10 +156,12 @@ function App() {
   const endpointCounts = useMemo(() => getSeverityCounts(endpointFindings), [endpointFindings]);
   const dnsCounts = useMemo(() => getSeverityCounts(dnsFindings), [dnsFindings]);
   const appLogCounts = useMemo(() => getSeverityCounts(appLogFindings), [appLogFindings]);
+  const windowsEventCounts = useMemo(() => getSeverityCounts(windowsEventFindings), [windowsEventFindings]);
 
   const endpointSelectedFinding = endpointFindings.find((finding) => finding.finding_id === endpointSelectedId) ?? endpointFindings[0];
   const dnsSelectedFinding = dnsFindings.find((finding) => finding.finding_id === dnsSelectedId) ?? dnsFindings[0];
   const appLogSelectedFinding = appLogFindings.find((finding) => finding.finding_id === appLogSelectedId) ?? appLogFindings[0];
+  const windowsEventSelectedFinding = windowsEventFindings.find((finding) => finding.finding_id === windowsEventSelectedId) ?? windowsEventFindings[0];
 
   const activeModuleCount = modules.filter((module) => (module.status ?? "").toLowerCase() !== "planned").length;
 
@@ -173,7 +186,7 @@ function App() {
   }, [reviewRecords]);
 
   useEffect(() => {
-    if (endpointFindings.length === 0 && dnsFindings.length === 0 && appLogFindings.length === 0) {
+    if (endpointFindings.length === 0 && dnsFindings.length === 0 && appLogFindings.length === 0 && windowsEventFindings.length === 0) {
       return;
     }
 
@@ -197,6 +210,13 @@ function App() {
         source: appLogSource,
         warnings: appLogWarnings,
         saved_at: new Date().toISOString()
+      },
+      windowsEvents: {
+        evidence: windowsEventEvidence,
+        findings: windowsEventFindings,
+        source: windowsEventSource,
+        warnings: windowsEventWarnings,
+        saved_at: new Date().toISOString()
       }
     };
 
@@ -216,14 +236,16 @@ function App() {
     appLogEvidence,
     appLogFindings,
     appLogSource,
-    appLogWarnings
+    appLogWarnings,
+    windowsEventEvidence
   ]);
 
-  function restoreSessionEvidence(): { endpoint: boolean; dns: boolean; appLog: boolean } {
+  function restoreSessionEvidence(): { endpoint: boolean; dns: boolean; appLog: boolean; windowsEvents: boolean } {
     const restored = {
       endpoint: false,
       dns: false,
-      appLog: false
+      appLog: false,
+      windowsEvents: false
     };
 
     try {
@@ -263,6 +285,16 @@ function App() {
         setAppLogWarnings(parsed.appLog.warnings ?? []);
         restored.appLog = true;
       }
+
+      if (parsed.windowsEvents?.findings?.length) {
+        const findings = normalizeFindings(parsed.windowsEvents.findings);
+        setWindowsEventEvidence(parsed.windowsEvents.evidence ?? null);
+        setWindowsEventFindings(findings);
+        setWindowsEventSelectedId(findings[0]?.finding_id ?? "");
+        setWindowsEventSource(parsed.windowsEvents.source || "Restored Windows Event evidence");
+        setWindowsEventWarnings(parsed.windowsEvents.warnings ?? []);
+        restored.windowsEvents = true;
+      }
     } catch {
       window.localStorage.removeItem(SESSION_STORAGE_KEY);
     }
@@ -277,6 +309,7 @@ function App() {
       loadModules(),
       restored.endpoint ? Promise.resolve() : loadEndpointSample(),
       restored.dns ? Promise.resolve() : loadDnsSample(),
+      restored.windowsEvents ? Promise.resolve() : loadWindowsEventSample(),
       loadReportArchive()
     ]);
   }
@@ -344,6 +377,26 @@ function App() {
       setDnsSelectedId(findings[0]?.finding_id ?? "");
     } catch {
       setDnsFindings([]);
+    }
+  }
+
+  async function loadWindowsEventSample() {
+    try {
+      const response = await fetch(`${API_BASE}/api/windows-events/sample-findings`);
+
+      if (!response.ok) {
+        return;
+      }
+
+      const data = await response.json();
+      const findings = normalizeFindings(data.findings ?? []);
+
+      setWindowsEventEvidence(data.evidence ?? null);
+      setWindowsEventFindings(findings);
+      setWindowsEventSelectedId(findings[0]?.finding_id ?? "");
+      setWindowsEventSource("sample-windows-events.json");
+    } catch {
+      setWindowsEventFindings([]);
     }
   }
 
@@ -628,23 +681,70 @@ function App() {
     }
   }
 
-  async function handleReportDownload(reportType: "endpoint" | "dns" | "app-log", format: ReportFormat) {
+  async function handleWindowsEventImport(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
     resetMessages();
 
-    const route = reportType === "app-log" ? "app-log" : reportType;
+    if (!file) {
+      return;
+    }
+
+    try {
+      const text = await file.text();
+
+      const response = await fetch(`${API_BASE}/api/windows-events/import`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          filename: file.name,
+          content: text
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      const data = await response.json();
+      const findings = normalizeFindings(data.findings ?? []);
+
+      setWindowsEventEvidence(data.evidence ?? null);
+      setWindowsEventFindings(findings);
+      setWindowsEventSelectedId(findings[0]?.finding_id ?? "");
+      setWindowsEventSource(file.name);
+      setWindowsEventWarnings(data.warnings ?? []);
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : "Unable to import Windows Event evidence.");
+    } finally {
+      event.target.value = "";
+    }
+  }
+
+  async function handleReportDownload(reportType: ReportModule, format: ReportFormat) {
+    resetMessages();
+
+    const route = reportType;
+
     const evidence =
       reportType === "endpoint"
         ? endpointEvidence
         : reportType === "dns"
           ? dnsEvidence
-          : appLogEvidence;
+          : reportType === "app-log"
+            ? appLogEvidence
+            : windowsEventEvidence;
 
     const findings =
       reportType === "endpoint"
         ? endpointFindings
         : reportType === "dns"
           ? dnsFindings
-          : appLogFindings;
+          : reportType === "app-log"
+            ? appLogFindings
+            : windowsEventFindings;
 
     if (findings.length === 0) {
       setReportError(`No ${reportType} findings are loaded.`);
@@ -867,11 +967,38 @@ function App() {
           />
         )}
 
+        {activeWorkspace === "windows-events" && (
+          <EvidenceWorkspace
+            title="Windows Event Evidence"
+            eyebrow="Windows Events"
+            description="Review imported Windows Event evidence: service failures, failed logons, application errors, DNS client events, and reboot/update timeline signals."
+            source={windowsEventSource}
+            findings={windowsEventFindings}
+            counts={windowsEventCounts}
+            selectedFinding={windowsEventSelectedFinding}
+            selectedId={windowsEventSelectedId}
+            onSelect={setWindowsEventSelectedId}
+            reviewRecord={windowsEventSelectedFinding ? getReviewRecord(windowsEventSelectedFinding) : undefined}
+            onReviewChange={updateFindingReview}
+            warnings={windowsEventWarnings}
+            actions={
+              <>
+                <label className="button">
+                  <input type="file" accept=".json,.csv,application/json,text/csv" onChange={handleWindowsEventImport} />
+                  Import JSON/CSV
+                </label>
+                <ReportButtons disabled={windowsEventFindings.length === 0} onDownload={(format) => handleReportDownload("windows-events", format)} />
+              </>
+            }
+          />
+        )}
+
         {activeWorkspace === "reports" && (
           <ReportsWorkspace
             endpointReady={endpointFindings.length > 0}
             dnsReady={dnsFindings.length > 0}
             appLogReady={appLogFindings.length > 0}
+            windowsEventReady={windowsEventFindings.length > 0}
             onDownload={handleReportDownload}
           />
         )}
@@ -1061,7 +1188,8 @@ function ReportsWorkspace(props: {
   endpointReady: boolean;
   dnsReady: boolean;
   appLogReady: boolean;
-  onDownload: (reportType: "endpoint" | "dns" | "app-log", format: ReportFormat) => void;
+  windowsEventReady: boolean;
+  onDownload: (reportType: ReportModule, format: ReportFormat) => void;
 }) {
   return (
     <div className="workspace-content">
@@ -1077,6 +1205,7 @@ function ReportsWorkspace(props: {
         <ReportCard title="Endpoint Report" ready={props.endpointReady} onDownload={(format) => props.onDownload("endpoint", format)} />
         <ReportCard title="DNS Hygiene Report" ready={props.dnsReady} onDownload={(format) => props.onDownload("dns", format)} />
         <ReportCard title="Application Log Report" ready={props.appLogReady} onDownload={(format) => props.onDownload("app-log", format)} />
+        <ReportCard title="Windows Event Report" ready={props.windowsEventReady} onDownload={(format) => props.onDownload("windows-events", format)} />
       </section>
     </div>
   );
@@ -1495,7 +1624,7 @@ function buildEvidenceFallback(reportType: "endpoint" | "dns" | "app-log", findi
     note: "Raw evidence was not available in frontend state, so CustosOps generated a minimal evidence metadata object for report continuity."
   };
 }
-function buildReportEvidence(reportType: "endpoint" | "dns" | "app-log", evidence: unknown | null, findings: Finding[]): Record<string, unknown> {
+function buildReportEvidence(reportType: ReportModule, evidence: unknown | null, findings: Finding[]): Record<string, unknown> {
   const base: Record<string, unknown> = isRecord(evidence) ? { ...evidence } : {};
   const topAsset = getTopAsset(findings) || "session-evidence";
 
@@ -1549,6 +1678,16 @@ function buildReportEvidence(reportType: "endpoint" | "dns" | "app-log", evidenc
   if (reportType === "app-log") {
     if (!base.source_file) {
       base.source_file = topAsset || "app-log";
+    }
+  }
+
+  if (reportType === "windows-events") {
+    if (!base.source_file) {
+      base.source_file = topAsset || "windows-events";
+    }
+
+    if (!base.source_type) {
+      base.source_type = "windows_event_session_evidence";
     }
   }
 
