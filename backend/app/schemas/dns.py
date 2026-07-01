@@ -27,3 +27,15 @@ class DnsEvidence(BaseModel):
     source_file: str | None = None
     records: list[DnsRecordEvidence] = Field(default_factory=list)
     safety: dict[str, Any] = Field(default_factory=dict)
+
+
+class DnsCsvImportRequest(BaseModel):
+    filename: str = "dns-audit.csv"
+    content: str
+
+
+class DnsCsvImportResponse(BaseModel):
+    evidence: DnsEvidence
+    parsed_record_count: int
+    ignored_row_count: int
+    warnings: list[str] = Field(default_factory=list)

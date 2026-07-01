@@ -27,3 +27,10 @@ history/
 Thumbs.db
 .vscode/
 .idea/
+# Local runtime markers
+backend/.deps_installed
+frontend/node_modules/
+backend/.venv/
+frontend/dist/
+reports/
+recovery_backup_*/

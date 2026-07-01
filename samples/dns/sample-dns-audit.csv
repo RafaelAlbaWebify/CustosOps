@@ -1,0 +1,5 @@
+HostName,IPAddress,Zone,ForwardStatus,PTRStatus,PingStatus,AgeDays,DupIP
+app-old,10.10.10.25,lab.local,OK,NO_PTR,Failed,180,false
+app-current,10.10.10.26,lab.local,OK,PTR_OK,Success,4,false
+legacy-alias-01,10.10.10.40,lab.local,FORWARD_MISMATCH,PTR_MISMATCH,Failed,220,true
+legacy-alias-02,10.10.10.40,lab.local,OK,PTR_MISMATCH,Failed,220,true

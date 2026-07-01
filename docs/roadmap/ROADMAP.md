@@ -260,3 +260,67 @@ Current scope:
 
 Next recommended milestone:
 - DNS Audit CSV import
+
+## Completed Milestone - DNS Hygiene Frontend v0.1
+
+CustosOps now displays DNS Hygiene findings in the frontend and supports DNS evidence JSON import.
+
+Next recommended milestone:
+- DNS Audit CSV import
+
+## Completed Milestone - DNS Audit CSV Import v0.1
+
+CustosOps can now import DNS Audit CSV output and convert it into DNS hygiene evidence and findings.
+
+Next recommended milestone:
+- Test with real DNS Audit Tool CSV output
+- Add DNS report export
+
+## Completed Milestone - DNS Report Export v0.1
+
+CustosOps can now generate downloadable DNS hygiene reports from imported DNS evidence or DNS Audit CSV output.
+
+Current DNS report formats:
+- HTML
+- Markdown
+- JSON
+
+Next recommended milestone:
+- Test DNS CSV import against real DNS Audit Tool output
+- Add report history/local archive
+
+## Completed Milestone - Local Report Archive v0.1
+
+CustosOps now stores generated endpoint and DNS reports locally under reports/custosops_archive and displays recent archive entries in the frontend.
+
+Next recommended milestone:
+- Real DNS Audit Tool CSV compatibility test
+- Or report archive open/delete actions
+
+## Completed Milestone - Executive Dashboard UI
+
+CustosOps frontend has been reorganized into an executive-dashboard layout with sidebar navigation, KPI cards, compact endpoint and DNS panels, local report archive, and module status cards.
+
+## Completed Milestone - Executive Dashboard UI
+
+CustosOps frontend has been reorganized into an executive-dashboard layout with sidebar navigation, KPI cards, compact endpoint and DNS panels, local report archive, and module status cards.
+
+## Completed Milestone - Compact Dashboard Refinement
+
+The executive dashboard UI was tightened to reduce vertical scrolling and better match the approved mock layout.
+
+## Completed Milestone - Local Report Archive Actions v0.1
+
+Archived reports can now be opened, downloaded again, or deleted from the CustosOps UI.
+
+## Completed Milestone - Local Endpoint Collection from UI v0.1
+
+CustosOps can now run the local read-only endpoint collector directly from the Endpoint panel and analyze the resulting evidence automatically.
+
+## Completed Milestone - Local Endpoint Collection from UI v0.1
+
+CustosOps can now run the local read-only endpoint collector directly from the Endpoint panel and analyze the resulting evidence automatically.
+
+## Completed Milestone - Local Endpoint Collection from UI v0.1
+
+CustosOps can now run the local read-only endpoint collector directly from the Endpoint panel and analyze the resulting evidence automatically.
