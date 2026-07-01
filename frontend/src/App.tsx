@@ -681,6 +681,32 @@ function App() {
     }
   }
 
+  async function handleWindowsEventCollectLocal() {
+    resetMessages();
+
+    try {
+      const response = await fetch(`${API_BASE}/api/windows-events/collect-local`, {
+        method: "POST"
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      const data = await response.json();
+      const findings = normalizeFindings(data.findings ?? []);
+
+      setWindowsEventEvidence(data.evidence ?? null);
+      setWindowsEventFindings(findings);
+      setWindowsEventSelectedId(findings[0]?.finding_id ?? "");
+      setWindowsEventSource(data.output_path ? `Local collection: ${data.output_path}` : "Local Windows Event collection");
+      setWindowsEventWarnings(data.warnings ?? []);
+      setStatusMessage(`Local Windows Event collection completed. Events parsed: ${data.parsed_event_count ?? 0}. Findings: ${findings.length}.`);
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : "Unable to collect local Windows Event evidence.");
+    }
+  }
+
   async function handleWindowsEventImport(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
 

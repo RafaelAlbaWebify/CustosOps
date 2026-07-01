@@ -1,10 +1,14 @@
 from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from app.analyzers.windows_event_evidence import analyze_windows_event_evidence
 from app.schemas.windows_event import WindowsEventImportRequest
 from app.services.windows_event_parser import parse_windows_event_evidence
+from app.services.windows_event_local_collector import (
+    WindowsEventCollectionError,
+    collect_local_windows_event_evidence,
+)
 
 router = APIRouter(prefix="/api/windows-events")
 
@@ -34,5 +38,34 @@ def get_sample_windows_event_findings() -> dict:
 
     return {
         "evidence": evidence.model_dump(),
+        "findings": findings,
+    }
+
+
+
+@router.post("/collect-local")
+def collect_local_windows_event_evidence_payload() -> dict:
+    try:
+        collected = collect_local_windows_event_evidence()
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except WindowsEventCollectionError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Unexpected Windows Event collection error: {exc}")
+
+    evidence = parse_windows_event_evidence(
+        filename="local-windows-events",
+        content=__import__("json").dumps(collected["evidence"]),
+    )
+    findings = analyze_windows_event_evidence(evidence)
+
+    return {
+        "input_type": "local_windows_event_collection",
+        "output_path": collected["relative_output_path"],
+        "evidence": evidence.model_dump(),
+        "raw_event_count": evidence.raw_event_count,
+        "parsed_event_count": evidence.parsed_event_count,
+        "warnings": evidence.parser_warnings,
         "findings": findings,
     }

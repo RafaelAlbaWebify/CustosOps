@@ -394,3 +394,10 @@ This milestone confirms the Operational Intelligence Pack as a stable local rele
 ## Completed Milestone 23 - Dependency and Packaging Hygiene
 
 CustosOps now includes a doctor script, dependency audit workflow, local packaging workflow, operations quickstart, and tests that verify the hygiene scripts exist and avoid forced npm audit remediation.
+
+
+## Completed Milestone 24A - Windows Event Local Collection
+
+CustosOps now supports read-only local Windows Event evidence collection from the UI and backend.
+
+This expands the Windows Event module beyond sample/import workflows while preserving the local-first, no-remediation safety model.
