@@ -348,3 +348,7 @@ CustosOps now separates the overview dashboard from operational module workspace
 ## Completed Milestone - Evidence State and Persistence v0.1
 
 CustosOps now preserves loaded evidence state in local browser storage, restores current module findings after refresh, and treats visible findings as report-ready evidence with safe fallback metadata when needed.
+
+## Completed Milestone - Report Fidelity v0.1
+
+CustosOps reports now preserve evidence fidelity better when generated from restored session findings. Endpoint reports infer endpoint names from affected assets, DNS reports derive record counts from loaded findings when raw records are missing, and App Log HTML reports render as proper styled HTML.
