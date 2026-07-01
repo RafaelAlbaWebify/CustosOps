@@ -68,3 +68,19 @@ It does not remediate findings.
 Automatic workflow recording is intentionally left for the next slice.
 
 This slice verifies that the frontend can display and manage backend run-history records safely.
+
+
+## Slice 25B-1 UI Polish - Run History layout
+
+The Run History workspace was visible and functional, but metric cards rendered as plain collapsed text because the frontend did not yet have the expected card/grid styling.
+
+Added CSS for:
+
+- metric-grid
+- metric-card
+- workspace-header
+- actions
+- panel
+- data-table
+- status-pill
+- danger button state
