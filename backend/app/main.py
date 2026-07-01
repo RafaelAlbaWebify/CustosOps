@@ -1,4 +1,3 @@
-from app.api import app_log
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -30,4 +29,3 @@ app.include_router(dns_router)
 app.include_router(reports_router)
 app.include_router(windows_events_router)
 app.include_router(app_log_router)
-app.include_router(app_log.router)
