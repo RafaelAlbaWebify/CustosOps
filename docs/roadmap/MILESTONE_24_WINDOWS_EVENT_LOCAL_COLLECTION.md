@@ -76,3 +76,18 @@ After a valid Windows Event local collection with zero matching events or zero f
 Windows Event report readiness is now based on loaded evidence, not finding count.
 
 This allows operators to export a report for a valid collection even when no findings are detected.
+
+
+# Milestone 24B UI Fix - Zero-finding Windows Event report export
+
+## Problem
+
+A valid Windows Event local collection can produce zero parsed matching events and zero findings.
+
+The UI displayed the successful collection state, but the report export handler still blocked export because it required at least one finding.
+
+## Fix
+
+Report export is now evidence-based.
+
+A module can export a report when evidence is loaded, even if the finding count is zero.

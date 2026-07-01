@@ -891,8 +891,10 @@ function App() {
             ? appLogFindings
             : windowsEventFindings;
 
-    if (findings.length === 0) {
-      setReportError(`No ${reportType} findings are loaded.`);
+    const hasReportEvidence = Boolean(evidence) || findings.length > 0;
+
+    if (!hasReportEvidence) {
+      setReportError(`No ${reportType} evidence is loaded.`);
       return;
     }
 

@@ -412,3 +412,8 @@ The analyzer no longer treats unrelated Winlogon 7001 events as service failure 
 ## Completed Milestone 24B UI Fix - Evidence-Based Report Readiness
 
 CustosOps now enables Windows Event report export after a valid local evidence collection, even when the collection produces zero findings.
+
+
+## Completed Milestone 24B UI Fix - Zero-finding Windows Event report export
+
+CustosOps now allows Windows Event report export after a valid local collection even when zero findings are detected.
