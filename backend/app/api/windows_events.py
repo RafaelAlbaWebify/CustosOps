@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, HTTPException
 
 from app.analyzers.windows_event_evidence import analyze_windows_event_evidence
 from app.schemas.windows_event import WindowsEventImportRequest
