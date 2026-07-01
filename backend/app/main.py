@@ -7,6 +7,7 @@ from app.api.health import router as health_router
 from app.api.modules import router as modules_router
 from app.api.reports import router as reports_router
 from app.api.windows_events import router as windows_events_router
+from app.api.evidence_runs import router as evidence_runs_router
 from app.api.app_log import router as app_log_router
 from app.api.sample_findings import router as sample_findings_router
 from app.config import PRODUCT_FULL_NAME, PRODUCT_VERSION
@@ -28,4 +29,5 @@ app.include_router(endpoint_router)
 app.include_router(dns_router)
 app.include_router(reports_router)
 app.include_router(windows_events_router)
+app.include_router(evidence_runs_router)
 app.include_router(app_log_router)

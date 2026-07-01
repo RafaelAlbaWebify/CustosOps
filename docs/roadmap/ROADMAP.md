@@ -417,3 +417,10 @@ CustosOps now enables Windows Event report export after a valid local evidence c
 ## Completed Milestone 24B UI Fix - Zero-finding Windows Event report export
 
 CustosOps now allows Windows Event report export after a valid local collection even when zero findings are detected.
+
+
+## In Progress Milestone 25 - Evidence Run History
+
+CustosOps is adding durable local evidence run history so collections, imports, reports, and review workflows can be tracked over time.
+
+Slice 25A adds the backend run history store and API.
