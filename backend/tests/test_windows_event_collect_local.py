@@ -36,7 +36,8 @@ def test_collect_local_windows_event_route_accepts_mocked_collector(monkeypatch)
 
 
 def test_windows_event_collector_script_exists_and_is_read_only():
-    script_path = windows_events_api.PROJECT_ROOT / "collectors" / "powershell" / "windows_events" / "Get-WindowsEventEvidence.ps1"
+    from app.services.windows_event_local_collector import COLLECTOR_PATH
+    script_path = COLLECTOR_PATH
 
     assert script_path.exists()
 

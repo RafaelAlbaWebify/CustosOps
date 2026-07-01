@@ -147,7 +147,7 @@ def _build_html_report(findings: list[dict[str, Any]], summary: dict[str, Any], 
     <p class="muted">Generated: {html.escape(generated_at)}</p>
     <p class="muted">Source file: {html.escape(str(summary['source_file']))}</p>
     <p class="muted">Raw events: {summary['raw_event_count']} | Parsed events: {summary['parsed_event_count']}</p>
-    <p class="muted">CustosOps analyzed imported Windows Event evidence locally and did not modify the host.</p>
+    <p class="muted">CustosOps analyzed imported or locally collected Windows Event evidence locally and did not modify the host.</p>
   </section>
 
   <section class="summary-grid">
@@ -242,8 +242,8 @@ def _html_review(finding: dict[str, Any]) -> str:
 
 def _report_limitations() -> list[str]:
     return [
-        "This report is based on imported Windows Event evidence.",
-        "A sample export may not represent the full incident window.",
+        "This report is based on imported or locally collected Windows Event evidence.",
+        "A sample or local collection window may not represent the full incident window.",
         "Windows Event records should be correlated with application logs, endpoint evidence, and change history.",
         "No remediation was performed by CustosOps.",
     ]

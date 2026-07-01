@@ -401,3 +401,10 @@ CustosOps now includes a doctor script, dependency audit workflow, local packagi
 CustosOps now supports read-only local Windows Event evidence collection from the UI and backend.
 
 This expands the Windows Event module beyond sample/import workflows while preserving the local-first, no-remediation safety model.
+
+
+## Completed Milestone 24B - Windows Event Signal Quality
+
+CustosOps now uses provider-aware Windows Event classification to reduce false positives from local collection.
+
+The analyzer no longer treats unrelated Winlogon 7001 events as service failure evidence.

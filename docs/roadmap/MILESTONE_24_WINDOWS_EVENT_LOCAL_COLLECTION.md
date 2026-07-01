@@ -38,3 +38,29 @@ It does not upload evidence externally.
 Some logs, especially Security, may require elevated permissions.
 
 If a log cannot be read, the collector records a warning and continues with the other logs.
+
+
+# Milestone 24B - Windows Event Signal Quality
+
+## Goal
+
+Reduce noisy Windows Event findings after enabling real local collection.
+
+## Added
+
+- Provider-aware Windows Event analyzer logic.
+- Service failure matching now requires Service Control Manager context.
+- Winlogon 7001 events are not treated as service failures.
+- Failed logon matching requires Security or Security-Auditing context.
+- DNS Client matching requires DNS Client context.
+- Reboot and update timeline matching uses provider/log context.
+- Report wording now covers imported or locally collected evidence.
+- Tests capture the false-positive pattern found during local TRON collection.
+
+## Safety
+
+This milestone changes classification logic only.
+
+No remediation is performed.
+No Windows Event logs are modified.
+No endpoint configuration is changed.

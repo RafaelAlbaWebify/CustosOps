@@ -4,6 +4,14 @@ from typing import Any
 from app.schemas.windows_event import WindowsEventEvidence, WindowsEventRecord
 
 
+SERVICE_FAILURE_EVENT_IDS = {7000, 7009, 7011, 7022, 7023, 7024, 7026, 7031, 7034, 7043}
+APPLICATION_ERROR_EVENT_IDS = {1000, 1001, 1026}
+DNS_CLIENT_EVENT_IDS = {1014}
+SECURITY_FAILED_LOGON_EVENT_IDS = {4625}
+REBOOT_EVENT_IDS = {12, 41, 1074, 6005, 6006, 6008}
+WINDOWS_UPDATE_EVENT_IDS = {19, 20, 21}
+
+
 def analyze_windows_event_evidence(evidence: WindowsEventEvidence) -> list[dict[str, Any]]:
     findings: list[dict[str, Any]] = []
     events = evidence.events
@@ -18,14 +26,7 @@ def analyze_windows_event_evidence(evidence: WindowsEventEvidence) -> list[dict[
 
 
 def _add_service_crash_findings(findings: list[dict[str, Any]], evidence: WindowsEventEvidence, events: list[WindowsEventRecord]) -> None:
-    matches = [
-        event for event in events
-        if event.event_id in {7000, 7001, 7023, 7031, 7034}
-        or (
-            _contains(event.provider, "service control manager")
-            and _contains_any(event.message, ["terminated unexpectedly", "failed to start", "service did not respond"])
-        )
-    ]
+    matches = [event for event in events if _is_service_failure_event(event)]
 
     if not matches:
         return
@@ -39,6 +40,7 @@ def _add_service_crash_findings(findings: list[dict[str, Any]], evidence: Window
         affected_asset=_top_computer(matches, evidence.source_file),
         evidence_items=[
             ("source_file", evidence.source_file),
+            ("matching_policy", "provider-aware service control matching"),
             ("event_count", str(len(matches))),
             ("event_ids", _event_id_summary(matches)),
             ("examples", _examples(matches)),
@@ -52,6 +54,7 @@ def _add_service_crash_findings(findings: list[dict[str, Any]], evidence: Window
         limitations=[
             "Windows Event evidence may show symptoms without full root cause.",
             "Service events should be correlated with application logs and change history.",
+            "Provider-aware matching reduces noise but does not replace manual service-owner validation.",
         ],
         non_actions=[
             "Do not restart production services blindly without checking active work and ownership.",
@@ -60,11 +63,7 @@ def _add_service_crash_findings(findings: list[dict[str, Any]], evidence: Window
 
 
 def _add_failed_logon_findings(findings: list[dict[str, Any]], evidence: WindowsEventEvidence, events: list[WindowsEventRecord]) -> None:
-    matches = [
-        event for event in events
-        if event.event_id == 4625
-        or _contains_any(event.message, ["failed logon", "an account failed to log on", "audit failure"])
-    ]
+    matches = [event for event in events if _is_failed_logon_event(event)]
 
     if not matches:
         return
@@ -78,6 +77,7 @@ def _add_failed_logon_findings(findings: list[dict[str, Any]], evidence: Windows
         affected_asset=_top_computer(matches, evidence.source_file),
         evidence_items=[
             ("source_file", evidence.source_file),
+            ("matching_policy", "provider-aware security log matching"),
             ("failed_logon_count", str(len(matches))),
             ("event_ids", _event_id_summary(matches)),
             ("examples", _examples(matches)),
@@ -90,7 +90,7 @@ def _add_failed_logon_findings(findings: list[dict[str, Any]], evidence: Windows
         ],
         limitations=[
             "Event 4625 alone does not prove malicious activity.",
-            "The imported sample may not include all security event fields.",
+            "The imported or collected evidence may not include all security event fields.",
         ],
         non_actions=[
             "Do not disable accounts or change passwords without confirming owner and business impact.",
@@ -99,12 +99,7 @@ def _add_failed_logon_findings(findings: list[dict[str, Any]], evidence: Windows
 
 
 def _add_application_error_findings(findings: list[dict[str, Any]], evidence: WindowsEventEvidence, events: list[WindowsEventRecord]) -> None:
-    matches = [
-        event for event in events
-        if event.event_id in {1000, 1001, 1026}
-        or _contains_any(event.provider, ["application error", ".net runtime", "windows error reporting"])
-        or (_contains(event.level, "error") and _contains_any(event.message, ["faulting application", "exception", "crash"]))
-    ]
+    matches = [event for event in events if _is_application_error_event(event)]
 
     if not matches:
         return
@@ -118,6 +113,7 @@ def _add_application_error_findings(findings: list[dict[str, Any]], evidence: Wi
         affected_asset=_top_computer(matches, evidence.source_file),
         evidence_items=[
             ("source_file", evidence.source_file),
+            ("matching_policy", "provider-aware application error matching"),
             ("application_error_count", str(len(matches))),
             ("event_ids", _event_id_summary(matches)),
             ("examples", _examples(matches)),
@@ -138,12 +134,7 @@ def _add_application_error_findings(findings: list[dict[str, Any]], evidence: Wi
 
 
 def _add_dns_client_findings(findings: list[dict[str, Any]], evidence: WindowsEventEvidence, events: list[WindowsEventRecord]) -> None:
-    matches = [
-        event for event in events
-        if event.event_id == 1014
-        or _contains(event.provider, "dns client")
-        or _contains_any(event.message, ["name resolution for the name", "dns query", "name resolution timed out"])
-    ]
+    matches = [event for event in events if _is_dns_client_event(event)]
 
     if not matches:
         return
@@ -157,6 +148,7 @@ def _add_dns_client_findings(findings: list[dict[str, Any]], evidence: WindowsEv
         affected_asset=_top_computer(matches, evidence.source_file),
         evidence_items=[
             ("source_file", evidence.source_file),
+            ("matching_policy", "provider-aware DNS Client matching"),
             ("dns_event_count", str(len(matches))),
             ("event_ids", _event_id_summary(matches)),
             ("examples", _examples(matches)),
@@ -177,11 +169,7 @@ def _add_dns_client_findings(findings: list[dict[str, Any]], evidence: WindowsEv
 
 
 def _add_reboot_update_findings(findings: list[dict[str, Any]], evidence: WindowsEventEvidence, events: list[WindowsEventRecord]) -> None:
-    matches = [
-        event for event in events
-        if event.event_id in {12, 19, 20, 41, 1074, 6005, 6006, 6008}
-        or _contains_any(event.message, ["restart", "reboot", "shutdown", "windows update", "unexpected shutdown"])
-    ]
+    matches = [event for event in events if _is_reboot_or_update_event(event)]
 
     if not matches:
         return
@@ -195,6 +183,7 @@ def _add_reboot_update_findings(findings: list[dict[str, Any]], evidence: Window
         affected_asset=_top_computer(matches, evidence.source_file),
         evidence_items=[
             ("source_file", evidence.source_file),
+            ("matching_policy", "provider-aware operational timeline matching"),
             ("signal_count", str(len(matches))),
             ("event_ids", _event_id_summary(matches)),
             ("examples", _examples(matches)),
@@ -211,6 +200,109 @@ def _add_reboot_update_findings(findings: list[dict[str, Any]], evidence: Window
             "Do not treat reboot evidence as a security finding without additional context.",
         ],
     ))
+
+
+def _is_service_failure_event(event: WindowsEventRecord) -> bool:
+    if not _is_service_control_manager_event(event):
+        return False
+
+    if event.event_id in SERVICE_FAILURE_EVENT_IDS:
+        return True
+
+    return _contains_any(
+        event.message,
+        [
+            "terminated unexpectedly",
+            "failed to start",
+            "service did not respond",
+            "service terminated",
+            "service failed",
+            "dependent service",
+        ],
+    )
+
+
+def _is_failed_logon_event(event: WindowsEventRecord) -> bool:
+    if not _is_security_event(event):
+        return False
+
+    if event.event_id in SECURITY_FAILED_LOGON_EVENT_IDS:
+        return True
+
+    return _contains_any(event.message, ["failed logon", "an account failed to log on", "audit failure"])
+
+
+def _is_application_error_event(event: WindowsEventRecord) -> bool:
+    if _is_application_error_provider(event):
+        if event.event_id in APPLICATION_ERROR_EVENT_IDS:
+            return True
+        return _contains_any(event.message, ["faulting application", "exception", "crash", "fault bucket"])
+
+    if not _is_application_log_event(event):
+        return False
+
+    if event.event_id in APPLICATION_ERROR_EVENT_IDS:
+        return True
+
+    return _contains(event.level, "error") and _contains_any(
+        event.message,
+        ["faulting application", "exception", "crash", "fault bucket"],
+    )
+
+
+def _is_dns_client_event(event: WindowsEventRecord) -> bool:
+    if not _is_dns_client_context(event):
+        return False
+
+    if event.event_id in DNS_CLIENT_EVENT_IDS:
+        return True
+
+    return _contains_any(event.message, ["name resolution for the name", "dns query", "name resolution timed out"])
+
+
+def _is_reboot_or_update_event(event: WindowsEventRecord) -> bool:
+    if event.event_id in WINDOWS_UPDATE_EVENT_IDS:
+        return _is_windows_update_context(event)
+
+    if event.event_id in REBOOT_EVENT_IDS:
+        return _is_system_timeline_context(event)
+
+    return _is_system_timeline_context(event) and _contains_any(
+        event.message,
+        ["restart", "reboot", "shutdown", "windows update", "unexpected shutdown"],
+    )
+
+
+def _is_service_control_manager_event(event: WindowsEventRecord) -> bool:
+    return _contains(event.provider, "service control manager")
+
+
+def _is_security_event(event: WindowsEventRecord) -> bool:
+    return _contains(event.provider, "security-auditing") or _equals(event.log_name, "security")
+
+
+def _is_application_error_provider(event: WindowsEventRecord) -> bool:
+    return _contains_any(event.provider, ["application error", ".net runtime", "windows error reporting"])
+
+
+def _is_application_log_event(event: WindowsEventRecord) -> bool:
+    return _equals(event.log_name, "application") or _is_application_error_provider(event)
+
+
+def _is_dns_client_context(event: WindowsEventRecord) -> bool:
+    return _contains(event.provider, "dns-client") or _contains(event.provider, "dns client") or _contains(event.log_name, "dns-client")
+
+
+def _is_windows_update_context(event: WindowsEventRecord) -> bool:
+    return _contains(event.provider, "windowsupdateclient") or _contains(event.provider, "windows update") or _contains(event.log_name, "windowsupdateclient")
+
+
+def _is_system_timeline_context(event: WindowsEventRecord) -> bool:
+    return (
+        _equals(event.log_name, "system")
+        or _contains_any(event.provider, ["user32", "eventlog", "kernel-power", "kernel-general", "windowsupdateclient"])
+        or _is_windows_update_context(event)
+    )
 
 
 def _finding(
@@ -252,6 +344,10 @@ def _contains(value: str | None, needle: str) -> bool:
 def _contains_any(value: str | None, needles: list[str]) -> bool:
     haystack = str(value or "").lower()
     return any(needle.lower() in haystack for needle in needles)
+
+
+def _equals(value: str | None, expected: str) -> bool:
+    return str(value or "").lower() == expected.lower()
 
 
 def _top_computer(events: list[WindowsEventRecord], fallback: str) -> str:
