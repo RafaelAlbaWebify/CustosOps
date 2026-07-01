@@ -15,11 +15,26 @@ class EndpointReportResponse(BaseModel):
     content: str
 
 
+
+def _as_dict(value: Any) -> dict[str, Any]:
+    if isinstance(value, dict):
+        return value
+
+    if hasattr(value, "model_dump"):
+        return value.model_dump()
+
+    if hasattr(value, "dict"):
+        return value.dict()
+
+    return {}
+
 def build_endpoint_report(
     evidence: dict[str, Any],
     findings: list[dict[str, Any]],
     report_format: str,
 ) -> EndpointReportResponse:
+    evidence = _as_dict(evidence)
+    findings = [_as_dict(finding) for finding in findings]
     generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     summary = _summary(evidence, findings)
     endpoint_name = summary["endpoint_name"]
@@ -53,7 +68,7 @@ def _build_json_report(
     generated_at: str,
 ) -> str:
     payload = {
-        "report_type": "endpoint",
+        "report_type": "custosops.endpoint.v0.1",
         "generated_at": generated_at,
         "summary": summary,
         "evidence": evidence,

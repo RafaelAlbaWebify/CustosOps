@@ -14,11 +14,26 @@ class DnsReportResponse(BaseModel):
     content: str
 
 
+
+def _as_dict(value: Any) -> dict[str, Any]:
+    if isinstance(value, dict):
+        return value
+
+    if hasattr(value, "model_dump"):
+        return value.model_dump()
+
+    if hasattr(value, "dict"):
+        return value.dict()
+
+    return {}
+
 def build_dns_report(
     evidence: dict[str, Any],
     findings: list[dict[str, Any]],
     report_format: str,
 ) -> DnsReportResponse:
+    evidence = _as_dict(evidence)
+    findings = [_as_dict(finding) for finding in findings]
     generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     summary = _summary(evidence, findings)
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%SZ")
@@ -52,7 +67,7 @@ def _build_json_report(
     generated_at: str,
 ) -> str:
     payload = {
-        "report_type": "dns",
+        "report_type": "custosops.dns.v0.1",
         "generated_at": generated_at,
         "summary": summary,
         "evidence": evidence,
@@ -280,13 +295,19 @@ def _record_count(evidence: dict[str, Any], findings: list[dict[str, Any]]) -> t
     for key in ["records", "dns_records", "items"]:
         value = evidence.get(key)
 
-        if isinstance(value, list):
+        if isinstance(value, list) and len(value) > 0:
             return len(value), False
 
     unique_assets = {str(finding.get("affected_asset")) for finding in findings if finding.get("affected_asset")}
 
     if unique_assets:
         return len(unique_assets), True
+
+    for key in ["records", "dns_records", "items"]:
+        value = evidence.get(key)
+
+        if isinstance(value, list):
+            return 0, False
 
     return 0, True
 

@@ -1,9 +1,10 @@
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class EndpointEvidence(BaseModel):
+    model_config = ConfigDict(extra="allow")
     schema_version: str = "custosops.endpoint.v0.1"
     collected_at: str | None = None
     collector: str | None = None

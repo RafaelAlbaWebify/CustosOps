@@ -14,11 +14,26 @@ class AppLogReportResponse(BaseModel):
     content: str
 
 
+
+def _as_dict(value: Any) -> dict[str, Any]:
+    if isinstance(value, dict):
+        return value
+
+    if hasattr(value, "model_dump"):
+        return value.model_dump()
+
+    if hasattr(value, "dict"):
+        return value.dict()
+
+    return {}
+
 def build_app_log_report(
     evidence: dict[str, Any],
     findings: list[dict[str, Any]],
     report_format: str,
 ) -> AppLogReportResponse:
+    evidence = _as_dict(evidence)
+    findings = [_as_dict(finding) for finding in findings]
     generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     source_file = str(evidence.get("source_file", "app-log"))
     stem = _safe_stem(source_file)
@@ -26,15 +41,25 @@ def build_app_log_report(
     summary = _summary(evidence, findings)
 
     if report_format == "json":
-        content = _build_json_report(evidence, findings, summary, generated_at)
+        content = json.dumps(
+            {
+                "report_type": "app_log",
+                "generated_at": generated_at,
+                "summary": summary,
+                "evidence": evidence,
+                "findings": findings,
+                "limitations": _report_limitations(),
+            },
+            indent=2,
+        )
         extension = "json"
         content_type = "application/json"
     elif report_format == "html":
-        content = _build_html_report(evidence, findings, summary, generated_at)
+        content = _build_html_report(findings, summary, generated_at)
         extension = "html"
         content_type = "text/html; charset=utf-8"
     else:
-        content = _build_markdown_report(evidence, findings, summary, generated_at)
+        content = _build_markdown_report(findings, summary, generated_at)
         extension = "md"
         content_type = "text/markdown; charset=utf-8"
 
@@ -46,30 +71,30 @@ def build_app_log_report(
     )
 
 
-def _build_json_report(
-    evidence: dict[str, Any],
-    findings: list[dict[str, Any]],
-    summary: dict[str, Any],
-    generated_at: str,
-) -> str:
-    payload = {
-        "report_type": "app_log",
-        "generated_at": generated_at,
-        "summary": summary,
-        "evidence": evidence,
-        "findings": findings,
-        "limitations": _report_limitations(),
+def _summary(evidence: dict[str, Any], findings: list[dict[str, Any]]) -> dict[str, Any]:
+    counts = {
+        "critical": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "info": 0,
     }
 
-    return json.dumps(payload, indent=2)
+    for finding in findings:
+        severity = _safe_severity(finding.get("severity", "info"))
+        counts[severity] += 1
+
+    return {
+        "source_file": evidence.get("source_file", "app-log"),
+        "raw_line_count": evidence.get("raw_line_count", 0),
+        "parsed_entry_count": evidence.get("parsed_entry_count", 0),
+        "finding_count": len(findings),
+        "sensitive_indicators": evidence.get("sensitive_indicators", []),
+        **counts,
+    }
 
 
-def _build_markdown_report(
-    evidence: dict[str, Any],
-    findings: list[dict[str, Any]],
-    summary: dict[str, Any],
-    generated_at: str,
-) -> str:
+def _build_markdown_report(findings: list[dict[str, Any]], summary: dict[str, Any], generated_at: str) -> str:
     lines: list[str] = []
 
     lines.append("# CustosOps Application Log Evidence Report")
@@ -92,60 +117,71 @@ def _build_markdown_report(
     if summary["sensitive_indicators"]:
         lines.append("## Sensitive Evidence Warning")
         lines.append("")
-
         for item in summary["sensitive_indicators"]:
             lines.append(f"- `{item}`")
-
         lines.append("")
 
-    lines.append("## Top Recommended Actions")
-    lines.append("")
-
-    top_actions = _top_actions(findings)
-
-    if top_actions:
-        for action in top_actions:
-            lines.append(f"- {action}")
-    else:
-        lines.append("- No app-log findings were generated from the imported evidence.")
-
-    lines.append("")
     lines.append("## Findings")
     lines.append("")
 
     for finding in findings:
-        lines.extend(_markdown_finding(finding))
+        lines.append(f"### {finding.get('title', 'Finding')}")
+        lines.append("")
+        lines.append(f"- Severity: `{finding.get('severity', 'unknown')}`")
+        lines.append(f"- Confidence: `{finding.get('confidence', 'unknown')}`")
+        lines.append(f"- Category: `{finding.get('category', 'unknown')}`")
+        lines.append(f"- Affected asset: `{finding.get('affected_asset', 'unknown')}`")
+        lines.append(f"- Finding ID: `{finding.get('finding_id', 'unknown')}`")
+        lines.append("")
+        lines.append(str(finding.get("why_it_matters", "")))
+        lines.append("")
+        lines.append("Evidence:")
+        for item in finding.get("evidence", []):
+            lines.append(f"- `{item.get('key', '')}`: `{item.get('value', '')}`")
+        lines.append("")
+        lines.append("Safe next steps:")
+        for step in finding.get("safe_next_steps", []):
+            lines.append(f"- {step}")
+        lines.append("")
+        lines.append("Limitations:")
+        for limitation in finding.get("limitations", []):
+            lines.append(f"- {limitation}")
+        lines.append("")
+        lines.append("Non-actions:")
+        for non_action in finding.get("non_actions", []):
+            lines.append(f"- {non_action}")
+        lines.append("")
 
     lines.append("## Report Limitations")
     lines.append("")
-
     for limitation in _report_limitations():
         lines.append(f"- {limitation}")
 
     return "\n".join(lines)
 
 
-def _build_html_report(
-    evidence: dict[str, Any],
-    findings: list[dict[str, Any]],
-    summary: dict[str, Any],
-    generated_at: str,
-) -> str:
+def _build_html_report(findings: list[dict[str, Any]], summary: dict[str, Any], generated_at: str) -> str:
     cards = "\n".join(_html_finding(finding) for finding in findings)
-    top_actions = "".join(f"<li>{html.escape(action)}</li>" for action in _top_actions(findings))
+    top_actions = "".join(
+        f"<li>{html.escape(str(finding.get('safe_next_steps', [''])[0]))}</li>"
+        for finding in findings
+        if finding.get("safe_next_steps")
+    )
     limitations = "".join(f"<li>{html.escape(item)}</li>" for item in _report_limitations())
-    sensitive_warning = ""
+    warning = ""
 
     if not top_actions:
         top_actions = "<li>No app-log findings were generated from the imported evidence.</li>"
 
     if summary["sensitive_indicators"]:
-        indicators = "".join(f"<li><code>{html.escape(item)}</code></li>" for item in summary["sensitive_indicators"])
-        sensitive_warning = f"""<section class="card warning">
+        indicators = "".join(f"<li><code>{html.escape(str(item))}</code></li>" for item in summary["sensitive_indicators"])
+        warning = f"""
+  <section class="card warning">
     <p class="eyebrow">Sensitive Evidence Warning</p>
     <p>Potential sensitive-data indicators were detected. Review and redact logs before sharing externally.</p>
     <ul>{indicators}</ul>
-  </section>"""
+  </section>
+"""
 
     return f"""<!doctype html>
 <html lang="en">
@@ -153,7 +189,7 @@ def _build_html_report(
   <meta charset="utf-8">
   <title>CustosOps Application Log Evidence Report</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  {_shared_style()}
+  {_style()}
 </head>
 <body>
 <main>
@@ -161,12 +197,12 @@ def _build_html_report(
     <p class="eyebrow">CustosOps Application Log Evidence Report</p>
     <h1>Application Log Evidence Report</h1>
     <p class="muted">Generated: {html.escape(generated_at)}</p>
-    <p class="muted">Source file: {html.escape(summary['source_file'])}</p>
+    <p class="muted">Source file: {html.escape(str(summary['source_file']))}</p>
     <p class="muted">Raw lines: {summary['raw_line_count']} | Parsed entries: {summary['parsed_entry_count']}</p>
     <p class="muted">CustosOps analyzed imported log evidence locally and did not modify applications, APIs, services, or infrastructure.</p>
   </section>
 
-  <section class="summary-grid six">
+  <section class="summary-grid">
     <div class="metric"><span>Findings</span><strong>{summary['finding_count']}</strong></div>
     <div class="metric"><span>Critical</span><strong>{summary['critical']}</strong></div>
     <div class="metric"><span>High</span><strong>{summary['high']}</strong></div>
@@ -175,7 +211,7 @@ def _build_html_report(
     <div class="metric"><span>Info</span><strong>{summary['info']}</strong></div>
   </section>
 
-  {sensitive_warning}
+  {warning}
 
   <section class="card">
     <p class="eyebrow">Top Recommended Actions</p>
@@ -194,53 +230,18 @@ def _build_html_report(
 """
 
 
-def _markdown_finding(finding: dict[str, Any]) -> list[str]:
-    lines: list[str] = []
-
-    lines.append(f"### {finding.get('title', 'Finding')}")
-    lines.append("")
-    lines.append(f"- Severity: `{finding.get('severity', 'unknown')}`")
-    lines.append(f"- Confidence: `{finding.get('confidence', 'unknown')}`")
-    lines.append(f"- Category: `{finding.get('category', 'unknown')}`")
-    lines.append(f"- Affected asset: `{finding.get('affected_asset', 'unknown')}`")
-    lines.append(f"- Finding ID: `{finding.get('finding_id', 'unknown')}`")
-    lines.append("")
-    lines.append(str(finding.get("why_it_matters", "")))
-    lines.append("")
-    lines.append("Evidence:")
-
-    for item in finding.get("evidence", []):
-        lines.append(f"- `{item.get('key', '')}`: `{item.get('value', '')}`")
-
-    lines.append("")
-    lines.append("Safe next steps:")
-
-    for step in finding.get("safe_next_steps", []):
-        lines.append(f"- {step}")
-
-    lines.append("")
-    lines.append("Limitations:")
-
-    for limitation in finding.get("limitations", []):
-        lines.append(f"- {limitation}")
-
-    lines.append("")
-    lines.append("Non-actions:")
-
-    for non_action in finding.get("non_actions", []):
-        lines.append(f"- {non_action}")
-
-    lines.append("")
-
-    return lines
-
-
 def _html_finding(finding: dict[str, Any]) -> str:
     severity = _safe_severity(finding.get("severity", "info"))
-    safe_steps = "".join(f"<li>{html.escape(str(step))}</li>" for step in finding.get("safe_next_steps", []))
+    evidence = "".join(
+        f"<li><code>{html.escape(str(item.get('key', 'evidence')))}</code>: {html.escape(str(item.get('value', '')))}</li>"
+        for item in finding.get("evidence", [])
+    )
+    safe_steps = "".join(f"<li>{html.escape(str(item))}</li>" for item in finding.get("safe_next_steps", []))
     limitations = "".join(f"<li>{html.escape(str(item))}</li>" for item in finding.get("limitations", []))
     non_actions = "".join(f"<li>{html.escape(str(item))}</li>" for item in finding.get("non_actions", []))
-    evidence = _html_evidence(finding)
+
+    if not evidence:
+        evidence = "<li>No evidence items provided.</li>"
 
     if not safe_steps:
         safe_steps = "<li>No safe next steps provided.</li>"
@@ -269,7 +270,8 @@ def _html_finding(finding: dict[str, Any]) -> str:
     <div><dt>Status</dt><dd>open</dd></div>
   </dl>
 
-  {evidence}
+  <h3>Evidence</h3>
+  <ul>{evidence}</ul>
 
   <div class="columns">
     <div>
@@ -287,35 +289,6 @@ def _html_finding(finding: dict[str, Any]) -> str:
 </section>"""
 
 
-def _summary(evidence: dict[str, Any], findings: list[dict[str, Any]]) -> dict[str, Any]:
-    severities = _severity_counts(findings)
-
-    return {
-        "source_file": evidence.get("source_file", "app-log"),
-        "raw_line_count": evidence.get("raw_line_count", 0),
-        "parsed_entry_count": evidence.get("parsed_entry_count", 0),
-        "finding_count": len(findings),
-        "sensitive_indicators": evidence.get("sensitive_indicators", []),
-        **severities,
-    }
-
-
-def _severity_counts(findings: list[dict[str, Any]]) -> dict[str, int]:
-    counts = {
-        "critical": 0,
-        "high": 0,
-        "medium": 0,
-        "low": 0,
-        "info": 0,
-    }
-
-    for finding in findings:
-        severity = _safe_severity(finding.get("severity", "info"))
-        counts[severity] += 1
-
-    return counts
-
-
 def _safe_severity(value: Any) -> str:
     lowered = str(value).lower()
 
@@ -323,21 +296,6 @@ def _safe_severity(value: Any) -> str:
         return lowered
 
     return "info"
-
-
-def _top_actions(findings: list[dict[str, Any]]) -> list[str]:
-    actions: list[str] = []
-
-    for finding in findings:
-        steps = finding.get("safe_next_steps", [])
-
-        if steps:
-            actions.append(steps[0])
-
-        if len(actions) >= 5:
-            break
-
-    return actions
 
 
 def _report_limitations() -> list[str]:
@@ -349,27 +307,13 @@ def _report_limitations() -> list[str]:
     ]
 
 
-def _html_evidence(finding: dict[str, Any]) -> str:
-    evidence = finding.get("evidence", [])
-
-    if not evidence:
-        return ""
-
-    items = "".join(
-        f"<li><code>{html.escape(str(item.get('key', 'evidence')))}</code>: {html.escape(str(item.get('value', '')))}</li>"
-        for item in evidence
-    )
-
-    return f"<h3>Evidence</h3><ul>{items}</ul>"
-
-
 def _safe_stem(filename: str) -> str:
     stem = Path(filename).stem or "app_log"
     cleaned = "".join(char if char.isalnum() or char in {"-", "_"} else "_" for char in stem)
     return cleaned[:80] or "app_log"
 
 
-def _shared_style() -> str:
+def _style() -> str:
     return """<style>
     :root { font-family: Inter, Segoe UI, Arial, sans-serif; color: #0f172a; background: #f8fafc; }
     body { margin: 0; background: #f8fafc; }
@@ -380,8 +324,7 @@ def _shared_style() -> str:
     h1 { margin: 0 0 10px; font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -0.06em; }
     .muted { color: #475569; line-height: 1.6; }
     .warning { border-color: #f59e0b; background: #fffbeb; }
-    .summary-grid { display: grid; gap: 12px; margin: 18px 0; }
-    .summary-grid.six { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    .summary-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin: 18px 0; }
     .metric { background: #eff6ff; border: 1px solid #dbeafe; border-radius: 14px; padding: 14px; }
     .metric span { display: block; color: #475569; font-size: 0.82rem; margin-bottom: 4px; }
     .metric strong { font-size: 1.25rem; }

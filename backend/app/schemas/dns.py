@@ -1,6 +1,6 @@
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class DnsRecordEvidence(BaseModel):
@@ -20,6 +20,7 @@ class DnsRecordEvidence(BaseModel):
 
 
 class DnsEvidence(BaseModel):
+    model_config = ConfigDict(extra="allow")
     schema_version: str = "custosops.dns.v0.1"
     collected_at: str | None = None
     collector: str | None = None

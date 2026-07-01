@@ -581,7 +581,7 @@ function App() {
       return;
     }
 
-    const reportEvidence = evidence ?? buildEvidenceFallback(reportType, findings);
+    const reportEvidence = buildReportEvidence(reportType, evidence, findings);
 
     try {
       const response = await fetch(`${API_BASE}/api/reports/${route}`, {
@@ -1350,6 +1350,67 @@ function buildEvidenceFallback(reportType: "endpoint" | "dns" | "app-log", findi
     note: "Raw evidence was not available in frontend state, so CustosOps generated a minimal evidence metadata object for report continuity."
   };
 }
+function buildReportEvidence(reportType: "endpoint" | "dns" | "app-log", evidence: unknown | null, findings: Finding[]): Record<string, unknown> {
+  const base: Record<string, unknown> = isRecord(evidence) ? { ...evidence } : {};
+  const topAsset = getTopAsset(findings) || "session-evidence";
+
+  if (!base.source_type) {
+    base.source_type = `${reportType}_session_evidence`;
+  }
+
+  if (!base.generated_from) {
+    base.generated_from = "loaded findings";
+  }
+
+  base.finding_count = findings.length;
+
+  if (reportType === "endpoint") {
+    if (!base.endpoint_name && !base.hostname && !base.computer_name && !base.device_name) {
+      base.endpoint_name = topAsset;
+      base.hostname = topAsset;
+      base.computer_name = topAsset;
+    }
+
+    if (!base.source_file || base.source_file === "custosops-session" || base.source_file === "unknown-endpoint") {
+      base.source_file = topAsset;
+    }
+  }
+
+  if (reportType === "dns") {
+    if (!base.source_file || base.source_file === "custosops-session") {
+      base.source_file = "restored-dns-session";
+    }
+
+    if (!Array.isArray(base.records) && !Array.isArray(base.dns_records)) {
+      const assets = Array.from(
+        new Set(
+          findings
+            .map((finding) => finding.affected_asset)
+            .filter((asset): asset is string => Boolean(asset))
+        )
+      );
+
+      base.records = assets.map((asset) => ({
+        hostname: asset,
+        record: asset,
+        source: "loaded findings"
+      }));
+    }
+  }
+
+  if (reportType === "app-log") {
+    if (!base.source_file) {
+      base.source_file = topAsset || "app-log";
+    }
+  }
+
+  return base;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 function downloadTextFile(filename: string, content: string, contentType: string) {
   const blob = new Blob([content], { type: contentType });
   const url = URL.createObjectURL(blob);
