@@ -340,3 +340,7 @@ CustosOps now supports imported application/API log evidence, detects common run
 ## Completed Milestone - Process Guard and App Log Repair
 
 CustosOps local launch/stop behavior was hardened with a process guard. The App Log report backend import issue was repaired, and startup now checks backend import and health before opening the frontend.
+
+## Completed Milestone - Module Workspaces v0.1
+
+CustosOps now separates the overview dashboard from operational module workspaces for Endpoint, DNS Hygiene, Application Logs, Reports, and Archive. Each evidence module has a full finding table and detail review panel.
