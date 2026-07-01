@@ -1,0 +1,4 @@
+Name,Type,Data,Domain,NameServer,ResolutionStatus,RDnsStatus,ICMPStatus,RecordAgeDays,DupIP,StatusDetail
+app-old,A,10.10.10.25,lab.local,LAB-DC01,OK,NO_PTR,Failed,180,false,Synthetic PowerShell export stale host
+legacy-alias-01,A,10.10.10.40,lab.local,LAB-DC01,FORWARD_MISMATCH,PTR_MISMATCH,Failed,220,true,Synthetic PowerShell mismatch
+legacy-alias-02,A,10.10.10.40,lab.local,LAB-DC01,OK,PTR_MISMATCH,Failed,220,true,Synthetic PowerShell shared IP

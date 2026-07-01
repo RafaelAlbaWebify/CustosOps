@@ -1,8 +1,9 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Response
 
 from app.analyzers.dns_hygiene import analyze_dns_evidence
 from app.schemas.dns import DnsCsvImportRequest, DnsEvidence
 from app.services.dns_csv_importer import import_dns_audit_csv
+from app.services.dns_csv_template import get_dns_csv_template_content
 from app.services.sample_loader import load_sample_json
 
 router = APIRouter(prefix="/api/dns")
@@ -41,3 +42,14 @@ def import_dns_csv_payload(request: DnsCsvImportRequest) -> dict:
         "warnings": imported.warnings,
         "findings": [finding.model_dump() for finding in findings],
     }
+
+
+@router.get("/csv-template")
+def download_dns_csv_template() -> Response:
+    return Response(
+        content=get_dns_csv_template_content(),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": 'attachment; filename="custosops_dns_audit_template.csv"'
+        },
+    )

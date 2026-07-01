@@ -217,6 +217,9 @@ export default function App() {
     }
   }
 
+  function handleDnsTemplateDownload() {
+    window.open(`${API_BASE}/api/dns/csv-template`, "_blank", "noopener,noreferrer");
+  }
   async function handleDnsEvidenceImport(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
 
@@ -534,6 +537,9 @@ export default function App() {
                   <h2>DNS Hygiene</h2>
                 </div>
                 <div className="button-group">
+                  <button className="button subtle" type="button" onClick={handleDnsTemplateDownload}>
+                    CSV Template
+                  </button>
                   <label className="button import-button">
                     <input type="file" accept=".json,application/json" onChange={handleDnsEvidenceImport} />
                     Import JSON

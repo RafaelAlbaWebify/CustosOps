@@ -719,3 +719,9 @@ h2 {
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+.button.subtle {
+  color: #bae6fd;
+  border-color: rgba(125, 211, 252, 0.24);
+  background: rgba(8, 47, 73, 0.24);
+}

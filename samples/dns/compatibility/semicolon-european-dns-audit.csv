@@ -1,0 +1,4 @@
+FQDN;IP;ZoneName;Server;ForwardResolution;ReverseDnsStatus;Reachable;DaysOld;SharedIP;Notes
+app-old.lab.local;10.10.10.25;lab.local;LAB-DC01;OK;NO_PTR;Failed;180;false;Synthetic semicolon stale host
+legacy-alias-01.lab.local;10.10.10.40;lab.local;LAB-DC01;FORWARD_MISMATCH;PTR_MISMATCH;Failed;220;true;Synthetic semicolon mismatch
+legacy-alias-02.lab.local;10.10.10.40;lab.local;LAB-DC01;OK;PTR_MISMATCH;Failed;220;true;Synthetic semicolon shared IP

@@ -328,3 +328,7 @@ CustosOps can now run the local read-only endpoint collector directly from the E
 ## Completed Milestone - Local Audit Cleanup
 
 CustosOps passed a local audit checkpoint. Backend tests and frontend build passed, Git state was clean, and obsolete recovery backup files were removed from the repository.
+
+## Completed Milestone - DNS CSV Compatibility Lab v0.1
+
+CustosOps now includes synthetic DNS CSV compatibility fixtures, a downloadable CSV template, and tests proving the importer handles multiple common DNS audit CSV shapes without using real company data.

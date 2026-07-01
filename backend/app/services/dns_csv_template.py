@@ -1,0 +1,7 @@
+def get_dns_csv_template_content() -> str:
+    return """HostName,IPAddress,Zone,ForwardStatus,PTRStatus,PingStatus,AgeDays,DupIP,Notes
+app-old,10.10.10.25,lab.local,OK,NO_PTR,Failed,180,false,Synthetic stale host
+app-current,10.10.10.26,lab.local,OK,PTR_OK,Success,4,false,Synthetic current host
+legacy-alias-01,10.10.10.40,lab.local,FORWARD_MISMATCH,PTR_MISMATCH,Failed,220,true,Synthetic mismatch
+legacy-alias-02,10.10.10.40,lab.local,OK,PTR_MISMATCH,Failed,220,true,Synthetic shared IP
+"""

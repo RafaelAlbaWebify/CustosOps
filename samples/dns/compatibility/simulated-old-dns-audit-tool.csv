@@ -1,0 +1,4 @@
+RecordName,RecordType,RecordData,ZoneName,DnsServer,ForwardStatus,PtrStatus,PingStatus,StaleDays,DuplicateIP,Comment
+app-old,A,10.10.10.25,lab.local,LAB-DC01,OK,NO_PTR,Failed,180,false,Synthetic old-tool style row
+legacy-alias-01,A,10.10.10.40,lab.local,LAB-DC01,FORWARD_MISMATCH,PTR_MISMATCH,Failed,220,true,Synthetic old-tool mismatch
+legacy-alias-02,A,10.10.10.40,lab.local,LAB-DC01,OK,PTR_MISMATCH,Failed,220,true,Synthetic old-tool shared IP

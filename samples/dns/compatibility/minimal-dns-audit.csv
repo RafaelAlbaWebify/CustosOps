@@ -1,0 +1,4 @@
+Host,IP,Zone,PTR,Age,DupIP
+app-old,10.10.10.25,lab.local,NO_PTR,180,false
+legacy-alias-01,10.10.10.40,lab.local,PTR_MISMATCH,220,true
+legacy-alias-02,10.10.10.40,lab.local,PTR_MISMATCH,220,true
