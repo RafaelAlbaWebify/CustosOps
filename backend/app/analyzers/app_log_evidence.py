@@ -1,6 +1,7 @@
 from collections import Counter
 
 from app.schemas.app_log import AppLogEntry, AppLogEvidence
+from app.services.app_log_redaction import redact_text
 
 
 def analyze_app_log_evidence(evidence: AppLogEvidence) -> list[dict]:
@@ -493,6 +494,6 @@ def _example_lines(entries: list[AppLogEntry], limit: int = 3) -> str:
     examples = []
 
     for entry in entries[:limit]:
-        examples.append(f"line {entry.line_number}: {entry.raw[:160]}")
+        examples.append(f"line {entry.line_number}: {redact_text(entry.raw[:160])}")
 
     return " | ".join(examples)

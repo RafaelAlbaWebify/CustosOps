@@ -1,3 +1,4 @@
+from typing import Any
 from pydantic import BaseModel, Field
 
 
@@ -27,3 +28,4 @@ class AppLogEvidence(BaseModel):
     entries: list[AppLogEntry] = Field(default_factory=list)
     sensitive_indicators: list[str] = Field(default_factory=list)
     parser_warnings: list[str] = Field(default_factory=list)
+    api_summary: dict[str, Any] = Field(default_factory=dict)

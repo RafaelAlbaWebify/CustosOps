@@ -6,6 +6,9 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from app.services.app_log_intelligence import build_api_error_summary
+from app.services.app_log_redaction import redact_obj, redact_text
+
 
 class AppLogReportResponse(BaseModel):
     filename: str
@@ -14,19 +17,6 @@ class AppLogReportResponse(BaseModel):
     content: str
 
 
-
-def _as_dict(value: Any) -> dict[str, Any]:
-    if isinstance(value, dict):
-        return value
-
-    if hasattr(value, "model_dump"):
-        return value.model_dump()
-
-    if hasattr(value, "dict"):
-        return value.dict()
-
-    return {}
-
 def build_app_log_report(
     evidence: dict[str, Any],
     findings: list[dict[str, Any]],
@@ -34,20 +24,28 @@ def build_app_log_report(
 ) -> AppLogReportResponse:
     evidence = _as_dict(evidence)
     findings = [_as_dict(finding) for finding in findings]
+
     generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     source_file = str(evidence.get("source_file", "app-log"))
     stem = _safe_stem(source_file)
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%SZ")
+
+    api_summary = evidence.get("api_summary") or build_api_error_summary(evidence)
+    evidence["api_summary"] = api_summary
+
     summary = _summary(evidence, findings)
+    redacted_evidence = redact_obj(evidence)
+    redacted_findings = redact_obj(findings)
 
     if report_format == "json":
         content = json.dumps(
             {
-                "report_type": "app_log",
+                "report_type": "custosops.app_log.v0.1",
                 "generated_at": generated_at,
                 "summary": summary,
-                "evidence": evidence,
-                "findings": findings,
+                "api_summary": api_summary,
+                "evidence": redacted_evidence,
+                "findings": redacted_findings,
                 "limitations": _report_limitations(),
             },
             indent=2,
@@ -55,11 +53,11 @@ def build_app_log_report(
         extension = "json"
         content_type = "application/json"
     elif report_format == "html":
-        content = _build_html_report(findings, summary, generated_at)
+        content = _build_html_report(redacted_findings, summary, api_summary, generated_at)
         extension = "html"
         content_type = "text/html; charset=utf-8"
     else:
-        content = _build_markdown_report(findings, summary, generated_at)
+        content = _build_markdown_report(redacted_findings, summary, api_summary, generated_at)
         extension = "md"
         content_type = "text/markdown; charset=utf-8"
 
@@ -94,7 +92,12 @@ def _summary(evidence: dict[str, Any], findings: list[dict[str, Any]]) -> dict[s
     }
 
 
-def _build_markdown_report(findings: list[dict[str, Any]], summary: dict[str, Any], generated_at: str) -> str:
+def _build_markdown_report(
+    findings: list[dict[str, Any]],
+    summary: dict[str, Any],
+    api_summary: dict[str, Any],
+    generated_at: str,
+) -> str:
     lines: list[str] = []
 
     lines.append("# CustosOps Application Log Evidence Report")
@@ -113,12 +116,15 @@ def _build_markdown_report(findings: list[dict[str, Any]], summary: dict[str, An
     lines.append(f"- Low: `{summary['low']}`")
     lines.append(f"- Info: `{summary['info']}`")
     lines.append("")
+    lines.extend(_markdown_api_summary(api_summary))
 
     if summary["sensitive_indicators"]:
         lines.append("## Sensitive Evidence Warning")
         lines.append("")
         for item in summary["sensitive_indicators"]:
             lines.append(f"- `{item}`")
+        lines.append("")
+        lines.append("Report output was redacted for common secret/token patterns.")
         lines.append("")
 
     lines.append("## Findings")
@@ -132,9 +138,9 @@ def _build_markdown_report(findings: list[dict[str, Any]], summary: dict[str, An
         lines.append(f"- Category: `{finding.get('category', 'unknown')}`")
         lines.append(f"- Affected asset: `{finding.get('affected_asset', 'unknown')}`")
         lines.append(f"- Finding ID: `{finding.get('finding_id', 'unknown')}`")
-    lines.append(f"- Review status: `{finding.get('status', 'open')}`")
-    if finding.get("review_notes"):
-        lines.append(f"- Review notes: `{finding.get('review_notes')}`")
+        lines.append(f"- Review status: `{finding.get('status', 'open')}`")
+        if finding.get("review_notes"):
+            lines.append(f"- Review notes: `{finding.get('review_notes')}`")
         lines.append("")
         lines.append(str(finding.get("why_it_matters", "")))
         lines.append("")
@@ -150,10 +156,6 @@ def _build_markdown_report(findings: list[dict[str, Any]], summary: dict[str, An
         for limitation in finding.get("limitations", []):
             lines.append(f"- {limitation}")
         lines.append("")
-        lines.append("Non-actions:")
-        for non_action in finding.get("non_actions", []):
-            lines.append(f"- {non_action}")
-        lines.append("")
 
     lines.append("## Report Limitations")
     lines.append("")
@@ -163,7 +165,12 @@ def _build_markdown_report(findings: list[dict[str, Any]], summary: dict[str, An
     return "\n".join(lines)
 
 
-def _build_html_report(findings: list[dict[str, Any]], summary: dict[str, Any], generated_at: str) -> str:
+def _build_html_report(
+    findings: list[dict[str, Any]],
+    summary: dict[str, Any],
+    api_summary: dict[str, Any],
+    generated_at: str,
+) -> str:
     cards = "\n".join(_html_finding(finding) for finding in findings)
     top_actions = "".join(
         f"<li>{html.escape(str(finding.get('safe_next_steps', [''])[0]))}</li>"
@@ -178,11 +185,15 @@ def _build_html_report(findings: list[dict[str, Any]], summary: dict[str, Any], 
 
     if summary["sensitive_indicators"]:
         indicators = "".join(f"<li><code>{html.escape(str(item))}</code></li>" for item in summary["sensitive_indicators"])
+        redaction_markers = "<li><code>[REDACTED_AUTH_HEADER]</code></li><li><code>[REDACTED_BEARER_TOKEN]</code></li><li><code>[REDACTED_PASSWORD]</code></li><li><code>[REDACTED_TOKEN]</code></li>"
         warning = f"""
   <section class="card warning">
     <p class="eyebrow">Sensitive Evidence Warning</p>
-    <p>Potential sensitive-data indicators were detected. Review and redact logs before sharing externally.</p>
+    <p>Potential sensitive-data indicators were detected. Report output was redacted for common secret/token patterns.</p>
+    <h3>Detected indicators</h3>
     <ul>{indicators}</ul>
+    <h3>Redaction markers used by export policy</h3>
+    <ul>{redaction_markers}</ul>
   </section>
 """
 
@@ -214,6 +225,8 @@ def _build_html_report(findings: list[dict[str, Any]], summary: dict[str, Any], 
     <div class="metric"><span>Info</span><strong>{summary['info']}</strong></div>
   </section>
 
+  {_html_api_summary(api_summary)}
+
   {warning}
 
   <section class="card">
@@ -233,10 +246,109 @@ def _build_html_report(findings: list[dict[str, Any]], summary: dict[str, Any], 
 """
 
 
+def _markdown_api_summary(api_summary: dict[str, Any]) -> list[str]:
+    lines: list[str] = []
+
+    lines.append("## API Operational Summary")
+    lines.append("")
+    lines.append(f"- HTTP requests: `{api_summary.get('http_request_count', 0)}`")
+    lines.append(f"- Failed requests: `{api_summary.get('failure_count', 0)}`")
+    lines.append(f"- Server errors: `{api_summary.get('server_error_count', 0)}`")
+    lines.append(f"- Auth failures: `{api_summary.get('auth_failure_count', 0)}`")
+    lines.append(f"- Slow requests: `{api_summary.get('slow_request_count', 0)}`")
+    lines.append(f"- First seen: `{api_summary.get('first_seen') or 'unknown'}`")
+    lines.append(f"- Last seen: `{api_summary.get('last_seen') or 'unknown'}`")
+    lines.append("")
+
+    if api_summary.get("status_code_breakdown"):
+        lines.append("Status-code breakdown:")
+        for code, count in api_summary["status_code_breakdown"].items():
+            lines.append(f"- `{code}`: `{count}`")
+        lines.append("")
+
+    if api_summary.get("top_failing_endpoints"):
+        lines.append("Top failing endpoints:")
+        for item in api_summary["top_failing_endpoints"]:
+            lines.append(f"- `{item.get('endpoint')}`: `{item.get('count')}`")
+        lines.append("")
+
+    return lines
+
+
+def _html_api_summary(api_summary: dict[str, Any]) -> str:
+    status_items = "".join(
+        f"<li><code>{html.escape(str(code))}</code>: {html.escape(str(count))}</li>"
+        for code, count in api_summary.get("status_code_breakdown", {}).items()
+    )
+    endpoint_items = "".join(
+        f"<li><code>{html.escape(str(item.get('endpoint')))}</code>: {html.escape(str(item.get('count')))}</li>"
+        for item in api_summary.get("top_failing_endpoints", [])
+    )
+    client_items = "".join(
+        f"<li><code>{html.escape(str(item.get('client_ip')))}</code>: {html.escape(str(item.get('count')))}</li>"
+        for item in api_summary.get("top_client_ips", [])
+    )
+    slow_items = "".join(
+        "<li>"
+        f"<code>{html.escape(str(item.get('path')))}</code> "
+        f"{html.escape(str(item.get('latency_ms')))} ms "
+        f"status={html.escape(str(item.get('status_code')))} "
+        f"line={html.escape(str(item.get('line_number')))}"
+        "</li>"
+        for item in api_summary.get("slowest_requests", [])
+    )
+
+    if not status_items:
+        status_items = "<li>No HTTP status codes detected.</li>"
+
+    if not endpoint_items:
+        endpoint_items = "<li>No failing endpoints detected.</li>"
+
+    if not client_items:
+        client_items = "<li>No failing client IPs detected.</li>"
+
+    if not slow_items:
+        slow_items = "<li>No slow requests detected.</li>"
+
+    return f"""<section class="card">
+    <p class="eyebrow">API Operational Summary</p>
+    <div class="api-grid">
+      <div><span>HTTP requests</span><strong>{api_summary.get('http_request_count', 0)}</strong></div>
+      <div><span>Failures</span><strong>{api_summary.get('failure_count', 0)}</strong></div>
+      <div><span>Server errors</span><strong>{api_summary.get('server_error_count', 0)}</strong></div>
+      <div><span>Auth failures</span><strong>{api_summary.get('auth_failure_count', 0)}</strong></div>
+      <div><span>Slow requests</span><strong>{api_summary.get('slow_request_count', 0)}</strong></div>
+      <div><span>Window</span><strong>{html.escape(str(api_summary.get('first_seen') or 'unknown'))} - {html.escape(str(api_summary.get('last_seen') or 'unknown'))}</strong></div>
+    </div>
+
+    <div class="columns">
+      <div>
+        <h3>Status-code breakdown</h3>
+        <ul>{status_items}</ul>
+      </div>
+      <div>
+        <h3>Top failing endpoints</h3>
+        <ul>{endpoint_items}</ul>
+      </div>
+    </div>
+
+    <div class="columns">
+      <div>
+        <h3>Top client IPs</h3>
+        <ul>{client_items}</ul>
+      </div>
+      <div>
+        <h3>Slowest requests</h3>
+        <ul>{slow_items}</ul>
+      </div>
+    </div>
+  </section>"""
+
+
 def _html_finding(finding: dict[str, Any]) -> str:
     severity = _safe_severity(finding.get("severity", "info"))
     evidence = "".join(
-        f"<li><code>{html.escape(str(item.get('key', 'evidence')))}</code>: {html.escape(str(item.get('value', '')))}</li>"
+        f"<li><code>{html.escape(str(item.get('key', 'evidence')))}</code>: {html.escape(redact_text(item.get('value', '')))}</li>"
         for item in finding.get("evidence", [])
     )
     safe_steps = "".join(f"<li>{html.escape(str(item))}</li>" for item in finding.get("safe_next_steps", []))
@@ -270,7 +382,7 @@ def _html_finding(finding: dict[str, Any]) -> str:
     <div><dt>Finding ID</dt><dd>{html.escape(str(finding.get('finding_id', 'unknown')))}</dd></div>
     <div><dt>Confidence</dt><dd>{html.escape(str(finding.get('confidence', 'unknown')))}</dd></div>
     <div><dt>Affected asset</dt><dd>{html.escape(str(finding.get('affected_asset', 'unknown')))}</dd></div>
-    <div><dt>Status</dt><dd>{html.escape(str(finding.get("status", "open")))}</dd></div>
+    <div><dt>Status</dt><dd>{html.escape(str(finding.get('status', 'open')))}</dd></div>
   </dl>
 
   {_html_review(finding)}
@@ -292,24 +404,6 @@ def _html_finding(finding: dict[str, Any]) -> str:
   <h3>Non-actions</h3>
   <ul>{non_actions}</ul>
 </section>"""
-
-
-def _safe_severity(value: Any) -> str:
-    lowered = str(value).lower()
-
-    if lowered in {"critical", "high", "medium", "low", "info"}:
-        return lowered
-
-    return "info"
-
-
-def _report_limitations() -> list[str]:
-    return [
-        "This report is based on imported log evidence.",
-        "A log sample may not represent the full incident window.",
-        "No application, API, or infrastructure changes were made by CustosOps.",
-        "Sensitive values should be redacted before sharing externally.",
-    ]
 
 
 def _html_review(finding: dict[str, Any]) -> str:
@@ -334,6 +428,38 @@ def _html_review(finding: dict[str, Any]) -> str:
     return f"<h3>Operator review</h3><ul>{''.join(items)}</ul>"
 
 
+def _as_dict(value: Any) -> dict[str, Any]:
+    if isinstance(value, dict):
+        return value
+
+    if hasattr(value, "model_dump"):
+        return value.model_dump()
+
+    if hasattr(value, "dict"):
+        return value.dict()
+
+    return {}
+
+
+def _safe_severity(value: Any) -> str:
+    lowered = str(value).lower()
+
+    if lowered in {"critical", "high", "medium", "low", "info"}:
+        return lowered
+
+    return "info"
+
+
+def _report_limitations() -> list[str]:
+    return [
+        "This report is based on imported log evidence.",
+        "A log sample may not represent the full incident window.",
+        "No application, API, or infrastructure changes were made by CustosOps.",
+        "Sensitive values are redacted in exported reports using pattern-based detection.",
+        "Redaction may not detect every possible secret format.",
+    ]
+
+
 def _safe_stem(filename: str) -> str:
     stem = Path(filename).stem or "app_log"
     cleaned = "".join(char if char.isalnum() or char in {"-", "_"} else "_" for char in stem)
@@ -352,9 +478,10 @@ def _style() -> str:
     .muted { color: #475569; line-height: 1.6; }
     .warning { border-color: #f59e0b; background: #fffbeb; }
     .summary-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin: 18px 0; }
-    .metric { background: #eff6ff; border: 1px solid #dbeafe; border-radius: 14px; padding: 14px; }
-    .metric span { display: block; color: #475569; font-size: 0.82rem; margin-bottom: 4px; }
-    .metric strong { font-size: 1.25rem; }
+    .metric, .api-grid div { background: #eff6ff; border: 1px solid #dbeafe; border-radius: 14px; padding: 14px; }
+    .metric span, .api-grid span { display: block; color: #475569; font-size: 0.82rem; margin-bottom: 4px; }
+    .metric strong, .api-grid strong { font-size: 1.05rem; }
+    .api-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 14px 0; }
     .card { padding: 20px; margin-bottom: 14px; }
     .finding-top { display: flex; justify-content: space-between; gap: 12px; align-items: start; margin-bottom: 10px; }
     .severity { padding: 5px 9px; border-radius: 999px; text-transform: uppercase; font-size: 0.72rem; font-weight: 900; letter-spacing: 0.08em; }
@@ -369,5 +496,5 @@ def _style() -> str:
     code { background: #f1f5f9; border-radius: 6px; padding: 2px 5px; }
     .columns { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
     @media print { .card, .hero { box-shadow: none; } body { background: white; } }
-    @media (max-width: 900px) { .summary-grid, .columns, dl { grid-template-columns: 1fr; } }
+    @media (max-width: 900px) { .summary-grid, .api-grid, .columns, dl { grid-template-columns: 1fr; } }
   </style>"""

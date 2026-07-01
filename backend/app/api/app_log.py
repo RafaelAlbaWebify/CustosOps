@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from app.analyzers.app_log_evidence import analyze_app_log_evidence
 from app.schemas.app_log import AppLogImportRequest
+from app.services.app_log_intelligence import build_api_error_summary
 from app.services.app_log_parser import parse_app_log
 
 router = APIRouter(prefix="/api/app-log")
@@ -15,6 +16,7 @@ SAMPLE_LOG_PATH = PROJECT_ROOT / "samples" / "app_logs" / "fastapi-api-errors.lo
 @router.post("/import")
 def import_app_log(request: AppLogImportRequest) -> dict:
     evidence = parse_app_log(filename=request.filename, content=request.content)
+    evidence.api_summary = build_api_error_summary(evidence)
     findings = analyze_app_log_evidence(evidence)
 
     return {
@@ -23,6 +25,7 @@ def import_app_log(request: AppLogImportRequest) -> dict:
         "raw_line_count": evidence.raw_line_count,
         "sensitive_indicators": evidence.sensitive_indicators,
         "warnings": evidence.parser_warnings,
+        "api_summary": evidence.api_summary,
         "findings": findings,
     }
 
@@ -31,6 +34,7 @@ def import_app_log(request: AppLogImportRequest) -> dict:
 def get_sample_app_log_findings() -> dict:
     content = SAMPLE_LOG_PATH.read_text(encoding="utf-8-sig")
     evidence = parse_app_log(filename=SAMPLE_LOG_PATH.name, content=content)
+    evidence.api_summary = build_api_error_summary(evidence)
     findings = analyze_app_log_evidence(evidence)
 
     return {

@@ -357,3 +357,8 @@ CustosOps reports now preserve evidence fidelity better when generated from rest
 ## Completed Milestone Slice - Finding Review Workflow v0.1
 
 CustosOps now supports local operator review status, review notes, review timestamps, and reviewed-by metadata for findings. Report exports include review metadata.
+
+
+## Completed Milestone Slice - Evidence Redaction and API Error Summary v0.1
+
+CustosOps App Log evidence now includes API operational summary metadata and redacted report output for common secret/token patterns.
