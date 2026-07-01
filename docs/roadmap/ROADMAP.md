@@ -362,3 +362,8 @@ CustosOps now supports local operator review status, review notes, review timest
 ## Completed Milestone Slice - Evidence Redaction and API Error Summary v0.1
 
 CustosOps App Log evidence now includes API operational summary metadata and redacted report output for common secret/token patterns.
+
+
+## Completed Milestone Slice - Windows Event Log Evidence v0.1
+
+CustosOps now supports imported Windows Event evidence with findings for service failures, failed logons, application errors, DNS client events, and reboot/update timeline signals.

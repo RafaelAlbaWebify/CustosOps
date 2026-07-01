@@ -25,6 +25,13 @@ def get_modules() -> list[ModuleInfo]:
             description="Read-only DNS and infrastructure hygiene evidence.",
         ),
         ModuleInfo(
+            id="windows-events",
+            name="Windows Event Evidence",
+            group="Endpoint",
+            status="foundation",
+            description="Imported Windows Event evidence for service failures, logon failures, application errors, DNS client events, and reboot/update timeline signals.",
+        ),
+        ModuleInfo(
             id="identity-m365",
             name="Identity and M365 Security Posture",
             group="Identity",

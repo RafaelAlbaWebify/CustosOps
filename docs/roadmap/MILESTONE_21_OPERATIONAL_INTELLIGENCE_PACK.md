@@ -49,3 +49,25 @@ Review metadata is stored locally in browser storage and included only when the 
 Redaction is pattern-based and should reduce accidental disclosure in exported reports.
 
 Raw evidence remains local. Redaction should not be treated as a guarantee that every possible secret format has been removed.
+
+
+## Slice 21C - Windows Event Log Evidence v0.1
+
+### Added
+
+- Windows Event JSON/CSV import backend.
+- Synthetic Windows Event sample evidence.
+- Detection for:
+  - service failures
+  - failed logons
+  - application errors
+  - DNS client resolution events
+  - reboot, shutdown, and update timeline signals
+- HTML, Markdown, and JSON report generation.
+- Archive-compatible report route.
+
+### Safety
+
+This slice uses imported evidence only.
+
+No Windows Event logs are collected live and no host changes are made.

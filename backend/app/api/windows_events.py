@@ -1,0 +1,38 @@
+from pathlib import Path
+
+from fastapi import APIRouter
+
+from app.analyzers.windows_event_evidence import analyze_windows_event_evidence
+from app.schemas.windows_event import WindowsEventImportRequest
+from app.services.windows_event_parser import parse_windows_event_evidence
+
+router = APIRouter(prefix="/api/windows-events")
+
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+SAMPLE_PATH = PROJECT_ROOT / "samples" / "windows_events" / "sample-windows-events.json"
+
+
+@router.post("/import")
+def import_windows_events(request: WindowsEventImportRequest) -> dict:
+    evidence = parse_windows_event_evidence(filename=request.filename, content=request.content)
+    findings = analyze_windows_event_evidence(evidence)
+
+    return {
+        "evidence": evidence.model_dump(),
+        "parsed_event_count": evidence.parsed_event_count,
+        "raw_event_count": evidence.raw_event_count,
+        "warnings": evidence.parser_warnings,
+        "findings": findings,
+    }
+
+
+@router.get("/sample-findings")
+def get_sample_windows_event_findings() -> dict:
+    content = SAMPLE_PATH.read_text(encoding="utf-8-sig")
+    evidence = parse_windows_event_evidence(filename=SAMPLE_PATH.name, content=content)
+    findings = analyze_windows_event_evidence(evidence)
+
+    return {
+        "evidence": evidence.model_dump(),
+        "findings": findings,
+    }

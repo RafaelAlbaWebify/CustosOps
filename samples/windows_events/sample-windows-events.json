@@ -1,0 +1,58 @@
+{
+  "events": [
+    {
+      "TimeCreated": "2026-06-30 08:00:01",
+      "ProviderName": "Service Control Manager",
+      "Id": 7031,
+      "LevelDisplayName": "Error",
+      "MachineName": "LAB-WIN11-01",
+      "LogName": "System",
+      "Message": "The Spooler service terminated unexpectedly. It has done this 1 time."
+    },
+    {
+      "TimeCreated": "2026-06-30 08:02:14",
+      "ProviderName": "Microsoft-Windows-Security-Auditing",
+      "Id": 4625,
+      "LevelDisplayName": "Information",
+      "MachineName": "LAB-WIN11-01",
+      "LogName": "Security",
+      "Message": "An account failed to log on. Account Name: svc-old-api. Logon Type: 3. Failure Reason: Unknown user name or bad password."
+    },
+    {
+      "TimeCreated": "2026-06-30 08:05:10",
+      "ProviderName": "Application Error",
+      "Id": 1000,
+      "LevelDisplayName": "Error",
+      "MachineName": "LAB-WIN11-01",
+      "LogName": "Application",
+      "Message": "Faulting application name: inventory-client.exe, faulting module name: KERNELBASE.dll."
+    },
+    {
+      "TimeCreated": "2026-06-30 08:07:33",
+      "ProviderName": "Microsoft-Windows-DNS-Client",
+      "Id": 1014,
+      "LevelDisplayName": "Warning",
+      "MachineName": "LAB-WIN11-01",
+      "LogName": "System",
+      "Message": "Name resolution for the name inventory-api.internal.local timed out after none of the configured DNS servers responded."
+    },
+    {
+      "TimeCreated": "2026-06-30 08:20:00",
+      "ProviderName": "USER32",
+      "Id": 1074,
+      "LevelDisplayName": "Information",
+      "MachineName": "LAB-WIN11-01",
+      "LogName": "System",
+      "Message": "The process C:\\Windows\\System32\\RuntimeBroker.exe has initiated the restart of computer LAB-WIN11-01."
+    },
+    {
+      "TimeCreated": "2026-06-30 08:30:00",
+      "ProviderName": "Microsoft-Windows-WindowsUpdateClient",
+      "Id": 20,
+      "LevelDisplayName": "Error",
+      "MachineName": "LAB-WIN11-01",
+      "LogName": "System",
+      "Message": "Installation Failure: Windows failed to install the following update."
+    }
+  ]
+}
