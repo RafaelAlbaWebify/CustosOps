@@ -1391,9 +1391,12 @@ function buildReportEvidence(reportType: "endpoint" | "dns" | "app-log", evidenc
       );
 
       base.records = assets.map((asset) => ({
-        hostname: asset,
-        record: asset,
-        source: "loaded findings"
+        host_name: asset,
+        record_type: "A",
+        raw: {
+          source: "loaded findings",
+          record: asset
+        }
       }));
     }
   }
