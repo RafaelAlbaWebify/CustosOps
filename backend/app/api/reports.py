@@ -2,11 +2,13 @@ from fastapi import APIRouter, HTTPException, Response
 
 from app.schemas.app_log_report import AppLogReportRequest
 from app.schemas.report import DnsReportRequest, EndpointReportRequest
+from app.schemas.executive_summary_report import ExecutiveSummaryReportRequest
 from app.schemas.windows_event_report import WindowsEventReportRequest
 from app.services.app_log_report import build_app_log_report
 from app.services.dns_report import build_dns_report
 from app.services.endpoint_report import build_endpoint_report
 from app.services.windows_event_report import build_windows_event_report
+from app.services.executive_summary_report import build_executive_summary_report
 from app.services.report_archive import (
     delete_archived_report,
     get_archived_report,
@@ -156,6 +158,31 @@ def create_windows_event_report(request: WindowsEventReportRequest) -> dict:
     if request.archive:
         entry = save_archived_report(
             report_type="windows_events",
+            report_format=response.format,
+            filename=response.filename,
+            content_type=response.content_type,
+            content=response.content,
+        )
+        payload["archived"] = True
+        payload["archived_path"] = entry["relative_path"]
+        payload["archive_entry_id"] = entry["id"]
+
+    return payload
+
+
+
+@router.post("/executive-summary")
+def create_executive_summary_report(request: ExecutiveSummaryReportRequest) -> dict:
+    response = build_executive_summary_report(
+        modules=[module.model_dump() for module in request.modules],
+        report_format=request.format,
+    )
+
+    payload = response.model_dump()
+
+    if request.archive:
+        entry = save_archived_report(
+            report_type="executive_summary",
             report_format=response.format,
             filename=response.filename,
             content_type=response.content_type,

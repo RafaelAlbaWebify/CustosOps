@@ -88,3 +88,24 @@ No Windows Event logs are collected live and no host changes are made.
 The frontend imports user-selected JSON/CSV evidence only.
 
 No live Windows Event collection is performed in this slice.
+
+
+## Slice 21D - Executive Summary Pack v0.1
+
+### Added
+
+- Backend executive summary report engine.
+- Combined report input for Endpoint, DNS, App Log, and Windows Event modules.
+- Portfolio-level severity counts.
+- Portfolio-level review status counts.
+- Module summaries.
+- Top risks.
+- Recommended next actions.
+- HTML, Markdown, and JSON export formats.
+- Archive-compatible report route.
+
+### Safety
+
+The executive summary pack only summarizes evidence already loaded into CustosOps.
+
+No remediation is performed and no evidence is uploaded externally.

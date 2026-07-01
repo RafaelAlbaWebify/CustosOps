@@ -372,3 +372,8 @@ CustosOps now supports imported Windows Event evidence with findings for service
 ## Completed Milestone Slice - Windows Event Workspace UI v0.1
 
 CustosOps now exposes Windows Event evidence in the frontend workspace navigation, supports JSON/CSV import, and generates Windows Event reports from the Reports workspace.
+
+
+## Completed Milestone Slice - Executive Summary Pack v0.1
+
+CustosOps now supports a combined executive summary report across loaded evidence modules, including severity counts, review status counts, top risks, recommended actions, and evidence limitations.
