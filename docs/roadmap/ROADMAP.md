@@ -389,3 +389,8 @@ CustosOps now exposes the Executive Summary Pack in the Reports workspace and ca
 CustosOps now has a release stabilization checkpoint with backend route integrity testing, reusable release smoke reporting, reusable release audit packaging, and a stable local tag.
 
 This milestone confirms the Operational Intelligence Pack as a stable local release candidate.
+
+
+## Completed Milestone 23 - Dependency and Packaging Hygiene
+
+CustosOps now includes a doctor script, dependency audit workflow, local packaging workflow, operations quickstart, and tests that verify the hygiene scripts exist and avoid forced npm audit remediation.

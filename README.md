@@ -47,3 +47,27 @@ JOLT remains separate.
 - No credential storage.
 - No automatic remediation in the first public version.
 - No customer or employer-specific data.
+
+## CustosOps local operations
+
+Start the local application:
+
+    .\LAUNCH_CUSTOSOPS.bat
+
+Stop the local application:
+
+    .\STOP_CUSTOSOPS.bat
+
+Validate backend and frontend:
+
+    .\scriptsalidate-foundation.ps1
+
+Run local doctor:
+
+    .\scripts\custosops-doctor.ps1
+
+Create a local package:
+
+    .\scripts\custosops-local-package.ps1
+
+More details are available in docs/OPERATIONS_QUICKSTART.md.
