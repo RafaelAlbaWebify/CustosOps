@@ -1329,6 +1329,7 @@ function ReportsWorkspace(props: {
         <ReportCard title="DNS Hygiene Report" ready={props.dnsReady} onDownload={(format) => props.onDownload("dns", format)} />
         <ReportCard title="Application Log Report" ready={props.appLogReady} onDownload={(format) => props.onDownload("app-log", format)} />
         <ReportCard title="Windows Event Report" ready={props.windowsEventReady} onDownload={(format) => props.onDownload("windows-events", format)} />
+        <ReportCard title="Executive Summary Pack" ready={props.executiveReady} onDownload={props.onExecutiveDownload} />
       </section>
     </div>
   );
