@@ -1128,6 +1128,9 @@ function App() {
             warnings={windowsEventWarnings}
             actions={
               <>
+                <button type="button" className="button" onClick={handleWindowsEventCollectLocal}>
+                  Collect Local
+                </button>
                 <label className="button">
                   <input type="file" accept=".json,.csv,application/json,text/csv" onChange={handleWindowsEventImport} />
                   Import JSON/CSV
