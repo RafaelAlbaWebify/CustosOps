@@ -84,3 +84,33 @@ Added CSS for:
 - data-table
 - status-pill
 - danger button state
+
+
+## Slice 25B-2 - Automatic workflow recording
+
+### Added
+
+Successful evidence workflows now record local run-history metadata.
+
+Covered workflows:
+
+- Endpoint import
+- Endpoint local collection
+- DNS imports
+- Application log import
+- Windows Event import
+- Windows Event local collection
+
+### Behavior
+
+Run recording is non-blocking.
+
+If the run-history API is unavailable, the evidence workflow still completes and the browser console records a warning.
+
+### Safety
+
+Run history stores operational metadata only.
+
+It does not upload evidence.
+
+It does not perform remediation.

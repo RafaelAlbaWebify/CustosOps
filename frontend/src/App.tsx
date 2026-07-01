@@ -459,6 +459,121 @@ function App() {
     }
   }
 
+  async function recordEvidenceRun(input: {
+    module_id: string;
+    module_name: string;
+    source: string;
+    source_type: string;
+    evidence?: unknown;
+    findings: Finding[];
+    raw_count?: number;
+    parsed_count?: number;
+    warning_count?: number;
+    asset?: string;
+    notes?: string;
+    metadata?: Record<string, unknown>;
+  }) {
+    const warningCount = input.warning_count ?? 0;
+
+    const payload = {
+      module_id: input.module_id,
+      module_name: input.module_name,
+      source: input.source,
+      source_type: input.source_type,
+      asset: input.asset ?? inferRunAsset(input.evidence, input.findings, "unknown"),
+      status: warningCount > 0 ? "warning" : "success",
+      raw_count: input.raw_count ?? readNumericValue([input.evidence, input.metadata], ["raw_count", "raw_event_count", "line_count", "record_count"], 0),
+      parsed_count: input.parsed_count ?? readNumericValue([input.evidence, input.metadata], ["parsed_count", "parsed_event_count", "entry_count", "record_count"], 0),
+      finding_count: input.findings.length,
+      high_count: countSeverity(input.findings, "high"),
+      medium_count: countSeverity(input.findings, "medium"),
+      low_count: countSeverity(input.findings, "low"),
+      info_count: countSeverity(input.findings, "info"),
+      warning_count: warningCount,
+      report_ids: [],
+      notes: input.notes ?? null,
+      metadata: input.metadata ?? {}
+    };
+
+    try {
+      const response = await fetch(`${API_BASE}/api/runs`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        await loadRunHistory();
+      } else {
+        console.warn("Unable to record evidence run:", await response.text());
+      }
+    } catch (err) {
+      console.warn("Unable to record evidence run:", err);
+    }
+  }
+
+  function countSeverity(findings: Finding[], severity: string) {
+    return findings.filter((finding) => finding.severity === severity).length;
+  }
+
+  function readNumericValue(sources: unknown, keys: string[], fallback: number) {
+    const candidates = Array.isArray(sources) ? sources : [sources];
+
+    for (const candidate of candidates) {
+      if (!candidate || typeof candidate !== "object") {
+        continue;
+      }
+
+      const record = candidate as Record<string, unknown>;
+
+      for (const key of keys) {
+        const value = record[key];
+
+        if (typeof value === "number" && Number.isFinite(value)) {
+          return value;
+        }
+
+        if (Array.isArray(value)) {
+          return value.length;
+        }
+      }
+    }
+
+    return fallback;
+  }
+
+  function inferRunAsset(evidence: unknown, findings: Finding[], fallback: string) {
+    const affectedAsset = findings.find((finding) => finding.affected_asset)?.affected_asset;
+
+    if (affectedAsset) {
+      return affectedAsset;
+    }
+
+    if (evidence && typeof evidence === "object") {
+      const record = evidence as Record<string, unknown>;
+      const directAsset = record.asset ?? record.hostname ?? record.computer ?? record.computer_name ?? record.device_name;
+
+      if (typeof directAsset === "string" && directAsset.trim()) {
+        return directAsset;
+      }
+
+      const events = record.events;
+
+      if (Array.isArray(events) && events.length > 0 && events[0] && typeof events[0] === "object") {
+        const firstEvent = events[0] as Record<string, unknown>;
+        const eventComputer = firstEvent.computer ?? firstEvent.hostname ?? firstEvent.asset;
+
+        if (typeof eventComputer === "string" && eventComputer.trim()) {
+          return eventComputer;
+        }
+      }
+    }
+
+    return fallback;
+  }
+
   async function loadReportArchive() {
     try {
       const response = await fetch(`${API_BASE}/api/reports/archive`);
@@ -559,6 +674,17 @@ function App() {
       setEndpointFindings(findings);
       setEndpointSelectedId(findings[0]?.finding_id ?? "");
       setEndpointSource(file.name);
+
+      await recordEvidenceRun({
+        module_id: "endpoint",
+        module_name: "Endpoint Security",
+        source: file.name,
+        source_type: "endpoint_import",
+        evidence: data.evidence ?? data,
+        findings,
+        raw_count: 1,
+        parsed_count: 1
+      });
     } catch (err) {
       setImportError(err instanceof Error ? err.message : "Unable to import endpoint evidence.");
     } finally {
@@ -587,6 +713,17 @@ function App() {
       setEndpointSelectedId(findings[0]?.finding_id ?? "");
       setEndpointSource(data.evidence_path ?? "Local endpoint collection");
       setStatusMessage("Local endpoint evidence collected.");
+
+      await recordEvidenceRun({
+        module_id: "endpoint",
+        module_name: "Endpoint Security",
+        source: data.evidence_path ?? "Local endpoint collection",
+        source_type: "endpoint_local_collection",
+        evidence: data.evidence ?? data,
+        findings,
+        raw_count: 1,
+        parsed_count: 1
+      });
     } catch (err) {
       setImportError(err instanceof Error ? err.message : "Unable to collect local endpoint evidence.");
       setStatusMessage("");
@@ -635,6 +772,18 @@ function App() {
       setDnsSelectedId(findings[0]?.finding_id ?? "");
       setDnsSource(file.name);
       setDnsWarnings(data.warnings ?? []);
+
+      await recordEvidenceRun({
+        module_id: "dns",
+        module_name: "DNS Hygiene",
+        source: file.name,
+        source_type: "dns_import",
+        evidence: data.evidence ?? data,
+        findings,
+        raw_count: readNumericValue([data.evidence, data], ["raw_count", "record_count", "total_records"], findings.length),
+        parsed_count: readNumericValue([data.evidence, data], ["parsed_count", "record_count", "total_records"], findings.length),
+        warning_count: (data.warnings ?? []).length
+      });
     } catch (err) {
       setImportError(err instanceof Error ? err.message : "Unable to import DNS JSON evidence.");
     } finally {
@@ -672,6 +821,18 @@ function App() {
       setDnsSelectedId(findings[0]?.finding_id ?? "");
       setDnsSource(file.name);
       setDnsWarnings(data.warnings ?? []);
+
+      await recordEvidenceRun({
+        module_id: "dns",
+        module_name: "DNS Hygiene",
+        source: file.name,
+        source_type: "dns_import",
+        evidence: data.evidence ?? data,
+        findings,
+        raw_count: readNumericValue([data.evidence, data], ["raw_count", "record_count", "total_records"], findings.length),
+        parsed_count: readNumericValue([data.evidence, data], ["parsed_count", "record_count", "total_records"], findings.length),
+        warning_count: (data.warnings ?? []).length
+      });
     } catch (err) {
       setImportError(err instanceof Error ? err.message : "Unable to import DNS CSV evidence.");
     } finally {
@@ -733,6 +894,18 @@ function App() {
       setAppLogSelectedId(findings[0]?.finding_id ?? "");
       setAppLogSource(file.name);
       setAppLogWarnings(data.warnings ?? []);
+
+      await recordEvidenceRun({
+        module_id: "app-logs",
+        module_name: "Application Logs",
+        source: file.name,
+        source_type: "app_log_import",
+        evidence: data.evidence ?? data,
+        findings,
+        raw_count: readNumericValue([data.evidence, data], ["raw_count", "line_count", "entry_count", "record_count"], findings.length),
+        parsed_count: readNumericValue([data.evidence, data], ["parsed_count", "entry_count", "record_count"], findings.length),
+        warning_count: (data.warnings ?? []).length
+      });
     } catch (err) {
       setImportError(err instanceof Error ? err.message : "Unable to import application log.");
     } finally {
@@ -761,6 +934,21 @@ function App() {
       setWindowsEventSource(data.output_path ? `Local collection: ${data.output_path}` : "Local Windows Event collection");
       setWindowsEventWarnings(data.warnings ?? []);
       setStatusMessage(`Local Windows Event collection completed. Events parsed: ${data.parsed_event_count ?? 0}. Findings: ${findings.length}.`);
+
+      await recordEvidenceRun({
+        module_id: "windows-events",
+        module_name: "Windows Events",
+        source: data.output_path ? `Local collection: ${data.output_path}` : "Local Windows Event collection",
+        source_type: "windows_event_log_local_collection",
+        evidence: data.evidence ?? data,
+        findings,
+        raw_count: readNumericValue([data.evidence, data], ["raw_event_count", "raw_count"], 0),
+        parsed_count: readNumericValue([data.evidence, data], ["parsed_event_count", "parsed_count"], data.parsed_event_count ?? 0),
+        warning_count: (data.warnings ?? []).length,
+        metadata: {
+          output_path: data.output_path ?? null
+        }
+      });
     } catch (err) {
       setImportError(err instanceof Error ? err.message : "Unable to collect local Windows Event evidence.");
     }
@@ -801,6 +989,18 @@ function App() {
       setWindowsEventSelectedId(findings[0]?.finding_id ?? "");
       setWindowsEventSource(file.name);
       setWindowsEventWarnings(data.warnings ?? []);
+
+      await recordEvidenceRun({
+        module_id: "windows-events",
+        module_name: "Windows Events",
+        source: file.name,
+        source_type: "windows_event_import",
+        evidence: data.evidence ?? data,
+        findings,
+        raw_count: readNumericValue([data.evidence, data], ["raw_event_count", "raw_count"], findings.length),
+        parsed_count: readNumericValue([data.evidence, data], ["parsed_event_count", "parsed_count"], findings.length),
+        warning_count: (data.warnings ?? []).length
+      });
     } catch (err) {
       setImportError(err instanceof Error ? err.message : "Unable to import Windows Event evidence.");
     } finally {
