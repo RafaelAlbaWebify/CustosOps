@@ -120,3 +120,35 @@ Direct navigation, backend/frontend startup timing, and workspace switching coul
 This is frontend lifecycle stabilization only.
 
 It does not change collectors, analyzers, or remediation behavior.
+
+
+## Slice 26D-1 - Apply Redaction to Generated Reports
+
+### Added
+
+Report generation now applies the active local redaction settings before returning or archiving report content.
+
+Covered report endpoints:
+
+- Endpoint
+- DNS
+- Application Logs
+- Windows Events
+- Executive Summary
+
+### Behavior
+
+- HTML and Markdown reports are redacted as rendered text.
+- JSON reports are redacted as structured values and then serialized again, preserving valid JSON.
+- Archive content receives the redacted report content.
+- Response payloads include redaction metadata:
+  - enabled
+  - profile_name
+  - changed
+  - applied_rules
+
+### Safety
+
+Redaction does not modify source evidence, local collections, findings in memory, or host configuration.
+
+It only applies to generated report content.

@@ -456,3 +456,8 @@ CustosOps now exposes a redaction preview panel so operators can test local reda
 ## Completed Milestone 26C-3 - Workspace Lifecycle Stabilization
 
 CustosOps now reloads workspace data on workspace activation, avoiding manual Refresh requirements for Redaction, Run History, Reports, Archive, and sample evidence workspaces.
+
+
+## Completed Milestone 26D-1 - Apply Redaction to Generated Reports
+
+CustosOps now applies active local redaction settings to generated report content across Endpoint, DNS, Application Logs, Windows Events, and Executive Summary reports.

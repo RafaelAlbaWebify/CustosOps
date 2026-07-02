@@ -1,3 +1,4 @@
+import json
 from fastapi import APIRouter, HTTPException, Response
 
 from app.schemas.app_log_report import AppLogReportRequest
@@ -9,12 +10,88 @@ from app.services.dns_report import build_dns_report
 from app.services.endpoint_report import build_endpoint_report
 from app.services.windows_event_report import build_windows_event_report
 from app.services.executive_summary_report import build_executive_summary_report
+from app.services.redaction_engine import redact_text
+from app.services.redaction_settings import get_redaction_settings
 from app.services.report_archive import (
     delete_archived_report,
     get_archived_report,
     list_archived_reports,
     save_archived_report,
 )
+
+
+
+def _merge_rule_ids(target: list[str], source: list[str]) -> None:
+    for rule_id in source:
+        if rule_id not in target:
+            target.append(rule_id)
+
+
+def _redact_report_value(value: object, settings) -> tuple[object, list[str]]:
+    if isinstance(value, str):
+        return redact_text(value, settings=settings)
+
+    if isinstance(value, list):
+        redacted_items = []
+        applied_rules: list[str] = []
+
+        for item in value:
+            redacted_item, item_rules = _redact_report_value(item, settings)
+            redacted_items.append(redacted_item)
+            _merge_rule_ids(applied_rules, item_rules)
+
+        return redacted_items, applied_rules
+
+    if isinstance(value, dict):
+        redacted_dict = {}
+        applied_rules: list[str] = []
+
+        for key, item in value.items():
+            redacted_item, item_rules = _redact_report_value(item, settings)
+            redacted_dict[key] = redacted_item
+            _merge_rule_ids(applied_rules, item_rules)
+
+        return redacted_dict, applied_rules
+
+    return value, []
+
+
+def _apply_report_redaction(payload: dict) -> dict:
+    content = payload.get("content")
+    settings = get_redaction_settings()
+
+    if not isinstance(content, str):
+        payload["redaction"] = {
+            "enabled": settings.enabled,
+            "profile_name": settings.profile_name,
+            "changed": False,
+            "applied_rules": [],
+        }
+        return payload
+
+    original = content
+    applied_rules: list[str] = []
+
+    if str(payload.get("format", "")).lower() == "json":
+        try:
+            parsed = json.loads(content)
+            redacted_value, applied_rules = _redact_report_value(parsed, settings)
+            redacted = json.dumps(redacted_value, indent=2)
+        except Exception:
+            redacted, applied_rules = redact_text(content, settings=settings)
+    else:
+        redacted, applied_rules = redact_text(content, settings=settings)
+
+    payload["content"] = redacted
+    payload["redaction"] = {
+        "enabled": settings.enabled,
+        "profile_name": settings.profile_name,
+        "changed": redacted != original,
+        "applied_rules": applied_rules,
+    }
+
+    return payload
+
 
 router = APIRouter(prefix="/api/reports")
 
@@ -78,7 +155,7 @@ def create_endpoint_report(request: EndpointReportRequest) -> dict:
         report_format=request.format,
     )
 
-    payload = response.model_dump()
+    payload = _apply_report_redaction(response.model_dump())
 
     if request.archive:
         entry = save_archived_report(
@@ -103,7 +180,7 @@ def create_dns_report(request: DnsReportRequest) -> dict:
         report_format=request.format,
     )
 
-    payload = response.model_dump()
+    payload = _apply_report_redaction(response.model_dump())
 
     if request.archive:
         entry = save_archived_report(
@@ -128,7 +205,7 @@ def create_app_log_report(request: AppLogReportRequest) -> dict:
         report_format=request.format,
     )
 
-    payload = response.model_dump()
+    payload = _apply_report_redaction(response.model_dump())
 
     if request.archive:
         entry = save_archived_report(
@@ -153,7 +230,7 @@ def create_windows_event_report(request: WindowsEventReportRequest) -> dict:
         report_format=request.format,
     )
 
-    payload = response.model_dump()
+    payload = _apply_report_redaction(response.model_dump())
 
     if request.archive:
         entry = save_archived_report(
@@ -178,7 +255,7 @@ def create_executive_summary_report(request: ExecutiveSummaryReportRequest) -> d
         report_format=request.format,
     )
 
-    payload = response.model_dump()
+    payload = _apply_report_redaction(response.model_dump())
 
     if request.archive:
         entry = save_archived_report(
