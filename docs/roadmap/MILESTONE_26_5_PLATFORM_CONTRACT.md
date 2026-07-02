@@ -53,3 +53,10 @@ The initial platform audit expected the Application Logs workspace id as `app-lo
 The actual frontend workspace id is `app-log`.
 
 The audit and contract documentation now use the real frontend workspace id so the platform contract reflects the implemented app.
+
+
+### 26.5A Repair - App Log Lifecycle Coverage
+
+The `app-log` workspace now has explicit lifecycle dispatcher coverage.
+
+Current behavior is intentionally import-driven until IIS/Application local collection is added.

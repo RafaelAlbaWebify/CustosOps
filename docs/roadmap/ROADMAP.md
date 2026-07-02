@@ -486,3 +486,8 @@ Planned next:
 ## M26.5A Repair - App Log Workspace Contract
 
 The platform contract audit now uses the real Application Logs workspace id: `app-log`.
+
+
+## M26.5A Repair - App Log Lifecycle Coverage
+
+The platform contract audit now has explicit lifecycle coverage for the existing `app-log` workspace.

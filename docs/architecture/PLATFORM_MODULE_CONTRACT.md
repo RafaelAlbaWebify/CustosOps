@@ -111,3 +111,12 @@ A new module is not done until it has:
 - archive behavior where applicable
 - workspace lifecycle coverage
 - validation proof
+
+
+## Current Application Logs lifecycle note
+
+The current `app-log` workspace is import-driven.
+
+It has explicit workspace lifecycle coverage, but it does not auto-load sample or local evidence yet.
+
+Before Milestone 27 adds IIS/Application local collection, `app-log` should receive a real local/sample loader that follows the same module contract as Endpoint, DNS, and Windows Events.

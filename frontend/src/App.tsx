@@ -711,6 +711,12 @@ function App() {
       return;
     }
 
+    if (workspace === "app-log") {
+      // App Logs is currently import-driven. Keep explicit lifecycle coverage
+      // so the workspace contract remains complete before local collection is added.
+      return;
+    }
+
     if (workspace === "windows-events") {
       if (!windowsEventEvidence && windowsEventFindings.length === 0) {
         await loadWindowsEventSample();
