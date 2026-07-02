@@ -481,3 +481,8 @@ Planned next:
 - 26.5B API helper extraction
 - 26.5C Workspace component extraction
 - 26.5D Evidence module helper contract
+
+
+## M26.5A Repair - App Log Workspace Contract
+
+The platform contract audit now uses the real Application Logs workspace id: `app-log`.

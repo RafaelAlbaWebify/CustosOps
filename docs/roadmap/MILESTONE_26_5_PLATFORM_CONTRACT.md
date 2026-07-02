@@ -44,3 +44,12 @@ Move Run History and Redaction workspaces into separate components first.
 ### 26.5D - Evidence module helper contract
 
 Create reusable helper patterns for evidence modules before adding IIS/Application local collection.
+
+
+### 26.5A Repair - App Log Workspace Contract
+
+The initial platform audit expected the Application Logs workspace id as `app-logs`.
+
+The actual frontend workspace id is `app-log`.
+
+The audit and contract documentation now use the real frontend workspace id so the platform contract reflects the implemented app.

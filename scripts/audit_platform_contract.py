@@ -11,7 +11,7 @@ EXPECTED_WORKSPACES = [
     "overview",
     "endpoint",
     "dns",
-    "app-logs",
+    "app-log",
     "windows-events",
     "reports",
     "archive",

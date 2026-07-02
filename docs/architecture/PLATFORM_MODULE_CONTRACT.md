@@ -69,7 +69,7 @@ Expected behavior:
 - overview loads module status.
 - endpoint loads sample endpoint evidence when no evidence exists.
 - dns loads sample DNS evidence when no evidence exists.
-- app-logs should have explicit lifecycle coverage before more app-log work.
+- app-log should have explicit lifecycle coverage before more app-log work.
 - windows-events loads sample/local state when needed.
 - reports and archive load report archive.
 - run-history loads run history.
