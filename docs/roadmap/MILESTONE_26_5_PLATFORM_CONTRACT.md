@@ -60,3 +60,31 @@ The audit and contract documentation now use the real frontend workspace id so t
 The `app-log` workspace now has explicit lifecycle dispatcher coverage.
 
 Current behavior is intentionally import-driven until IIS/Application local collection is added.
+
+
+## Slice 26.5B - API Helper Extraction
+
+### Added
+
+- Frontend API helper:
+  - frontend/src/services/api.ts
+
+### Changed
+
+- App.tsx now uses:
+  - apiFetch()
+  - apiUrl()
+
+instead of constructing every backend URL directly with API_BASE.
+
+### Scope
+
+This is intentionally behavior-preserving.
+
+It does not move workspace logic yet.
+It does not change backend routes.
+It does not change report generation, redaction, run history, archive behavior, or collectors.
+
+### Why
+
+This is the first safe step toward reducing App.tsx complexity before adding more evidence modules.

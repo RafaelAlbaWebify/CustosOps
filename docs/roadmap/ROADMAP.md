@@ -491,3 +491,10 @@ The platform contract audit now uses the real Application Logs workspace id: `ap
 ## M26.5A Repair - App Log Lifecycle Coverage
 
 The platform contract audit now has explicit lifecycle coverage for the existing `app-log` workspace.
+
+
+## M26.5B - API Helper Extraction
+
+CustosOps now has a frontend API helper layer for backend URL construction.
+
+This is the first controlled extraction step before moving workspace components out of App.tsx.

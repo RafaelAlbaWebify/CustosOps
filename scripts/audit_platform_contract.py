@@ -161,6 +161,33 @@ def main():
         report_lines.append(f"- redaction_engine.py L{line_no}: {pattern}: `{line}`")
 
     report_lines.append("")
+    report_lines.append("## API helper extraction")
+    report_lines.append("")
+
+    api_helper_path = root / "frontend" / "src" / "services" / "api.ts"
+    api_helper_text = read(api_helper_path)
+
+    if api_helper_path.exists():
+        report_lines.append("- OK: frontend API helper exists at frontend/src/services/api.ts.")
+    else:
+        report_lines.append("- HIGH: frontend API helper is missing.")
+
+    if "apiFetch(" in app_text:
+        report_lines.append("- OK: App.tsx uses apiFetch helper.")
+    else:
+        report_lines.append("- CHECK: App.tsx does not appear to use apiFetch.")
+
+    if "API_BASE" in app_text:
+        report_lines.append("- MEDIUM: App.tsx still references API_BASE directly.")
+    else:
+        report_lines.append("- OK: App.tsx does not reference API_BASE directly.")
+
+    if "fetch(`${API_BASE}" in app_text:
+        report_lines.append("- HIGH: App.tsx still contains direct fetch API_BASE calls.")
+    else:
+        report_lines.append("- OK: App.tsx no longer contains direct fetch API_BASE calls.")
+
+    report_lines.append("")
     report_lines.append("## Initial findings")
     report_lines.append("")
 

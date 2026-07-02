@@ -1,7 +1,7 @@
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { apiFetch, apiUrl } from "./services/api";
 import "./styles.css";
 
-const API_BASE = "http://127.0.0.1:8000";
 const SESSION_STORAGE_KEY = "custosops.sessionEvidence.v1";
 const REVIEW_STORAGE_KEY = "custosops.findingReviews.v1";
 
@@ -384,7 +384,7 @@ function App() {
 
   async function checkBackend() {
     try {
-      const response = await fetch(`${API_BASE}/api/health`);
+      const response = await apiFetch("/api/health");
       setBackendOnline(response.ok);
     } catch {
       setBackendOnline(false);
@@ -393,7 +393,7 @@ function App() {
 
   async function loadModules() {
     try {
-      const response = await fetch(`${API_BASE}/api/modules`);
+      const response = await apiFetch("/api/modules");
 
       if (!response.ok) {
         return;
@@ -412,7 +412,7 @@ function App() {
 
   async function loadEndpointSample() {
     try {
-      const response = await fetch(`${API_BASE}/api/endpoint/sample-findings`);
+      const response = await apiFetch("/api/endpoint/sample-findings");
 
       if (!response.ok) {
         return;
@@ -431,7 +431,7 @@ function App() {
 
   async function loadDnsSample() {
     try {
-      const response = await fetch(`${API_BASE}/api/dns/sample-findings`);
+      const response = await apiFetch("/api/dns/sample-findings");
 
       if (!response.ok) {
         return;
@@ -450,7 +450,7 @@ function App() {
 
   async function loadWindowsEventSample() {
     try {
-      const response = await fetch(`${API_BASE}/api/windows-events/sample-findings`);
+      const response = await apiFetch("/api/windows-events/sample-findings");
 
       if (!response.ok) {
         return;
@@ -470,7 +470,7 @@ function App() {
 
   async function loadRedactionSettings() {
     try {
-      const response = await fetch(`${API_BASE}/api/redaction/settings`);
+      const response = await apiFetch("/api/redaction/settings");
 
       if (!response.ok) {
         throw new Error(await response.text());
@@ -488,7 +488,7 @@ function App() {
     resetMessages();
 
     try {
-      const response = await fetch(`${API_BASE}/api/redaction/settings`, {
+      const response = await apiFetch("/api/redaction/settings", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json"
@@ -517,7 +517,7 @@ function App() {
     resetMessages();
 
     try {
-      const response = await fetch(`${API_BASE}/api/redaction/settings/reset`, {
+      const response = await apiFetch("/api/redaction/settings/reset", {
         method: "POST"
       });
 
@@ -540,7 +540,7 @@ function App() {
 
   async function loadRunHistory() {
     try {
-      const response = await fetch(`${API_BASE}/api/runs?limit=100`);
+      const response = await apiFetch("/api/runs?limit=100");
 
       if (!response.ok) {
         throw new Error(await response.text());
@@ -558,7 +558,7 @@ function App() {
     resetMessages();
 
     try {
-      const response = await fetch(`${API_BASE}/api/runs`, {
+      const response = await apiFetch("/api/runs", {
         method: "DELETE"
       });
 
@@ -611,7 +611,7 @@ function App() {
     };
 
     try {
-      const response = await fetch(`${API_BASE}/api/runs`, {
+      const response = await apiFetch("/api/runs", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -743,7 +743,7 @@ function App() {
 
   async function loadReportArchive() {
     try {
-      const response = await fetch(`${API_BASE}/api/reports/archive`);
+      const response = await apiFetch("/api/reports/archive");
 
       if (!response.ok) {
         return;
@@ -822,7 +822,7 @@ function App() {
         return;
       }
 
-      const response = await fetch(`${API_BASE}/api/endpoint/analyze`, {
+      const response = await apiFetch("/api/endpoint/analyze", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -864,7 +864,7 @@ function App() {
     setStatusMessage("Collecting local endpoint evidence...");
 
     try {
-      const response = await fetch(`${API_BASE}/api/endpoint/collect-local`, {
+      const response = await apiFetch("/api/endpoint/collect-local", {
         method: "POST"
       });
 
@@ -919,7 +919,7 @@ function App() {
         return;
       }
 
-      const response = await fetch(`${API_BASE}/api/dns/analyze`, {
+      const response = await apiFetch("/api/dns/analyze", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -971,7 +971,7 @@ function App() {
       const body = new FormData();
       body.append("file", file);
 
-      const response = await fetch(`${API_BASE}/api/dns/import-csv`, {
+      const response = await apiFetch("/api/dns/import-csv", {
         method: "POST",
         body
       });
@@ -1011,7 +1011,7 @@ function App() {
     resetMessages();
 
     try {
-      const response = await fetch(`${API_BASE}/api/dns/csv-template`);
+      const response = await apiFetch("/api/dns/csv-template");
 
       if (!response.ok) {
         throw new Error(await response.text());
@@ -1038,7 +1038,7 @@ function App() {
     try {
       const text = await file.text();
 
-      const response = await fetch(`${API_BASE}/api/app-log/import`, {
+      const response = await apiFetch("/api/app-log/import", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -1084,7 +1084,7 @@ function App() {
     resetMessages();
 
     try {
-      const response = await fetch(`${API_BASE}/api/windows-events/collect-local`, {
+      const response = await apiFetch("/api/windows-events/collect-local", {
         method: "POST"
       });
 
@@ -1137,7 +1137,7 @@ function App() {
     try {
       const text = await file.text();
 
-      const response = await fetch(`${API_BASE}/api/windows-events/import`, {
+      const response = await apiFetch("/api/windows-events/import", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -1271,7 +1271,7 @@ function App() {
     }
 
     try {
-      const response = await fetch(`${API_BASE}/api/reports/executive-summary`, {
+      const response = await apiFetch("/api/reports/executive-summary", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -1333,7 +1333,7 @@ function App() {
     const reportEvidence = buildReportEvidence(reportType, evidence, reportFindings);
 
     try {
-      const response = await fetch(`${API_BASE}/api/reports/${route}`, {
+      const response = await apiFetch(`/api/reports/${route}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -1363,7 +1363,7 @@ function App() {
     resetMessages();
 
     try {
-      const response = await fetch(`${API_BASE}/api/reports/archive/${entry.id}`, {
+      const response = await apiFetch(`/api/reports/archive/${entry.id}`, {
         method: "DELETE"
       });
 
@@ -1379,11 +1379,11 @@ function App() {
   }
 
   function handleArchiveOpen(entry: ArchiveEntry) {
-    window.open(`${API_BASE}/api/reports/archive/${entry.id}/open`, "_blank", "noopener,noreferrer");
+    window.open(apiUrl(`/api/reports/archive/${entry.id}/open`), "_blank", "noopener,noreferrer");
   }
 
   function handleArchiveDownload(entry: ArchiveEntry) {
-    window.open(`${API_BASE}/api/reports/archive/${entry.id}/download`, "_blank", "noopener,noreferrer");
+    window.open(apiUrl(`/api/reports/archive/${entry.id}/download`), "_blank", "noopener,noreferrer");
   }
 
   function resetMessages() {
@@ -1797,7 +1797,7 @@ function RedactionSettingsWorkspace(props: {
     setPreviewResult(null);
 
     try {
-      const response = await fetch(`${API_BASE}/api/redaction/preview`, {
+      const response = await apiFetch("/api/redaction/preview", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
