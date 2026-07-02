@@ -466,3 +466,18 @@ CustosOps now applies active local redaction settings to generated report conten
 ## Completed Milestone 26E - Redaction and Lifecycle Proof Pack
 
 CustosOps now includes a reusable proof pack exporter for redaction, report redaction, workspace lifecycle hooks, backend tests, frontend build, and API smoke validation.
+
+
+## Milestone 26.5 - Platform Contract and UI Reliability Gate
+
+CustosOps now has a platform module contract and audit tooling to prevent future evidence modules from increasing frontend fragility.
+
+Initial slice:
+
+- 26.5A Platform Contract and Audit
+
+Planned next:
+
+- 26.5B API helper extraction
+- 26.5C Workspace component extraction
+- 26.5D Evidence module helper contract
