@@ -461,3 +461,8 @@ CustosOps now reloads workspace data on workspace activation, avoiding manual Re
 ## Completed Milestone 26D-1 - Apply Redaction to Generated Reports
 
 CustosOps now applies active local redaction settings to generated report content across Endpoint, DNS, Application Logs, Windows Events, and Executive Summary reports.
+
+
+## Completed Milestone 26E - Redaction and Lifecycle Proof Pack
+
+CustosOps now includes a reusable proof pack exporter for redaction, report redaction, workspace lifecycle hooks, backend tests, frontend build, and API smoke validation.

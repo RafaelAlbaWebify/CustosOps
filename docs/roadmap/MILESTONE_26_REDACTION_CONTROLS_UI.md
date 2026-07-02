@@ -152,3 +152,31 @@ Covered report endpoints:
 Redaction does not modify source evidence, local collections, findings in memory, or host configuration.
 
 It only applies to generated report content.
+
+
+## Slice 26E - Redaction and Lifecycle Proof Pack
+
+### Added
+
+- Reusable proof pack exporter:
+  - scripts/export-redaction-lifecycle-proof-pack.ps1
+  - scripts/export_redaction_lifecycle_proof_pack.py
+
+### Validates
+
+- Workspace lifecycle hooks.
+- Redaction settings API.
+- Redaction preview API.
+- Generated report redaction.
+- Executive summary report redaction.
+- Report archive API availability.
+- Run history API availability.
+- Backend tests.
+- Frontend build.
+- Git commit and tag state.
+
+### Output
+
+The script creates a ZIP in the user's Downloads folder.
+
+This can be used before demos, releases, reviews, and milestone handoffs.
