@@ -429,3 +429,15 @@ Slice 25A adds the backend run history store and API.
 ## In Progress Milestone 25 - Run History Workspace UI
 
 CustosOps now exposes the backend evidence run history through a Run History workspace. Automatic workflow recording is the next slice.
+
+
+## Completed Milestone 25B-3 - Run History record quality
+
+CustosOps improved Windows Event local collection run records so successful zero-finding collections show as successful evidence runs with local asset metadata.
+
+
+## In Progress Milestone 26 - Redaction Controls UI
+
+CustosOps is adding operator-controlled redaction settings.
+
+Slice 26A adds the backend settings store and API.

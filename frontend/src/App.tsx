@@ -470,6 +470,7 @@ function App() {
     parsed_count?: number;
     warning_count?: number;
     asset?: string;
+    status?: "success" | "warning" | "failed";
     notes?: string;
     metadata?: Record<string, unknown>;
   }) {
@@ -481,7 +482,7 @@ function App() {
       source: input.source,
       source_type: input.source_type,
       asset: input.asset ?? inferRunAsset(input.evidence, input.findings, "unknown"),
-      status: warningCount > 0 ? "warning" : "success",
+      status: input.status ?? (warningCount > 0 ? "warning" : "success"),
       raw_count: input.raw_count ?? readNumericValue([input.evidence, input.metadata], ["raw_count", "raw_event_count", "line_count", "record_count"], 0),
       parsed_count: input.parsed_count ?? readNumericValue([input.evidence, input.metadata], ["parsed_count", "parsed_event_count", "entry_count", "record_count"], 0),
       finding_count: input.findings.length,
@@ -945,8 +946,12 @@ function App() {
         raw_count: readNumericValue([data.evidence, data], ["raw_event_count", "raw_count"], 0),
         parsed_count: readNumericValue([data.evidence, data], ["parsed_event_count", "parsed_count"], data.parsed_event_count ?? 0),
         warning_count: (data.warnings ?? []).length,
+        asset: typeof data.asset === "string" && data.asset.trim() ? data.asset : inferRunAsset(data.evidence ?? data, findings, "local-host"),
+        status: "success",
+        notes: findings.length === 0 ? "Local Windows Event collection completed with no findings." : undefined,
         metadata: {
-          output_path: data.output_path ?? null
+          output_path: data.output_path ?? null,
+          parser_warnings: data.warnings ?? []
         }
       });
     } catch (err) {

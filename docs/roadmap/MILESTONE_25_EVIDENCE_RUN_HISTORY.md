@@ -114,3 +114,23 @@ Run history stores operational metadata only.
 It does not upload evidence.
 
 It does not perform remediation.
+
+
+## Slice 25B-3 - Run History record quality
+
+### Added
+
+Windows Event local collection run records now include better operational metadata.
+
+Improvements:
+
+- Backend returns the local computer name as the asset for local Windows Event collection.
+- Frontend records successful local collections with status success, even when zero matching events are parsed.
+- Parser warnings are preserved in metadata.
+- Zero-finding local Windows Event collections include a note explaining that the collection completed with no findings.
+
+### Reason
+
+A collection with zero findings is still a successful operational evidence run.
+
+Warnings about an empty event window should not make the whole collection look failed or unhealthy.

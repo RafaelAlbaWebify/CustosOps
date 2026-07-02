@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, HTTPException
@@ -14,6 +15,12 @@ router = APIRouter(prefix="/api/windows-events")
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 SAMPLE_PATH = PROJECT_ROOT / "samples" / "windows_events" / "sample-windows-events.json"
+
+
+
+
+def _local_asset_name() -> str:
+    return os.environ.get("COMPUTERNAME") or os.environ.get("HOSTNAME") or "local-host"
 
 
 @router.post("/import")
@@ -61,6 +68,7 @@ def collect_local_windows_event_evidence_payload() -> dict:
     findings = analyze_windows_event_evidence(evidence)
 
     return {
+        "asset": _local_asset_name(),
         "input_type": "local_windows_event_collection",
         "output_path": collected["relative_output_path"],
         "evidence": evidence.model_dump(),
