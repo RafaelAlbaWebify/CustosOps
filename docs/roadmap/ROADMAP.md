@@ -451,3 +451,8 @@ CustosOps now has a backend redaction engine and preview API. Report wiring is t
 ## In Progress Milestone 26 - Redaction Preview UI
 
 CustosOps now exposes a redaction preview panel so operators can test local redaction rules before report generation uses them.
+
+
+## Completed Milestone 26C-3 - Workspace Lifecycle Stabilization
+
+CustosOps now reloads workspace data on workspace activation, avoiding manual Refresh requirements for Redaction, Run History, Reports, Archive, and sample evidence workspaces.

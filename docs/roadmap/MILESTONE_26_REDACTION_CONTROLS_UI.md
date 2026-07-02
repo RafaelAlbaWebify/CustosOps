@@ -91,3 +91,32 @@ Report generation wiring is intentionally left for the next slice so each report
 ### Notes
 
 This lets operators test the current redaction profile before report generation is wired to use it.
+
+
+## Slice 26C-3 - Workspace Lifecycle Stabilization
+
+### Problem
+
+Several workspaces depended on initial app startup loading or manual Refresh.
+
+Direct navigation, backend/frontend startup timing, and workspace switching could leave screens in a loading or stale state until the operator manually refreshed.
+
+### Added
+
+- Active workspace lifecycle effect.
+- Idempotent ensureWorkspaceData dispatcher.
+- Redaction settings load when opening Redaction.
+- Run history load when opening Run History.
+- Archive load when opening Reports or Archive.
+- Sample evidence load when opening Endpoint, DNS, or Windows Events if no evidence is present.
+- One delayed retry after workspace activation to handle backend launch timing.
+- Successful redaction/run-history loads clear stale report errors.
+- Session restore now supports zero-finding evidence.
+- Session persistence now uses evidence presence, not only finding count.
+- Endpoint, DNS, and App Log report buttons are now evidence-based.
+
+### Safety
+
+This is frontend lifecycle stabilization only.
+
+It does not change collectors, analyzers, or remediation behavior.

@@ -231,7 +231,27 @@ function App() {
   }, [reviewRecords]);
 
   useEffect(() => {
-    if (endpointFindings.length === 0 && dnsFindings.length === 0 && appLogFindings.length === 0 && windowsEventFindings.length === 0) {
+    void ensureWorkspaceData(activeWorkspace);
+
+    const retryHandle = window.setTimeout(() => {
+      void ensureWorkspaceData(activeWorkspace);
+    }, 1200);
+
+    return () => window.clearTimeout(retryHandle);
+  }, [activeWorkspace]);
+
+  useEffect(() => {
+    const hasPersistableEvidence =
+      Boolean(endpointEvidence) ||
+      Boolean(dnsEvidence) ||
+      Boolean(appLogEvidence) ||
+      Boolean(windowsEventEvidence) ||
+      endpointFindings.length > 0 ||
+      dnsFindings.length > 0 ||
+      appLogFindings.length > 0 ||
+      windowsEventFindings.length > 0;
+
+    if (!hasPersistableEvidence) {
       return;
     }
 
@@ -282,7 +302,10 @@ function App() {
     appLogFindings,
     appLogSource,
     appLogWarnings,
-    windowsEventEvidence
+    windowsEventEvidence,
+    windowsEventFindings,
+    windowsEventSource,
+    windowsEventWarnings
   ]);
 
   function restoreSessionEvidence(): { endpoint: boolean; dns: boolean; appLog: boolean; windowsEvents: boolean } {
@@ -302,8 +325,8 @@ function App() {
 
       const parsed = JSON.parse(raw) as PersistedEvidenceState;
 
-      if (parsed.endpoint?.findings?.length) {
-        const findings = normalizeFindings(parsed.endpoint.findings);
+      if (parsed.endpoint?.evidence || parsed.endpoint?.findings?.length) {
+        const findings = normalizeFindings(parsed.endpoint.findings ?? []);
         setEndpointEvidence(parsed.endpoint.evidence ?? null);
         setEndpointFindings(findings);
         setEndpointSelectedId(findings[0]?.finding_id ?? "");
@@ -311,8 +334,8 @@ function App() {
         restored.endpoint = true;
       }
 
-      if (parsed.dns?.findings?.length) {
-        const findings = normalizeFindings(parsed.dns.findings);
+      if (parsed.dns?.evidence || parsed.dns?.findings?.length) {
+        const findings = normalizeFindings(parsed.dns.findings ?? []);
         setDnsEvidence(parsed.dns.evidence ?? null);
         setDnsFindings(findings);
         setDnsSelectedId(findings[0]?.finding_id ?? "");
@@ -321,8 +344,8 @@ function App() {
         restored.dns = true;
       }
 
-      if (parsed.appLog?.findings?.length) {
-        const findings = normalizeFindings(parsed.appLog.findings);
+      if (parsed.appLog?.evidence || parsed.appLog?.findings?.length) {
+        const findings = normalizeFindings(parsed.appLog.findings ?? []);
         setAppLogEvidence(parsed.appLog.evidence ?? null);
         setAppLogFindings(findings);
         setAppLogSelectedId(findings[0]?.finding_id ?? "");
@@ -331,8 +354,8 @@ function App() {
         restored.appLog = true;
       }
 
-      if (parsed.windowsEvents?.findings?.length) {
-        const findings = normalizeFindings(parsed.windowsEvents.findings);
+      if (parsed.windowsEvents?.evidence || parsed.windowsEvents?.findings?.length) {
+        const findings = normalizeFindings(parsed.windowsEvents.findings ?? []);
         setWindowsEventEvidence(parsed.windowsEvents.evidence ?? null);
         setWindowsEventFindings(findings);
         setWindowsEventSelectedId(findings[0]?.finding_id ?? "");
@@ -455,6 +478,7 @@ function App() {
 
       const data = await response.json();
       setRedactionSettings(data);
+      setReportError("");
     } catch (err) {
       setReportError(err instanceof Error ? err.message : "Unable to load redaction settings.");
     }
@@ -482,6 +506,7 @@ function App() {
 
       const data = await response.json();
       setRedactionSettings(data);
+      setReportError("");
       setStatusMessage("Redaction settings saved.");
     } catch (err) {
       setReportError(err instanceof Error ? err.message : "Unable to save redaction settings.");
@@ -502,6 +527,7 @@ function App() {
 
       const data = await response.json();
       setRedactionSettings(data);
+      setReportError("");
       setStatusMessage("Redaction settings reset to defaults.");
     } catch (err) {
       setReportError(err instanceof Error ? err.message : "Unable to reset redaction settings.");
@@ -522,6 +548,7 @@ function App() {
 
       const data = await response.json();
       setRunHistory(data.runs ?? []);
+      setReportError("");
     } catch (err) {
       setReportError(err instanceof Error ? err.message : "Unable to load run history.");
     }
@@ -540,7 +567,6 @@ function App() {
       }
 
       await loadRunHistory();
-    loadRedactionSettings();
       setStatusMessage("Evidence run history cleared.");
     } catch (err) {
       setReportError(err instanceof Error ? err.message : "Unable to clear run history.");
@@ -661,6 +687,52 @@ function App() {
     }
 
     return fallback;
+  }
+
+  async function ensureWorkspaceData(workspace: Workspace) {
+    await checkBackend();
+
+    if (workspace === "overview") {
+      await loadModules();
+      return;
+    }
+
+    if (workspace === "endpoint") {
+      if (!endpointEvidence && endpointFindings.length === 0) {
+        await loadEndpointSample();
+      }
+      return;
+    }
+
+    if (workspace === "dns") {
+      if (!dnsEvidence && dnsFindings.length === 0) {
+        await loadDnsSample();
+      }
+      return;
+    }
+
+    if (workspace === "windows-events") {
+      if (!windowsEventEvidence && windowsEventFindings.length === 0) {
+        await loadWindowsEventSample();
+      }
+      return;
+    }
+
+    if (workspace === "redaction") {
+      if (!redactionSettings) {
+        await loadRedactionSettings();
+      }
+      return;
+    }
+
+    if (workspace === "run-history") {
+      await loadRunHistory();
+      return;
+    }
+
+    if (workspace === "reports" || workspace === "archive") {
+      await loadReportArchive();
+    }
   }
 
   async function loadReportArchive() {
@@ -1404,7 +1476,7 @@ function App() {
                   <input type="file" accept=".json,application/json" onChange={handleEndpointImport} />
                   Import JSON
                 </label>
-                <ReportButtons disabled={!endpointEvidence || endpointFindings.length === 0} onDownload={(format) => handleReportDownload("endpoint", format)} />
+                <ReportButtons disabled={!endpointEvidence} onDownload={(format) => handleReportDownload("endpoint", format)} />
               </>
             }
           />
@@ -1435,7 +1507,7 @@ function App() {
                   <input type="file" accept=".csv,text/csv" onChange={handleDnsCsvImport} />
                   Import CSV
                 </label>
-                <ReportButtons disabled={!dnsEvidence || dnsFindings.length === 0} onDownload={(format) => handleReportDownload("dns", format)} />
+                <ReportButtons disabled={!dnsEvidence} onDownload={(format) => handleReportDownload("dns", format)} />
               </>
             }
           />
@@ -1461,7 +1533,7 @@ function App() {
                   <input type="file" accept=".log,.txt,.csv,.json,.ndjson,text/plain,application/json" onChange={handleAppLogImport} />
                   Import Log
                 </label>
-                <ReportButtons disabled={!appLogEvidence || appLogFindings.length === 0} onDownload={(format) => handleReportDownload("app-log", format)} />
+                <ReportButtons disabled={!appLogEvidence} onDownload={(format) => handleReportDownload("app-log", format)} />
               </>
             }
           />
