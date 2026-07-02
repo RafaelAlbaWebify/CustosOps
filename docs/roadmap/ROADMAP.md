@@ -441,3 +441,13 @@ CustosOps improved Windows Event local collection run records so successful zero
 CustosOps is adding operator-controlled redaction settings.
 
 Slice 26A adds the backend settings store and API.
+
+
+## In Progress Milestone 26 - Redaction Engine Backend
+
+CustosOps now has a backend redaction engine and preview API. Report wiring is the next slice.
+
+
+## In Progress Milestone 26 - Redaction Preview UI
+
+CustosOps now exposes a redaction preview panel so operators can test local redaction rules before report generation uses them.

@@ -1710,6 +1710,41 @@ function RedactionSettingsWorkspace(props: {
   onReset: () => void;
   onRefresh: () => void;
 }) {
+  const [previewText, setPreviewText] = useState("Contact rafael@example.com from C:\\Users\\ralba\\Desktop");
+  const [previewResult, setPreviewResult] = useState<{ redacted: string; changed: boolean; applied_rules: string[] } | null>(null);
+  const [previewStatus, setPreviewStatus] = useState("");
+
+  async function runRedactionPreview() {
+    setPreviewStatus("");
+    setPreviewResult(null);
+
+    try {
+      const response = await fetch(`${API_BASE}/api/redaction/preview`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          text: previewText
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      const data = await response.json();
+
+      setPreviewResult({
+        redacted: String(data.redacted ?? ""),
+        changed: Boolean(data.changed),
+        applied_rules: Array.isArray(data.applied_rules) ? data.applied_rules.map(String) : []
+      });
+    } catch (err) {
+      setPreviewStatus(err instanceof Error ? err.message : "Unable to preview redaction.");
+    }
+  }
+
   if (!props.settings) {
     return (
       <section className="workspace">
@@ -1825,6 +1860,57 @@ function RedactionSettingsWorkspace(props: {
         <p className="muted">
           Updated: {formatRunDate(props.settings.updated_at)}
         </p>
+      </div>
+
+      <div className="panel redaction-preview-panel">
+        <div className="workspace-header compact-header">
+          <div>
+            <p className="eyebrow">Preview</p>
+            <h3>Preview redaction</h3>
+            <p className="muted">
+              Test the current local redaction profile before applying it to report generation.
+            </p>
+          </div>
+          <div className="actions">
+            <button type="button" className="button" onClick={runRedactionPreview}>
+              Preview Redaction
+            </button>
+          </div>
+        </div>
+
+        <div className="preview-grid">
+          <label>
+            Original text
+            <textarea
+              value={previewText}
+              onChange={(event) => setPreviewText(event.target.value)}
+              rows={6}
+            />
+          </label>
+
+          <label>
+            Redacted preview
+            <textarea
+              value={previewResult?.redacted ?? ""}
+              readOnly
+              rows={6}
+              placeholder="Preview output will appear here."
+            />
+          </label>
+        </div>
+
+        {previewResult && (
+          <div className="preview-result">
+            <p className="muted">
+              Changed: <strong>{previewResult.changed ? "yes" : "no"}</strong>
+            </p>
+            <p className="muted">
+              Applied rules: {previewResult.applied_rules.length > 0 ? previewResult.applied_rules.join(", ") : "none"}
+            </p>
+          </div>
+        )}
+
+        {previewStatus && <p className="error-text">{previewStatus}</p>}
       </div>
 
       <div className="redaction-rule-grid">

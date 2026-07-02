@@ -24,3 +24,15 @@ class RedactionSettingsUpdateRequest(BaseModel):
 
 class RedactionSettingsResponse(RedactionSettingsUpdateRequest):
     updated_at: str
+
+
+
+class RedactionPreviewRequest(BaseModel):
+    text: str
+
+
+class RedactionPreviewResponse(BaseModel):
+    original: str
+    redacted: str
+    changed: bool
+    applied_rules: list[str] = Field(default_factory=list)
