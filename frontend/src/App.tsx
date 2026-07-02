@@ -22,7 +22,7 @@ type PersistedEvidenceState = {
   windowsEvents?: PersistedModuleEvidence;
 };
 
-type Workspace = "overview" | "endpoint" | "dns" | "app-log" | "windows-events" | "reports" | "archive" | "run-history";
+type Workspace = "overview" | "endpoint" | "dns" | "app-log" | "windows-events" | "reports" | "archive" | "run-history" | "redaction";
 
 type ReportFormat = "html" | "markdown" | "json";
 
@@ -66,6 +66,23 @@ type ModuleStatus = {
   module?: string;
   status?: string;
   description?: string;
+};
+
+type RedactionRule = {
+  rule_id: string;
+  label: string;
+  kind: "field" | "pattern" | "literal";
+  value: string;
+  enabled: boolean;
+  replacement: string;
+  description?: string | null;
+};
+
+type RedactionSettings = {
+  enabled: boolean;
+  profile_name: string;
+  rules: RedactionRule[];
+  updated_at: string;
 };
 
 type EvidenceRun = {
@@ -119,6 +136,7 @@ const WORKSPACES: { id: Workspace; label: string; short: string }[] = [
   { id: "app-log", label: "App Logs", short: "LG" },
   { id: "windows-events", label: "Windows Events", short: "WE" },
   { id: "reports", label: "Reports", short: "RP" },
+  { id: "redaction", label: "Redaction", short: "RX" },
   { id: "run-history", label: "Run History", short: "RH" },
   { id: "archive", label: "Archive", short: "AR" }
 ];
@@ -173,6 +191,8 @@ function App() {
   const [archiveEntries, setArchiveEntries] = useState<ArchiveEntry[]>([]);
 
   const [runHistory, setRunHistory] = useState<EvidenceRun[]>([]);
+
+  const [redactionSettings, setRedactionSettings] = useState<RedactionSettings | null>(null);
   const [importError, setImportError] = useState("");
   const [reportError, setReportError] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
@@ -425,6 +445,73 @@ function App() {
     }
   }
 
+  async function loadRedactionSettings() {
+    try {
+      const response = await fetch(`${API_BASE}/api/redaction/settings`);
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      const data = await response.json();
+      setRedactionSettings(data);
+    } catch (err) {
+      setReportError(err instanceof Error ? err.message : "Unable to load redaction settings.");
+    }
+  }
+
+  async function saveRedactionSettings(settings: RedactionSettings) {
+    resetMessages();
+
+    try {
+      const response = await fetch(`${API_BASE}/api/redaction/settings`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          enabled: settings.enabled,
+          profile_name: settings.profile_name,
+          rules: settings.rules
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      const data = await response.json();
+      setRedactionSettings(data);
+      setStatusMessage("Redaction settings saved.");
+    } catch (err) {
+      setReportError(err instanceof Error ? err.message : "Unable to save redaction settings.");
+    }
+  }
+
+  async function resetRedactionSettings() {
+    resetMessages();
+
+    try {
+      const response = await fetch(`${API_BASE}/api/redaction/settings/reset`, {
+        method: "POST"
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      const data = await response.json();
+      setRedactionSettings(data);
+      setStatusMessage("Redaction settings reset to defaults.");
+    } catch (err) {
+      setReportError(err instanceof Error ? err.message : "Unable to reset redaction settings.");
+    }
+  }
+
+  function updateRedactionSettings(nextSettings: RedactionSettings) {
+    setRedactionSettings(nextSettings);
+  }
+
   async function loadRunHistory() {
     try {
       const response = await fetch(`${API_BASE}/api/runs?limit=100`);
@@ -453,6 +540,7 @@ function App() {
       }
 
       await loadRunHistory();
+    loadRedactionSettings();
       setStatusMessage("Evidence run history cleared.");
     } catch (err) {
       setReportError(err instanceof Error ? err.message : "Unable to clear run history.");
@@ -1408,6 +1496,16 @@ function App() {
           />
         )}
 
+        {activeWorkspace === "redaction" && (
+          <RedactionSettingsWorkspace
+            settings={redactionSettings}
+            onChange={updateRedactionSettings}
+            onSave={saveRedactionSettings}
+            onReset={resetRedactionSettings}
+            onRefresh={loadRedactionSettings}
+          />
+        )}
+
         {activeWorkspace === "run-history" && (
           <RunHistoryWorkspace runs={runHistory} onRefresh={loadRunHistory} onClear={clearRunHistory} />
         )}
@@ -1602,6 +1700,175 @@ function EvidenceWorkspace(props: {
         <FindingDetails finding={props.selectedFinding} reviewRecord={props.reviewRecord} onReviewChange={props.onReviewChange} />
       </section>
     </div>
+  );
+}
+
+function RedactionSettingsWorkspace(props: {
+  settings: RedactionSettings | null;
+  onChange: (settings: RedactionSettings) => void;
+  onSave: (settings: RedactionSettings) => void;
+  onReset: () => void;
+  onRefresh: () => void;
+}) {
+  if (!props.settings) {
+    return (
+      <section className="workspace">
+        <div className="workspace-header">
+          <div>
+            <p className="eyebrow">Redaction controls</p>
+            <h2>Redaction Settings</h2>
+            <p className="muted">Loading local redaction settings...</p>
+          </div>
+          <div className="actions">
+            <button type="button" className="button secondary" onClick={props.onRefresh}>
+              Refresh
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const enabledRules = props.settings.rules.filter((rule) => rule.enabled).length;
+
+  function updateProfileName(profileName: string) {
+    props.onChange({
+      ...props.settings!,
+      profile_name: profileName
+    });
+  }
+
+  function updateGlobalEnabled(enabled: boolean) {
+    props.onChange({
+      ...props.settings!,
+      enabled
+    });
+  }
+
+  function updateRule(ruleId: string, updates: Partial<RedactionRule>) {
+    props.onChange({
+      ...props.settings!,
+      rules: props.settings!.rules.map((rule) =>
+        rule.rule_id === ruleId
+          ? {
+              ...rule,
+              ...updates
+            }
+          : rule
+      )
+    });
+  }
+
+  return (
+    <section className="workspace">
+      <div className="workspace-header">
+        <div>
+          <p className="eyebrow">Redaction controls</p>
+          <h2>Redaction Settings</h2>
+          <p className="muted">
+            Configure local redaction preferences. These settings are stored locally and will be wired into report generation in the next slice.
+          </p>
+        </div>
+        <div className="actions">
+          <button type="button" className="button secondary" onClick={props.onRefresh}>
+            Refresh
+          </button>
+          <button type="button" className="button secondary" onClick={props.onReset}>
+            Reset Defaults
+          </button>
+          <button type="button" className="button" onClick={() => props.onSave(props.settings!)}>
+            Save Settings
+          </button>
+        </div>
+      </div>
+
+      <div className="metric-grid">
+        <div className="metric-card">
+          <span>Profile</span>
+          <strong>{props.settings.profile_name}</strong>
+        </div>
+        <div className="metric-card">
+          <span>Redaction</span>
+          <strong>{props.settings.enabled ? "Enabled" : "Disabled"}</strong>
+        </div>
+        <div className="metric-card">
+          <span>Enabled rules</span>
+          <strong>{enabledRules}</strong>
+        </div>
+        <div className="metric-card">
+          <span>Total rules</span>
+          <strong>{props.settings.rules.length}</strong>
+        </div>
+      </div>
+
+      <div className="panel redaction-panel">
+        <div className="form-grid">
+          <label>
+            Profile name
+            <input
+              type="text"
+              value={props.settings.profile_name}
+              onChange={(event) => updateProfileName(event.target.value)}
+            />
+          </label>
+
+          <label className="toggle-row">
+            <input
+              type="checkbox"
+              checked={props.settings.enabled}
+              onChange={(event) => updateGlobalEnabled(event.target.checked)}
+            />
+            Enable redaction profile
+          </label>
+        </div>
+
+        <p className="muted">
+          Updated: {formatRunDate(props.settings.updated_at)}
+        </p>
+      </div>
+
+      <div className="redaction-rule-grid">
+        {props.settings.rules.map((rule) => (
+          <article className="redaction-rule-card" key={rule.rule_id}>
+            <div className="rule-card-top">
+              <div>
+                <p className="eyebrow">{rule.kind}</p>
+                <h3>{rule.label}</h3>
+                <p className="muted">{rule.description ?? "No description provided."}</p>
+              </div>
+              <label className="toggle-row compact">
+                <input
+                  type="checkbox"
+                  checked={rule.enabled}
+                  onChange={(event) => updateRule(rule.rule_id, { enabled: event.target.checked })}
+                />
+                Enabled
+              </label>
+            </div>
+
+            <dl className="rule-details">
+              <div>
+                <dt>Rule ID</dt>
+                <dd><code>{rule.rule_id}</code></dd>
+              </div>
+              <div>
+                <dt>Matcher</dt>
+                <dd><code>{rule.value}</code></dd>
+              </div>
+            </dl>
+
+            <label>
+              Replacement
+              <input
+                type="text"
+                value={rule.replacement}
+                onChange={(event) => updateRule(rule.rule_id, { replacement: event.target.value })}
+              />
+            </label>
+          </article>
+        ))}
+      </div>
+    </section>
   );
 }
 

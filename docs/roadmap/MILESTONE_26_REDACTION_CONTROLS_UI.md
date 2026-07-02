@@ -37,3 +37,24 @@ No evidence is uploaded.
 No remediation is performed.
 
 Slice 26A does not yet apply these settings to reports. It creates the durable settings foundation first.
+
+
+## Slice 26B - Redaction Controls UI
+
+### Added
+
+- Redaction Settings workspace in the frontend sidebar.
+- GET /api/redaction/settings integration.
+- PUT /api/redaction/settings integration.
+- POST /api/redaction/settings/reset integration.
+- Profile name editing.
+- Global redaction enabled toggle.
+- Rule enabled toggles.
+- Replacement text editing.
+- Summary cards for profile, global state, enabled rules, and total rules.
+
+### Notes
+
+This slice exposes and saves local redaction settings.
+
+Applying the settings to report generation is intentionally left for Slice 26C.
