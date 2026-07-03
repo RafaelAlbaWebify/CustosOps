@@ -120,3 +120,13 @@ The current `app-log` workspace is import-driven.
 It has explicit workspace lifecycle coverage, but it does not auto-load sample or local evidence yet.
 
 Before Milestone 27 adds IIS/Application local collection, `app-log` should receive a real local/sample loader that follows the same module contract as Endpoint, DNS, and Windows Events.
+
+## Evidence module helper contract
+
+Detailed helper requirements now live in:
+
+```text
+docs/architecture/EVIDENCE_MODULE_HELPER_CONTRACT.md
+```
+
+Before adding future collectors such as IIS/Application local collection, modules should pass the evidence module contract audit.

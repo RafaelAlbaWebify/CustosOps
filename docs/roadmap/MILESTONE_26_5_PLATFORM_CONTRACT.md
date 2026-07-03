@@ -100,3 +100,9 @@ The Desktop Playwright UI proof workflow is documented as a release gate. This p
 Status: complete.
 
 Run History workspace extraction validated the Desktop UI proof gate before further frontend modularization work.
+
+## M26.5D - Evidence Module Helper Contract
+
+Status: complete.
+
+The evidence module helper contract now documents required backend, frontend, report, archive, redaction, and run-history expectations for existing and future evidence modules.

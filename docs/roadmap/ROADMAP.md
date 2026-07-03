@@ -510,3 +510,9 @@ The external Desktop Playwright UI proof tool is documented as a required UI reg
 Status: complete in tag custosops-v0.26.12-run-history-workspace-extraction.
 
 Run History workspace was extracted from App.tsx into a dedicated frontend component, with App.tsx retaining run history state, API lifecycle ownership, and shared date formatting used by Redaction settings.
+
+## M26.5D - Evidence Module Helper Contract
+
+Status: complete in tag custosops-v0.26.13-evidence-helper-contract.
+
+CustosOps now documents and audits the evidence module helper contract required before adding more local collectors.
