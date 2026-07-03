@@ -88,3 +88,9 @@ It does not change report generation, redaction, run history, archive behavior, 
 ### Why
 
 This is the first safe step toward reducing App.tsx complexity before adding more evidence modules.
+
+## M26.5C-2 - Desktop Playwright UI Proof Gate
+
+Status: complete.
+
+The Desktop Playwright UI proof workflow is documented as a release gate. This protects future frontend extraction work by requiring build, tests, platform audit, and a real running UI proof ZIP before commit and tag.

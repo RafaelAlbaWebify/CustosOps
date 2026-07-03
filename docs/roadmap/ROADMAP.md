@@ -498,3 +498,9 @@ The platform contract audit now has explicit lifecycle coverage for the existing
 CustosOps now has a frontend API helper layer for backend URL construction.
 
 This is the first controlled extraction step before moving workspace components out of App.tsx.
+
+## M26.5C-2 - Desktop Playwright UI Proof Gate
+
+Status: complete in tag custosops-v0.26.11-desktop-ui-proof-gate.
+
+The external Desktop Playwright UI proof tool is documented as a required UI regression gate before frontend refactors and release tags. The tool remains outside the repository.
