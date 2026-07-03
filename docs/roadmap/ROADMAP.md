@@ -504,3 +504,9 @@ This is the first controlled extraction step before moving workspace components 
 Status: complete in tag custosops-v0.26.11-desktop-ui-proof-gate.
 
 The external Desktop Playwright UI proof tool is documented as a required UI regression gate before frontend refactors and release tags. The tool remains outside the repository.
+
+## M26.5C-3 - Run History Workspace Extraction
+
+Status: complete in tag custosops-v0.26.12-run-history-workspace-extraction.
+
+Run History workspace was extracted from App.tsx into a dedicated frontend component, with App.tsx retaining run history state, API lifecycle ownership, and shared date formatting used by Redaction settings.

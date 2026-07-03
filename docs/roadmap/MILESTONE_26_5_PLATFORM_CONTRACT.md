@@ -94,3 +94,9 @@ This is the first safe step toward reducing App.tsx complexity before adding mor
 Status: complete.
 
 The Desktop Playwright UI proof workflow is documented as a release gate. This protects future frontend extraction work by requiring build, tests, platform audit, and a real running UI proof ZIP before commit and tag.
+
+## M26.5C-3 - Run History Workspace Extraction
+
+Status: complete.
+
+Run History workspace extraction validated the Desktop UI proof gate before further frontend modularization work.
