@@ -96,7 +96,8 @@ $Modules = @(
     "endpoint|backend/app/schemas/endpoint.py|backend/app/api/endpoint.py|backend/app/analyzers/endpoint_security.py|backend/app/services/endpoint_report.py|backend/tests/test_endpoint_report.py",
     "dns|backend/app/schemas/dns.py|backend/app/api/dns.py|backend/app/analyzers/dns_hygiene.py|backend/app/services/dns_report.py|backend/tests/test_dns_report.py",
     "app-log|backend/app/schemas/app_log.py|backend/app/api/app_log.py|backend/app/analyzers/app_log_evidence.py|backend/app/services/app_log_report.py|backend/tests/test_app_log_evidence.py",
-    "windows-events|backend/app/schemas/windows_event.py|backend/app/api/windows_events.py|backend/app/analyzers/windows_event_evidence.py|backend/app/services/windows_event_report.py|backend/tests/test_windows_event_evidence.py"
+    "windows-events|backend/app/schemas/windows_event.py|backend/app/api/windows_events.py|backend/app/analyzers/windows_event_evidence.py|backend/app/services/windows_event_report.py|backend/tests/test_windows_event_evidence.py",
+    "iis|backend/app/schemas/iis.py|backend/app/api/iis.py|backend/app/analyzers/iis_evidence.py|backend/app/services/iis_report.py|backend/tests/test_iis_evidence.py"
 )
 
 Add-Line "## Module file coverage"
@@ -127,10 +128,12 @@ Test-PatternRequired -RelativePath "backend/app/services/endpoint_report.py" -Pa
 Test-PatternRequired -RelativePath "backend/app/services/dns_report.py" -Pattern "def build_dns_report" -Description "dns report builder"
 Test-PatternRequired -RelativePath "backend/app/services/app_log_report.py" -Pattern "def build_app_log_report" -Description "app-log report builder"
 Test-PatternRequired -RelativePath "backend/app/services/windows_event_report.py" -Pattern "def build_windows_event_report" -Description "windows-events report builder"
+Test-PatternRequired -RelativePath "backend/app/services/iis_report.py" -Pattern "def build_iis_report" -Description "iis report builder"
 Test-PatternRequired -RelativePath "backend/app/services/endpoint_report.py" -Pattern "content_type" -Description "endpoint content type"
 Test-PatternRequired -RelativePath "backend/app/services/dns_report.py" -Pattern "content_type" -Description "dns content type"
 Test-PatternRequired -RelativePath "backend/app/services/app_log_report.py" -Pattern "content_type" -Description "app-log content type"
 Test-PatternRequired -RelativePath "backend/app/services/windows_event_report.py" -Pattern "content_type" -Description "windows-events content type"
+Test-PatternRequired -RelativePath "backend/app/services/iis_report.py" -Pattern "content_type" -Description "iis content type"
 Add-Line ""
 
 Add-Line "## Analyzer checks"
@@ -138,6 +141,7 @@ Test-PatternRequired -RelativePath "backend/app/analyzers/endpoint_security.py" 
 Test-PatternRequired -RelativePath "backend/app/analyzers/dns_hygiene.py" -Pattern "analyze_dns_evidence" -Description "dns analyzer"
 Test-PatternRequired -RelativePath "backend/app/analyzers/app_log_evidence.py" -Pattern "analyze_app_log_evidence" -Description "app-log analyzer"
 Test-PatternRequired -RelativePath "backend/app/analyzers/windows_event_evidence.py" -Pattern "analyze_windows_event_evidence" -Description "windows-events analyzer"
+Test-PatternRequired -RelativePath "backend/app/analyzers/iis_evidence.py" -Pattern "analyze_iis_evidence" -Description "iis analyzer"
 Add-Line ""
 
 if ($AuditOk) {

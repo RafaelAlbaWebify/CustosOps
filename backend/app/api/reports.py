@@ -5,10 +5,12 @@ from app.schemas.app_log_report import AppLogReportRequest
 from app.schemas.report import DnsReportRequest, EndpointReportRequest
 from app.schemas.executive_summary_report import ExecutiveSummaryReportRequest
 from app.schemas.windows_event_report import WindowsEventReportRequest
+from app.schemas.iis_report import IisReportRequest
 from app.services.app_log_report import build_app_log_report
 from app.services.dns_report import build_dns_report
 from app.services.endpoint_report import build_endpoint_report
 from app.services.windows_event_report import build_windows_event_report
+from app.services.iis_report import build_iis_report
 from app.services.executive_summary_report import build_executive_summary_report
 from app.services.redaction_engine import redact_text
 from app.services.redaction_settings import get_redaction_settings
@@ -248,6 +250,33 @@ def create_windows_event_report(request: WindowsEventReportRequest) -> dict:
 
 
 
+
+@router.post("/iis")
+def create_iis_report(request: IisReportRequest) -> dict:
+    response = build_iis_report(
+        evidence=request.evidence,
+        findings=request.findings,
+        report_format=request.format,
+    )
+
+    payload = _apply_report_redaction(response.model_dump())
+
+    if request.archive:
+        entry = save_archived_report(
+            report_type="iis",
+            report_format=response.format,
+            filename=response.filename,
+            content_type=response.content_type,
+            content=response.content,
+        )
+        payload["archived"] = True
+        payload["archived_path"] = entry["relative_path"]
+        payload["archive_entry_id"] = entry["id"]
+    else:
+        payload["archived"] = False
+        payload["archive_entry_id"] = None
+
+    return payload
 @router.post("/executive-summary")
 def create_executive_summary_report(request: ExecutiveSummaryReportRequest) -> dict:
     response = build_executive_summary_report(

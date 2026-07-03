@@ -516,3 +516,9 @@ Run History workspace was extracted from App.tsx into a dedicated frontend compo
 Status: complete in tag custosops-v0.26.13-evidence-helper-contract.
 
 CustosOps now documents and audits the evidence module helper contract required before adding more local collectors.
+
+## M27A - IIS/Application Backend Evidence Core
+
+Status: complete in tag custosops-v0.27.0-iis-application-evidence-backend.
+
+CustosOps now has backend IIS/Application evidence schema, read-only local collection, analyzer, report builder, API routes, and tests. No frontend IIS workspace is included in this milestone.

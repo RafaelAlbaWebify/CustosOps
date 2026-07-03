@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.dns import router as dns_router
 from app.api.endpoint import router as endpoint_router
 from app.api.health import router as health_router
+from app.api.iis import router as iis_router
 from app.api.modules import router as modules_router
 from app.api.reports import router as reports_router
 from app.api.redaction_settings import router as redaction_settings_router
@@ -24,6 +25,7 @@ app.add_middleware(
 )
 
 app.include_router(health_router)
+app.include_router(iis_router)
 app.include_router(modules_router)
 app.include_router(sample_findings_router)
 app.include_router(endpoint_router)
