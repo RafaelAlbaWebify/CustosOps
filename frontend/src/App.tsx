@@ -1879,7 +1879,7 @@ function RedactionSettingsWorkspace(props: {
           <p className="eyebrow">Redaction controls</p>
           <h2>Redaction Settings</h2>
           <p className="muted">
-            Configure local redaction preferences. These settings are stored locally and will be wired into report generation in the next slice.
+            Configure local redaction preferences. These settings are stored locally and are applied to generated reports.
           </p>
         </div>
         <div className="actions">
@@ -1946,7 +1946,7 @@ function RedactionSettingsWorkspace(props: {
             <p className="eyebrow">Preview</p>
             <h3>Preview redaction</h3>
             <p className="muted">
-              Test the current local redaction profile before applying it to report generation.
+              Test the current local redaction profile before using it in generated reports.
             </p>
           </div>
           <div className="actions">
