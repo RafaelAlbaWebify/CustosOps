@@ -586,3 +586,9 @@ The Run History workspace now includes a local operations hero, run summary KPI 
 Status: complete in tag custosops-v0.30.3-report-archive-polish.
 
 The Reports and Archive workspaces now include dedicated hero panels, KPI cards, report readiness cards, archive distribution panels, and latest report summaries using existing local state and CSS-only visuals.
+
+## M30E - Full UI Design Pass
+
+Status: complete in tag custosops-v0.30.4-full-ui-design-pass.
+
+A CSS-first global design pass improves sidebar/topbar polish, card consistency, button/focus states, table density, and cross-workspace visual cohesion without adding backend features or chart dependencies.
