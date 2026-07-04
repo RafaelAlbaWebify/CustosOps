@@ -21,13 +21,14 @@ type PersistedEvidenceState = {
   dns?: PersistedModuleEvidence;
   appLog?: PersistedModuleEvidence;
   windowsEvents?: PersistedModuleEvidence;
+  iis?: PersistedModuleEvidence;
 };
 
-type Workspace = "overview" | "endpoint" | "dns" | "app-log" | "windows-events" | "reports" | "archive" | "run-history" | "redaction";
+type Workspace = "overview" | "endpoint" | "dns" | "app-log" | "windows-events" | "iis" | "reports" | "archive" | "run-history" | "redaction";
 
 type ReportFormat = "html" | "markdown" | "json";
 
-type ReportModule = "endpoint" | "dns" | "app-log" | "windows-events";
+type ReportModule = "endpoint" | "dns" | "app-log" | "windows-events" | "iis";
 
 type ReviewStatus = "open" | "reviewed" | "needs_follow_up" | "accepted_risk" | "false_positive";
 
@@ -136,6 +137,7 @@ const WORKSPACES: { id: Workspace; label: string; short: string }[] = [
   { id: "dns", label: "DNS Hygiene", short: "DN" },
   { id: "app-log", label: "App Logs", short: "LG" },
   { id: "windows-events", label: "Windows Events", short: "WE" },
+  { id: "iis", label: "IIS/Application", short: "IS" },
   { id: "reports", label: "Reports", short: "RP" },
   { id: "redaction", label: "Redaction", short: "RX" },
   { id: "run-history", label: "Run History", short: "RH" },
@@ -147,6 +149,7 @@ const DEFAULT_MODULES: ModuleStatus[] = [
   { name: "DNS Hygiene", status: "active", description: "DNS audit JSON and CSV evidence." },
   { name: "Application Logs", status: "active", description: "Application and API runtime log evidence." },
   { name: "Windows Event Evidence", status: "active", description: "Imported Windows Event operational evidence." },
+  { name: "IIS/Application Evidence", status: "active", description: "Read-only IIS/Application local collection and report evidence." },
   { name: "Reports", status: "active", description: "HTML, Markdown, and JSON evidence reports." },
   { name: "Archive", status: "active", description: "Local report archive." }
 ];
@@ -189,6 +192,12 @@ function App() {
   const [windowsEventWarnings, setWindowsEventWarnings] = useState<string[]>([]);
   const [windowsEventSelectedId, setWindowsEventSelectedId] = useState("");
 
+  const [iisFindings, setIisFindings] = useState<Finding[]>([]);
+  const [iisEvidence, setIisEvidence] = useState<unknown | null>(null);
+  const [iisSource, setIisSource] = useState("Sample IIS/Application evidence");
+  const [iisWarnings, setIisWarnings] = useState<string[]>([]);
+  const [iisSelectedId, setIisSelectedId] = useState("");
+
   const [archiveEntries, setArchiveEntries] = useState<ArchiveEntry[]>([]);
 
   const [runHistory, setRunHistory] = useState<EvidenceRun[]>([]);
@@ -203,11 +212,13 @@ function App() {
   const dnsCounts = useMemo(() => getSeverityCounts(dnsFindings), [dnsFindings]);
   const appLogCounts = useMemo(() => getSeverityCounts(appLogFindings), [appLogFindings]);
   const windowsEventCounts = useMemo(() => getSeverityCounts(windowsEventFindings), [windowsEventFindings]);
+  const iisCounts = useMemo(() => getSeverityCounts(iisFindings), [iisFindings]);
 
   const endpointSelectedFinding = endpointFindings.find((finding) => finding.finding_id === endpointSelectedId) ?? endpointFindings[0];
   const dnsSelectedFinding = dnsFindings.find((finding) => finding.finding_id === dnsSelectedId) ?? dnsFindings[0];
   const appLogSelectedFinding = appLogFindings.find((finding) => finding.finding_id === appLogSelectedId) ?? appLogFindings[0];
   const windowsEventSelectedFinding = windowsEventFindings.find((finding) => finding.finding_id === windowsEventSelectedId) ?? windowsEventFindings[0];
+  const iisSelectedFinding = iisFindings.find((finding) => finding.finding_id === iisSelectedId) ?? iisFindings[0];
 
   const activeModuleCount = modules.filter((module) => (module.status ?? "").toLowerCase() !== "planned").length;
 
@@ -247,10 +258,12 @@ function App() {
       Boolean(dnsEvidence) ||
       Boolean(appLogEvidence) ||
       Boolean(windowsEventEvidence) ||
+      Boolean(iisEvidence) ||
       endpointFindings.length > 0 ||
       dnsFindings.length > 0 ||
       appLogFindings.length > 0 ||
-      windowsEventFindings.length > 0;
+      windowsEventFindings.length > 0 ||
+      iisFindings.length > 0;
 
     if (!hasPersistableEvidence) {
       return;
@@ -283,6 +296,13 @@ function App() {
         source: windowsEventSource,
         warnings: windowsEventWarnings,
         saved_at: new Date().toISOString()
+      },
+      iis: {
+        evidence: iisEvidence,
+        findings: iisFindings,
+        source: iisSource,
+        warnings: iisWarnings,
+        saved_at: new Date().toISOString()
       }
     };
 
@@ -306,15 +326,20 @@ function App() {
     windowsEventEvidence,
     windowsEventFindings,
     windowsEventSource,
-    windowsEventWarnings
+    windowsEventWarnings,
+    iisEvidence,
+    iisFindings,
+    iisSource,
+    iisWarnings
   ]);
 
-  function restoreSessionEvidence(): { endpoint: boolean; dns: boolean; appLog: boolean; windowsEvents: boolean } {
+  function restoreSessionEvidence(): { endpoint: boolean; dns: boolean; appLog: boolean; windowsEvents: boolean; iis: boolean } {
     const restored = {
       endpoint: false,
       dns: false,
       appLog: false,
-      windowsEvents: false
+      windowsEvents: false,
+      iis: false
     };
 
     try {
@@ -364,6 +389,16 @@ function App() {
         setWindowsEventWarnings(parsed.windowsEvents.warnings ?? []);
         restored.windowsEvents = true;
       }
+
+      if (parsed.iis?.evidence || parsed.iis?.findings?.length) {
+        const findings = normalizeFindings(parsed.iis.findings ?? []);
+        setIisEvidence(parsed.iis.evidence ?? null);
+        setIisFindings(findings);
+        setIisSelectedId(findings[0]?.finding_id ?? "");
+        setIisSource(parsed.iis.source || "Restored IIS/Application evidence");
+        setIisWarnings(parsed.iis.warnings ?? []);
+        restored.iis = true;
+      }
     } catch {
       window.localStorage.removeItem(SESSION_STORAGE_KEY);
     }
@@ -379,6 +414,7 @@ function App() {
       restored.endpoint ? Promise.resolve() : loadEndpointSample(),
       restored.dns ? Promise.resolve() : loadDnsSample(),
       restored.windowsEvents ? Promise.resolve() : loadWindowsEventSample(),
+      restored.iis ? Promise.resolve() : loadIisSample(),
       loadReportArchive()
     ]);
   }
@@ -466,6 +502,27 @@ function App() {
       setWindowsEventSource("sample-windows-events.json");
     } catch {
       setWindowsEventFindings([]);
+    }
+  }
+
+  async function loadIisSample() {
+    try {
+      const response = await apiFetch("/api/iis/sample-findings");
+
+      if (!response.ok) {
+        return;
+      }
+
+      const data = await response.json();
+      const findings = normalizeFindings(data.findings ?? []);
+
+      setIisEvidence(data.evidence ?? null);
+      setIisFindings(findings);
+      setIisSelectedId(findings[0]?.finding_id ?? "");
+      setIisSource("sample-iis-application-evidence.json");
+      setIisWarnings(Array.isArray(data.evidence?.collection_warnings) ? data.evidence.collection_warnings.map(String) : []);
+    } catch {
+      setIisFindings([]);
     }
   }
 
@@ -721,6 +778,13 @@ function App() {
     if (workspace === "windows-events") {
       if (!windowsEventEvidence && windowsEventFindings.length === 0) {
         await loadWindowsEventSample();
+      }
+      return;
+    }
+
+    if (workspace === "iis") {
+      if (!iisEvidence && iisFindings.length === 0) {
+        await loadIisSample();
       }
       return;
     }
@@ -1180,6 +1244,110 @@ function App() {
     }
   }
 
+  async function handleIisCollectLocal() {
+    resetMessages();
+
+    try {
+      const response = await apiFetch("/api/iis/collect-local", {
+        method: "POST"
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      const data = await response.json();
+      const findings = normalizeFindings(data.findings ?? []);
+      const warnings = Array.isArray(data.warnings) ? data.warnings.map(String) : [];
+
+      setIisEvidence(data.evidence ?? null);
+      setIisFindings(findings);
+      setIisSelectedId(findings[0]?.finding_id ?? "");
+      setIisSource("Local IIS/Application collection");
+      setIisWarnings(warnings);
+      setStatusMessage(`Local IIS/Application collection loaded: ${findings.length} findings.`);
+
+      await recordEvidenceRun({
+        module_id: "iis",
+        module_name: "IIS/Application Evidence",
+        source: "Local IIS/Application collection",
+        source_type: data.input_type ?? "local_iis_application_collection",
+        evidence: data.evidence,
+        findings,
+        raw_count: data.raw_item_count,
+        parsed_count: data.parsed_item_count,
+        warning_count: warnings.length,
+        asset: data.asset,
+        notes: warnings.length > 0 ? warnings.join(" | ") : undefined,
+        metadata: {
+          action: "collect-local"
+        }
+      });
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : "Unable to collect local IIS/Application evidence.");
+    }
+  }
+
+  async function handleIisJsonImport(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    resetMessages();
+
+    if (!file) {
+      return;
+    }
+
+    try {
+      const text = await file.text();
+      const response = await apiFetch("/api/iis/import", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          filename: file.name,
+          content: text
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      const data = await response.json();
+      const findings = normalizeFindings(data.findings ?? []);
+      const warnings = Array.isArray(data.warnings) ? data.warnings.map(String) : [];
+
+      setIisEvidence(data.evidence ?? null);
+      setIisFindings(findings);
+      setIisSelectedId(findings[0]?.finding_id ?? "");
+      setIisSource(file.name);
+      setIisWarnings(warnings);
+      setStatusMessage(`IIS/Application evidence imported: ${findings.length} findings.`);
+
+      await recordEvidenceRun({
+        module_id: "iis",
+        module_name: "IIS/Application Evidence",
+        source: file.name,
+        source_type: data.input_type ?? "iis_application_import",
+        evidence: data.evidence,
+        findings,
+        raw_count: data.raw_item_count,
+        parsed_count: data.parsed_item_count,
+        warning_count: warnings.length,
+        asset: data.asset,
+        notes: warnings.length > 0 ? warnings.join(" | ") : undefined,
+        metadata: {
+          action: "import-json"
+        }
+      });
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : "Unable to import IIS/Application evidence.");
+    } finally {
+      event.target.value = "";
+    }
+  }
+
   function buildExecutiveSummaryModules(): Array<{
     module_id: string;
     module_name: string;
@@ -1199,6 +1367,7 @@ function App() {
     const reviewedDnsFindings = applyReviewsToFindingsForReport(dnsFindings, reviewRecords);
     const reviewedAppLogFindings = applyReviewsToFindingsForReport(appLogFindings, reviewRecords);
     const reviewedWindowsEventFindings = applyReviewsToFindingsForReport(windowsEventFindings, reviewRecords);
+    const reviewedIisFindings = applyReviewsToFindingsForReport(iisFindings, reviewRecords);
 
     if (reviewedEndpointFindings.length > 0) {
       modules.push({
@@ -1237,6 +1406,16 @@ function App() {
         source: windowsEventSource || "Windows Event evidence",
         evidence: buildReportEvidence("windows-events", windowsEventEvidence, reviewedWindowsEventFindings),
         findings: reviewedWindowsEventFindings
+      });
+    }
+
+    if (reviewedIisFindings.length > 0) {
+      modules.push({
+        module_id: "iis",
+        module_name: "IIS/Application Evidence",
+        source: iisSource || "IIS/Application evidence",
+        evidence: buildReportEvidence("iis", iisEvidence, reviewedIisFindings),
+        findings: reviewedIisFindings
       });
     }
 
@@ -1312,7 +1491,9 @@ function App() {
           ? dnsEvidence
           : reportType === "app-log"
             ? appLogEvidence
-            : windowsEventEvidence;
+            : reportType === "windows-events"
+              ? windowsEventEvidence
+              : iisEvidence;
 
     const findings =
       reportType === "endpoint"
@@ -1321,7 +1502,9 @@ function App() {
           ? dnsFindings
           : reportType === "app-log"
             ? appLogFindings
-            : windowsEventFindings;
+            : reportType === "windows-events"
+              ? windowsEventFindings
+              : iisFindings;
 
     const hasReportEvidence = Boolean(evidence) || findings.length > 0;
 
@@ -1453,10 +1636,12 @@ function App() {
             endpointFindings={endpointFindings}
             dnsFindings={dnsFindings}
             appLogFindings={appLogFindings}
+            iisFindings={iisFindings}
             archiveEntries={archiveEntries}
             endpointCounts={endpointCounts}
             dnsCounts={dnsCounts}
             appLogCounts={appLogCounts}
+            iisCounts={iisCounts}
             activeModuleCount={activeModuleCount}
             modules={modules}
             onNavigate={navigateTo}
@@ -1575,6 +1760,35 @@ function App() {
           />
         )}
 
+        {activeWorkspace === "iis" && (
+          <EvidenceWorkspace
+            title="IIS/Application Evidence"
+            eyebrow="IIS/Application"
+            description="Review local IIS/Application evidence: IIS service state, sites, application pools, applications, log visibility, and collection warnings. Missing IIS is treated as a valid zero-evidence state."
+            source={iisSource}
+            findings={iisFindings}
+            counts={iisCounts}
+            selectedFinding={iisSelectedFinding}
+            selectedId={iisSelectedId}
+            onSelect={setIisSelectedId}
+            reviewRecord={iisSelectedFinding ? getReviewRecord(iisSelectedFinding) : undefined}
+            onReviewChange={updateFindingReview}
+            warnings={iisWarnings}
+            actions={
+              <>
+                <button type="button" className="button" onClick={handleIisCollectLocal}>
+                  Collect Local
+                </button>
+                <label className="button">
+                  <input type="file" accept=".json,application/json" onChange={handleIisJsonImport} />
+                  Import JSON
+                </label>
+                <ReportButtons disabled={!iisEvidence} onDownload={(format) => handleReportDownload("iis", format)} />
+              </>
+            }
+          />
+        )}
+
         {activeWorkspace === "redaction" && (
           <RedactionSettingsWorkspace
             settings={redactionSettings}
@@ -1595,7 +1809,8 @@ function App() {
             dnsReady={dnsFindings.length > 0}
             appLogReady={appLogFindings.length > 0}
             windowsEventReady={Boolean(windowsEventEvidence)}
-            executiveReady={Boolean(endpointEvidence) || Boolean(dnsEvidence) || Boolean(appLogEvidence) || Boolean(windowsEventEvidence)}
+            iisReady={Boolean(iisEvidence)}
+            executiveReady={Boolean(endpointEvidence) || Boolean(dnsEvidence) || Boolean(appLogEvidence) || Boolean(windowsEventEvidence) || Boolean(iisEvidence)}
             onDownload={handleReportDownload}
             onExecutiveDownload={handleExecutiveSummaryDownload}
           />
@@ -1624,10 +1839,12 @@ function OverviewWorkspace(props: {
   endpointFindings: Finding[];
   dnsFindings: Finding[];
   appLogFindings: Finding[];
+  iisFindings: Finding[];
   archiveEntries: ArchiveEntry[];
   endpointCounts: SeverityCounts;
   dnsCounts: SeverityCounts;
   appLogCounts: SeverityCounts;
+  iisCounts: SeverityCounts;
   activeModuleCount: number;
   modules: ModuleStatus[];
   onNavigate: (workspace: Workspace) => void;
@@ -1638,6 +1855,7 @@ function OverviewWorkspace(props: {
         <KpiCard icon="EP" label="Endpoint Findings" value={String(props.endpointFindings.length)} note={getTopAsset(props.endpointFindings) || "Awaiting evidence"} />
         <KpiCard icon="DN" label="DNS Max Severity" value={capitalize(getMaxSeverity(props.dnsFindings))} note={`${props.dnsFindings.length} DNS findings`} />
         <KpiCard icon="LG" label="App Log Findings" value={String(props.appLogFindings.length)} note={getTopAsset(props.appLogFindings) || "Awaiting log import"} />
+        <KpiCard icon="IS" label="IIS Findings" value={String(props.iisFindings.length)} note={getTopAsset(props.iisFindings) || "Awaiting IIS collection"} />
         <KpiCard icon="AR" label="Archived Reports" value={String(props.archiveEntries.length)} note="In local archive" />
       </section>
 
@@ -1667,6 +1885,15 @@ function OverviewWorkspace(props: {
           findings={props.appLogFindings}
           actionLabel="Open App Log Workspace"
           onAction={() => props.onNavigate("app-log")}
+        />
+
+        <OverviewCard
+          title="IIS/Application Evidence"
+          eyebrow="IIS/Application"
+          counts={props.iisCounts}
+          findings={props.iisFindings}
+          actionLabel="Open IIS Workspace"
+          onAction={() => props.onNavigate("iis")}
         />
 
         <section className="card">
@@ -2052,6 +2279,7 @@ function ReportsWorkspace(props: {
   dnsReady: boolean;
   appLogReady: boolean;
   windowsEventReady: boolean;
+  iisReady: boolean;
   executiveReady: boolean;
   onDownload: (reportType: ReportModule, format: ReportFormat) => void;
   onExecutiveDownload: (format: ReportFormat) => void;
@@ -2071,6 +2299,7 @@ function ReportsWorkspace(props: {
         <ReportCard title="DNS Hygiene Report" ready={props.dnsReady} onDownload={(format) => props.onDownload("dns", format)} />
         <ReportCard title="Application Log Report" ready={props.appLogReady} onDownload={(format) => props.onDownload("app-log", format)} />
         <ReportCard title="Windows Event Report" ready={props.windowsEventReady} onDownload={(format) => props.onDownload("windows-events", format)} />
+        <ReportCard title="IIS/Application Report" ready={props.iisReady} onDownload={(format) => props.onDownload("iis", format)} />
         <ReportCard title="Executive Summary Pack" ready={props.executiveReady} onDownload={props.onExecutiveDownload} />
       </section>
     </div>
@@ -2554,6 +2783,20 @@ function buildReportEvidence(reportType: ReportModule, evidence: unknown | null,
 
     if (!base.source_type) {
       base.source_type = "windows_event_session_evidence";
+    }
+  }
+
+  if (reportType === "iis") {
+    if (!base.source_file) {
+      base.source_file = topAsset || "iis-application";
+    }
+
+    if (!base.asset) {
+      base.asset = topAsset;
+    }
+
+    if (!base.source_type || base.source_type === "iis_session_evidence") {
+      base.source_type = "iis_application_session_evidence";
     }
   }
 

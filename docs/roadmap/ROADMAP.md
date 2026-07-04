@@ -522,3 +522,10 @@ CustosOps now documents and audits the evidence module helper contract required 
 Status: complete in tag custosops-v0.27.0-iis-application-evidence-backend.
 
 CustosOps now has backend IIS/Application evidence schema, read-only local collection, analyzer, report builder, API routes, and tests. No frontend IIS workspace is included in this milestone.
+
+
+## M27B - IIS/Application Frontend Workspace and Run History
+
+Status: complete in tag custosops-v0.27.1-iis-application-frontend-workspace.
+
+CustosOps now exposes IIS/Application evidence in the frontend workspace lifecycle with local collection, JSON import, report generation, session persistence, overview visibility, and run-history recording.
