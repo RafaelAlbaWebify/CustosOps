@@ -556,3 +556,9 @@ Next: M29 portfolio/demo packaging.
 Status: complete in tag custosops-v0.29.0-github-publish-prep.
 
 CustosOps is prepared for GitHub publication with strengthened ignore rules, license file, generic public-safe examples, portable helper defaults, and a GitHub publish checklist.
+
+## M29C - Final GitHub / Portfolio Package
+
+Status: complete in tag custosops-v0.29.1-final-github-portfolio-package.
+
+CustosOps v1 is packaged for private-first GitHub publication and portfolio demonstration. Next optional track: M30 visual analytics and UI polish.

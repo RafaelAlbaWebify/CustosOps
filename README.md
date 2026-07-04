@@ -140,3 +140,15 @@ The v0.28 line is intended as the final hardening line before portfolio/demo pac
 This repository is prepared for GitHub publication with local/generated artifacts excluded from version control.
 
 Recommended first publication mode: private repository, then public after a final manual review of screenshots, demo text, and tracked files.
+
+## Portfolio and demo package
+
+Portfolio and GitHub publication support files are available in:
+
+```text
+docs/portfolio/CUSTOSOPS_PORTFOLIO_BRIEF.md
+docs/demo/CUSTOSOPS_DEMO_SCRIPT.md
+docs/release/GITHUB_PUBLISH_CHECKLIST.md
+docs/release/PRIVATE_FIRST_GITHUB_PUSH_GUIDE.md
+docs/release/FINAL_V1_CHECKLIST.md
+```
