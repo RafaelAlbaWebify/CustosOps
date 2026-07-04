@@ -1636,13 +1636,16 @@ function App() {
             endpointFindings={endpointFindings}
             dnsFindings={dnsFindings}
             appLogFindings={appLogFindings}
+            windowsEventFindings={windowsEventFindings}
             iisFindings={iisFindings}
             archiveEntries={archiveEntries}
             endpointCounts={endpointCounts}
             dnsCounts={dnsCounts}
             appLogCounts={appLogCounts}
+            windowsEventCounts={windowsEventCounts}
             iisCounts={iisCounts}
             activeModuleCount={activeModuleCount}
+            runHistory={runHistory}
             modules={modules}
             onNavigate={navigateTo}
           />
@@ -1839,24 +1842,139 @@ function OverviewWorkspace(props: {
   endpointFindings: Finding[];
   dnsFindings: Finding[];
   appLogFindings: Finding[];
+  windowsEventFindings: Finding[];
   iisFindings: Finding[];
   archiveEntries: ArchiveEntry[];
   endpointCounts: SeverityCounts;
   dnsCounts: SeverityCounts;
   appLogCounts: SeverityCounts;
+  windowsEventCounts: SeverityCounts;
   iisCounts: SeverityCounts;
   activeModuleCount: number;
+  runHistory: EvidenceRun[];
   modules: ModuleStatus[];
   onNavigate: (workspace: Workspace) => void;
 }) {
+  const moduleSummaries = [
+    {
+      workspace: "endpoint" as Workspace,
+      title: "Endpoint",
+      eyebrow: "Endpoint Evidence",
+      short: "EP",
+      counts: props.endpointCounts,
+      findings: props.endpointFindings,
+      note: getTopAsset(props.endpointFindings) || "Awaiting endpoint evidence"
+    },
+    {
+      workspace: "dns" as Workspace,
+      title: "DNS Hygiene",
+      eyebrow: "DNS Evidence",
+      short: "DN",
+      counts: props.dnsCounts,
+      findings: props.dnsFindings,
+      note: props.dnsFindings.length > 0 ? `${props.dnsFindings.length} DNS findings` : "Awaiting DNS import"
+    },
+    {
+      workspace: "app-log" as Workspace,
+      title: "Application Logs",
+      eyebrow: "Application Evidence",
+      short: "LG",
+      counts: props.appLogCounts,
+      findings: props.appLogFindings,
+      note: getTopAsset(props.appLogFindings) || "Awaiting app log import"
+    },
+    {
+      workspace: "windows-events" as Workspace,
+      title: "Windows Events",
+      eyebrow: "Windows Evidence",
+      short: "WE",
+      counts: props.windowsEventCounts,
+      findings: props.windowsEventFindings,
+      note: getTopAsset(props.windowsEventFindings) || "Awaiting event evidence"
+    },
+    {
+      workspace: "iis" as Workspace,
+      title: "IIS/Application",
+      eyebrow: "IIS Evidence",
+      short: "IS",
+      counts: props.iisCounts,
+      findings: props.iisFindings,
+      note: getTopAsset(props.iisFindings) || "Awaiting IIS collection"
+    }
+  ];
+
+  const allFindings = moduleSummaries.flatMap((module) => module.findings);
+  const totalCounts = mergeSeverityCounts(
+    props.endpointCounts,
+    props.dnsCounts,
+    props.appLogCounts,
+    props.windowsEventCounts,
+    props.iisCounts
+  );
+  const totalFindings = allFindings.length;
+  const highPriorityFindings = totalCounts.critical + totalCounts.high;
+  const activeSources = moduleSummaries.filter((module) => module.findings.length > 0).length;
+  const completedRuns = props.runHistory.filter((run) => run.status === "success").length;
+  const warningRuns = props.runHistory.filter((run) => run.status === "warning").length;
+  const failedRuns = props.runHistory.filter((run) => run.status === "failed").length;
+  const runStatusNote = props.runHistory.length > 0
+    ? `${completedRuns} completed / ${warningRuns} warning / ${failedRuns} failed`
+    : "No recorded runs yet";
+
   return (
-    <div className="workspace-content">
-      <section className="kpi-grid">
-        <KpiCard icon="EP" label="Endpoint Findings" value={String(props.endpointFindings.length)} note={getTopAsset(props.endpointFindings) || "Awaiting evidence"} />
-        <KpiCard icon="DN" label="DNS Max Severity" value={capitalize(getMaxSeverity(props.dnsFindings))} note={`${props.dnsFindings.length} DNS findings`} />
-        <KpiCard icon="LG" label="App Log Findings" value={String(props.appLogFindings.length)} note={getTopAsset(props.appLogFindings) || "Awaiting log import"} />
-        <KpiCard icon="IS" label="IIS Findings" value={String(props.iisFindings.length)} note={getTopAsset(props.iisFindings) || "Awaiting IIS collection"} />
-        <KpiCard icon="AR" label="Archived Reports" value={String(props.archiveEntries.length)} note="In local archive" />
+    <div className="workspace-content overview-visual-content">
+      <section className="visual-hero">
+        <div>
+          <p className="eyebrow">Local-first evidence console</p>
+          <h2>Cybersecurity posture overview</h2>
+          <p>
+            A visual summary of loaded evidence, finding severity, report archive state, and local run history. All metrics are derived from local CustosOps state.
+          </p>
+        </div>
+        <div className="visual-hero-panel">
+          <span>Coverage</span>
+          <strong>{activeSources}/{moduleSummaries.length}</strong>
+          <p>evidence sources loaded</p>
+        </div>
+      </section>
+
+      <section className="visual-kpi-grid">
+        <VisualKpiCard icon="EV" label="Total Findings" value={String(totalFindings)} note="Across loaded evidence" tone="primary" />
+        <VisualKpiCard icon="HI" label="High Priority" value={String(highPriorityFindings)} note="Critical and high findings" tone={highPriorityFindings > 0 ? "danger" : "success"} />
+        <VisualKpiCard icon="RH" label="Evidence Runs" value={String(props.runHistory.length)} note={runStatusNote} tone="teal" />
+        <VisualKpiCard icon="AR" label="Archived Reports" value={String(props.archiveEntries.length)} note="Reports in local archive" tone="purple" />
+      </section>
+
+      <section className="visual-overview-grid">
+        <section className="card analytics-card">
+          <div className="card-header">
+            <div>
+              <p className="eyebrow">Severity Analytics</p>
+              <h2>Findings by Severity</h2>
+            </div>
+            <span className="pill">{totalFindings} total</span>
+          </div>
+          <SeverityDistribution counts={totalCounts} />
+        </section>
+
+        <TopFindingCategories findings={allFindings} />
+
+        <RecentRunsPanel runs={props.runHistory} onNavigate={() => props.onNavigate("run-history")} />
+      </section>
+
+      <section className="workspace-coverage-grid">
+        {moduleSummaries.map((module) => (
+          <WorkspaceCoverageCard
+            key={module.workspace}
+            title={module.title}
+            eyebrow={module.eyebrow}
+            short={module.short}
+            counts={module.counts}
+            findings={module.findings}
+            note={module.note}
+            onOpen={() => props.onNavigate(module.workspace)}
+          />
+        ))}
       </section>
 
       <section className="overview-grid">
@@ -1885,6 +2003,15 @@ function OverviewWorkspace(props: {
           findings={props.appLogFindings}
           actionLabel="Open App Log Workspace"
           onAction={() => props.onNavigate("app-log")}
+        />
+
+        <OverviewCard
+          title="Windows Event Evidence"
+          eyebrow="Windows Events"
+          counts={props.windowsEventCounts}
+          findings={props.windowsEventFindings}
+          actionLabel="Open Windows Events"
+          onAction={() => props.onNavigate("windows-events")}
         />
 
         <OverviewCard
@@ -1943,6 +2070,191 @@ function OverviewWorkspace(props: {
   );
 }
 
+function VisualKpiCard(props: { icon: string; label: string; value: string; note: string; tone: string }) {
+  return (
+    <section className={`visual-kpi-card tone-${props.tone}`}>
+      <div className="visual-kpi-icon">{props.icon}</div>
+      <div>
+        <span>{props.label}</span>
+        <strong>{props.value}</strong>
+        <p>{props.note}</p>
+      </div>
+    </section>
+  );
+}
+
+function WorkspaceCoverageCard(props: {
+  title: string;
+  eyebrow: string;
+  short: string;
+  counts: SeverityCounts;
+  findings: Finding[];
+  note: string;
+  onOpen: () => void;
+}) {
+  const total = totalSeverityCount(props.counts);
+  const maxSeverity = total > 0 ? getMaxSeverity(props.findings) : "info";
+  const statusLabel = total > 0 ? "Evidence loaded" : "Awaiting evidence";
+
+  return (
+    <section className={`workspace-coverage-card ${total > 0 ? "loaded" : "empty"}`}>
+      <div className="coverage-card-top">
+        <div className="coverage-icon">{props.short}</div>
+        <div>
+          <p className="eyebrow">{props.eyebrow}</p>
+          <h3>{props.title}</h3>
+        </div>
+      </div>
+
+      <div className="coverage-card-main">
+        <strong>{total}</strong>
+        <span>findings</span>
+      </div>
+
+      <div className="coverage-card-status">
+        <SeverityDot severity={maxSeverity} />
+        <span>{statusLabel}</span>
+      </div>
+
+      <p>{props.note}</p>
+
+      <button type="button" onClick={props.onOpen}>Open Workspace</button>
+    </section>
+  );
+}
+
+function SeverityDistribution(props: { counts: SeverityCounts }) {
+  const total = totalSeverityCount(props.counts);
+
+  return (
+    <div className="severity-distribution">
+      {SEVERITY_ORDER.map((severity) => {
+        const count = props.counts[severity];
+        const percentage = getSeverityPercentage(count, total);
+
+        return (
+          <div className="severity-bar-row" key={severity}>
+            <div className="severity-bar-label">
+              <SeverityDot severity={severity} />
+              <strong>{count}</strong>
+            </div>
+            <div className="severity-bar-track" aria-label={`${capitalize(severity)} ${count}`}>
+              <span className={`severity-bar-fill severity-fill-${severity}`} style={{ width: `${percentage}%` }} />
+            </div>
+            <em>{percentage}%</em>
+          </div>
+        );
+      })}
+
+      {total === 0 && <p className="empty-state">No findings loaded yet. Import or collect evidence to populate severity analytics.</p>}
+    </div>
+  );
+}
+
+function TopFindingCategories(props: { findings: Finding[] }) {
+  const categories = getTopFindingCategories(props.findings);
+  const maxCount = categories[0]?.count ?? 0;
+
+  return (
+    <section className="card analytics-card">
+      <div className="card-header">
+        <div>
+          <p className="eyebrow">Finding Categories</p>
+          <h2>Top Priorities</h2>
+        </div>
+        <span className="pill">{categories.length} categories</span>
+      </div>
+
+      <div className="category-list">
+        {categories.map((category) => (
+          <div className="category-row" key={category.label}>
+            <div>
+              <strong>{category.label}</strong>
+              <span>{category.count} findings</span>
+            </div>
+            <div className="category-bar-track">
+              <span style={{ width: `${getSeverityPercentage(category.count, maxCount)}%` }} />
+            </div>
+          </div>
+        ))}
+
+        {categories.length === 0 && <p className="empty-state">No finding categories yet.</p>}
+      </div>
+    </section>
+  );
+}
+
+function RecentRunsPanel(props: { runs: EvidenceRun[]; onNavigate: () => void }) {
+  return (
+    <section className="card analytics-card">
+      <div className="card-header">
+        <div>
+          <p className="eyebrow">Run History</p>
+          <h2>Recent Evidence Runs</h2>
+        </div>
+        <button type="button" onClick={props.onNavigate}>Open History</button>
+      </div>
+
+      <div className="recent-run-list">
+        {props.runs.slice(0, 4).map((run) => (
+          <div className="recent-run-row" key={run.run_id}>
+            <span className={`run-status-dot ${run.status}`} />
+            <div>
+              <strong>{run.module_name}</strong>
+              <span>{formatRunDate(run.created_at)} - {run.finding_count} findings</span>
+            </div>
+          </div>
+        ))}
+
+        {props.runs.length === 0 && <p className="empty-state">No evidence runs recorded yet.</p>}
+      </div>
+    </section>
+  );
+}
+
+function mergeSeverityCounts(...countGroups: SeverityCounts[]): SeverityCounts {
+  const merged: SeverityCounts = {
+    critical: 0,
+    high: 0,
+    medium: 0,
+    low: 0,
+    info: 0
+  };
+
+  for (const counts of countGroups) {
+    for (const severity of SEVERITY_ORDER) {
+      merged[severity] += counts[severity];
+    }
+  }
+
+  return merged;
+}
+
+function totalSeverityCount(counts: SeverityCounts): number {
+  return SEVERITY_ORDER.reduce((sum, severity) => sum + counts[severity], 0);
+}
+
+function getSeverityPercentage(count: number, total: number): number {
+  if (total <= 0 || count <= 0) {
+    return 0;
+  }
+
+  return Math.round((count / total) * 100);
+}
+
+function getTopFindingCategories(findings: Finding[]): { label: string; count: number }[] {
+  const counts = new Map<string, number>();
+
+  for (const finding of findings) {
+    const label = finding.category || finding.title || "Uncategorized";
+    counts.set(label, (counts.get(label) ?? 0) + 1);
+  }
+
+  return Array.from(counts.entries())
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+    .slice(0, 5);
+}
 function EvidenceWorkspace(props: {
   title: string;
   eyebrow: string;

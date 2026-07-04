@@ -562,3 +562,9 @@ CustosOps is prepared for GitHub publication with strengthened ignore rules, lic
 Status: complete in tag custosops-v0.29.1-final-github-portfolio-package.
 
 CustosOps v1 is packaged for private-first GitHub publication and portfolio demonstration. Next optional track: M30 visual analytics and UI polish.
+
+## M30A - Overview Visual Refresh
+
+Status: complete in tag custosops-v0.30.0-overview-visual-refresh.
+
+The Overview workspace now includes aggregate local-state metrics, severity distribution bars, workspace coverage cards, top finding categories, and recent run previews without adding chart dependencies or backend feature changes.
