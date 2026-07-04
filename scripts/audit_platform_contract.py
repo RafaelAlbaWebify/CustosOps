@@ -69,7 +69,7 @@ def zip_dir(source_dir, zip_path):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--root", default=r"C:\Users\ralba\Documents\GitHub\custosops")
+    parser.add_argument("--root", default=str(Path(__file__).resolve().parents[1]))
     args = parser.parse_args()
 
     root = Path(args.root)

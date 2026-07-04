@@ -7,13 +7,13 @@ The tool is intentionally kept outside the repository unless explicitly moved la
 Tool location:
 
 ```text
-C:\Users\ralba\Desktop\CustosOps-UI-Tool
+$env:USERPROFILE\Desktop\CustosOps-UI-Tool
 ```
 
 Proof ZIP output folder:
 
 ```text
-C:\Users\ralba\Downloads
+$env:USERPROFILE\Downloads
 ```
 
 Standard run command:

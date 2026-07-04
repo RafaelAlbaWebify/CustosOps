@@ -22,12 +22,12 @@ def test_app_log_json_report_applies_default_redaction_settings(tmp_path, monkey
         "/api/reports/app-log",
         json={
             "evidence": {
-                "source_file": "C:\\Users\\ralba\\logs\\app.log",
+                "source_file": "C:\\Users\\analyst\\logs\\app.log",
                 "raw_line_count": 1,
                 "parsed_entry_count": 1,
                 "entries": [
                     {
-                        "message": "Contact rafael@example.com from C:\\Users\\ralba\\Desktop",
+                        "message": "Contact analyst@example.com from C:\\Users\\analyst\\Desktop",
                     }
                 ],
             },
@@ -43,11 +43,11 @@ def test_app_log_json_report_applies_default_redaction_settings(tmp_path, monkey
                         {
                             "source": "app-log",
                             "key": "message",
-                            "value": "Contact rafael@example.com from C:\\Users\\ralba\\Desktop",
+                            "value": "Contact analyst@example.com from C:\\Users\\analyst\\Desktop",
                         }
                     ],
-                    "why_it_matters": "The report should not expose rafael@example.com.",
-                    "safe_next_steps": ["Review C:\\Users\\ralba\\Desktop safely."],
+                    "why_it_matters": "The report should not expose analyst@example.com.",
+                    "safe_next_steps": ["Review C:\\Users\\analyst\\Desktop safely."],
                     "limitations": ["Synthetic test."],
                     "non_actions": ["Do not remediate."],
                 }
@@ -67,8 +67,8 @@ def test_app_log_json_report_applies_default_redaction_settings(tmp_path, monkey
 
     content = data["content"]
 
-    assert "rafael@example.com" not in content
-    assert "C:\\Users\\ralba" not in content
+    assert "analyst@example.com" not in content
+    assert "C:\\Users\\analyst" not in content
     assert "[REDACTED_EMAIL]" in content
     assert "[REDACTED_USER]" in content
 
@@ -92,9 +92,9 @@ def test_executive_summary_html_report_applies_redaction_to_rendered_fields(tmp_
                 {
                     "module_id": "app-logs",
                     "module_name": "Application Logs",
-                    "source": "Contact rafael@example.com from C:\\Users\\ralba\\logs\\app.log",
+                    "source": "Contact analyst@example.com from C:\\Users\\analyst\\logs\\app.log",
                     "evidence": {
-                        "source_file": "Contact rafael@example.com from C:\\Users\\ralba\\logs\\app.log",
+                        "source_file": "Contact analyst@example.com from C:\\Users\\analyst\\logs\\app.log",
                     },
                     "findings": [
                         {
@@ -108,11 +108,11 @@ def test_executive_summary_html_report_applies_redaction_to_rendered_fields(tmp_
                                 {
                                     "source": "app-log",
                                     "key": "message",
-                                    "value": "Contact rafael@example.com from C:\\Users\\ralba\\Desktop",
+                                    "value": "Contact analyst@example.com from C:\\Users\\analyst\\Desktop",
                                 }
                             ],
-                            "why_it_matters": "Contact rafael@example.com from C:\\Users\\ralba\\Desktop",
-                            "safe_next_steps": ["Review C:\\Users\\ralba\\Desktop safely."],
+                            "why_it_matters": "Contact analyst@example.com from C:\\Users\\analyst\\Desktop",
+                            "safe_next_steps": ["Review C:\\Users\\analyst\\Desktop safely."],
                             "limitations": ["Synthetic test."],
                             "non_actions": ["Do not remediate."],
                         }
@@ -131,8 +131,8 @@ def test_executive_summary_html_report_applies_redaction_to_rendered_fields(tmp_
     assert data["redaction"]["enabled"] is True
     assert data["redaction"]["changed"] is True
 
-    assert "rafael@example.com" not in content
-    assert "C:\\Users\\ralba" not in content
+    assert "analyst@example.com" not in content
+    assert "C:\\Users\\analyst" not in content
     assert "[REDACTED_EMAIL]" in content
     assert "[REDACTED_USER]" in content
 
@@ -182,10 +182,10 @@ def test_report_redaction_can_be_disabled(tmp_path, monkeypatch):
                         {
                             "source": "app-log",
                             "key": "message",
-                            "value": "Contact rafael@example.com",
+                            "value": "Contact analyst@example.com",
                         }
                     ],
-                    "why_it_matters": "Contact rafael@example.com",
+                    "why_it_matters": "Contact analyst@example.com",
                     "safe_next_steps": ["Review safely."],
                     "limitations": ["Synthetic test."],
                     "non_actions": ["Do not remediate."],
@@ -202,4 +202,4 @@ def test_report_redaction_can_be_disabled(tmp_path, monkeypatch):
     assert data["redaction"]["enabled"] is False
     assert data["redaction"]["changed"] is False
     assert data["redaction"]["applied_rules"] == []
-    assert "rafael@example.com" in data["content"]
+    assert "analyst@example.com" in data["content"]

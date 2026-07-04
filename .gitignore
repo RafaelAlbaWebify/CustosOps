@@ -34,3 +34,7 @@ backend/.venv/
 frontend/dist/
 reports/
 recovery_backup_*/
+.pytest_cache/
+*.zip
+CUSTOSOPS_*/
+CUSTOSOPS_*.zip

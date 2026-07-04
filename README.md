@@ -134,3 +134,9 @@ custosops-v0.28.1-release-hygiene-readme-demo
 ```
 
 The v0.28 line is intended as the final hardening line before portfolio/demo packaging.
+
+## GitHub publication status
+
+This repository is prepared for GitHub publication with local/generated artifacts excluded from version control.
+
+Recommended first publication mode: private repository, then public after a final manual review of screenshots, demo text, and tracked files.

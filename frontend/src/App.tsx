@@ -2016,7 +2016,7 @@ function RedactionSettingsWorkspace(props: {
   onReset: () => void;
   onRefresh: () => void;
 }) {
-  const [previewText, setPreviewText] = useState("Contact rafael@example.com from C:\\Users\\ralba\\Desktop");
+  const [previewText, setPreviewText] = useState("Contact analyst@example.com from C:\\Users\\analyst\\Desktop");
   const [previewResult, setPreviewResult] = useState<{ redacted: string; changed: boolean; applied_rules: string[] } | null>(null);
   const [previewStatus, setPreviewStatus] = useState("");
 

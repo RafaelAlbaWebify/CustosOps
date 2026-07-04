@@ -1,5 +1,5 @@
 param(
-    [string]$Root = "C:\Users\ralba\Documents\GitHub\custosops"
+    [string]$Root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 )
 
 $Python = Join-Path $Root "backend\.venv\Scripts\python.exe"

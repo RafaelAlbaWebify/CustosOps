@@ -550,3 +550,9 @@ Status: complete in tag custosops-v0.28.1-release-hygiene-readme-demo.
 M28B aligns README, release notes, and demo guidance with the actual 10-workspace product. It also documents the expected redacted placeholder secret-scan matches and keeps final hardening focused on release hygiene rather than new features.
 
 Next: M29 portfolio/demo packaging.
+
+## M29B - GitHub Publish Prep
+
+Status: complete in tag custosops-v0.29.0-github-publish-prep.
+
+CustosOps is prepared for GitHub publication with strengthened ignore rules, license file, generic public-safe examples, portable helper defaults, and a GitHub publish checklist.

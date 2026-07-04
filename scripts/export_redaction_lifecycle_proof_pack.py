@@ -122,12 +122,12 @@ def api_proof(root, out_file):
         "POST /api/redaction/preview",
         client.post(
             "/api/redaction/preview",
-            json={"text": "Contact rafael@example.com from C:\\Users\\ralba\\Desktop"},
+            json={"text": "Contact analyst@example.com from C:\\Users\\analyst\\Desktop"},
         ),
     )
 
     preview_text = preview.get("redacted", "")
-    if "rafael@example.com" in preview_text or "C:\\Users\\ralba" in preview_text:
+    if "analyst@example.com" in preview_text or "C:\\Users\\analyst" in preview_text:
         lines.append("ERROR: preview redaction failed")
         ok = False
 
@@ -137,7 +137,7 @@ def api_proof(root, out_file):
             "/api/reports/app-log",
             json={
                 "evidence": {
-                    "source_file": "C:\\Users\\ralba\\logs\\app.log",
+                    "source_file": "C:\\Users\\analyst\\logs\\app.log",
                     "raw_line_count": 1,
                     "parsed_entry_count": 1,
                 },
@@ -153,11 +153,11 @@ def api_proof(root, out_file):
                             {
                                 "source": "app-log",
                                 "key": "message",
-                                "value": "Contact rafael@example.com from C:\\Users\\ralba\\Desktop",
+                                "value": "Contact analyst@example.com from C:\\Users\\analyst\\Desktop",
                             }
                         ],
-                        "why_it_matters": "Contact rafael@example.com from C:\\Users\\ralba\\Desktop",
-                        "safe_next_steps": ["Review C:\\Users\\ralba\\Desktop safely."],
+                        "why_it_matters": "Contact analyst@example.com from C:\\Users\\analyst\\Desktop",
+                        "safe_next_steps": ["Review C:\\Users\\analyst\\Desktop safely."],
                         "limitations": ["Synthetic proof."],
                         "non_actions": ["Do not remediate."],
                     }
@@ -169,7 +169,7 @@ def api_proof(root, out_file):
     )
 
     report_content = report.get("content", "")
-    if "rafael@example.com" in report_content or "C:\\Users\\ralba" in report_content:
+    if "analyst@example.com" in report_content or "C:\\Users\\analyst" in report_content:
         lines.append("ERROR: app-log report redaction failed")
         ok = False
 
@@ -182,9 +182,9 @@ def api_proof(root, out_file):
                     {
                         "module_id": "app-logs",
                         "module_name": "Application Logs",
-                        "source": "Contact rafael@example.com from C:\\Users\\ralba\\logs\\app.log",
+                        "source": "Contact analyst@example.com from C:\\Users\\analyst\\logs\\app.log",
                         "evidence": {
-                            "source_file": "Contact rafael@example.com from C:\\Users\\ralba\\logs\\app.log",
+                            "source_file": "Contact analyst@example.com from C:\\Users\\analyst\\logs\\app.log",
                         },
                         "findings": [],
                     }
@@ -196,7 +196,7 @@ def api_proof(root, out_file):
     )
 
     executive_content = executive.get("content", "")
-    if "rafael@example.com" in executive_content or "C:\\Users\\ralba" in executive_content:
+    if "analyst@example.com" in executive_content or "C:\\Users\\analyst" in executive_content:
         lines.append("ERROR: executive report redaction failed")
         ok = False
 
@@ -216,7 +216,7 @@ def zip_dir(source_dir, zip_path):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--root", default=r"C:\Users\ralba\Documents\GitHub\custosops")
+    parser.add_argument("--root", default=str(Path(__file__).resolve().parents[1]))
     args = parser.parse_args()
 
     root = Path(args.root)

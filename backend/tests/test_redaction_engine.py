@@ -43,12 +43,12 @@ def test_redaction_engine_applies_default_email_and_windows_profile_rules():
     )
 
     redacted, applied = redact_text(
-        "Contact rafael@example.com and inspect C:\\Users\\ralba\\Desktop\\file.txt from 192.168.1.10",
+        "Contact analyst@example.com and inspect C:\\Users\\analyst\\Desktop\\file.txt from 192.168.1.10",
         settings=settings,
     )
 
-    assert "rafael@example.com" not in redacted
-    assert "C:\\Users\\ralba" not in redacted
+    assert "analyst@example.com" not in redacted
+    assert "C:\\Users\\analyst" not in redacted
     assert "192.168.1.10" in redacted
     assert "email-addresses" in applied
     assert "user-profile-paths" in applied
@@ -73,7 +73,7 @@ def test_redaction_engine_can_redact_nested_values():
     )
 
     value = {
-        "message": "User rafael@example.com failed test",
+        "message": "User analyst@example.com failed test",
         "items": ["admin@example.com", 10],
     }
 
@@ -96,7 +96,7 @@ def test_redaction_preview_api_uses_saved_settings(tmp_path, monkeypatch):
     response = client.post(
         "/api/redaction/preview",
         json={
-            "text": "Contact rafael@example.com from C:\\Users\\ralba\\Desktop"
+            "text": "Contact analyst@example.com from C:\\Users\\analyst\\Desktop"
         },
     )
 
@@ -104,7 +104,7 @@ def test_redaction_preview_api_uses_saved_settings(tmp_path, monkeypatch):
     data = response.json()
 
     assert data["changed"] is True
-    assert "rafael@example.com" not in data["redacted"]
-    assert "C:\\Users\\ralba" not in data["redacted"]
+    assert "analyst@example.com" not in data["redacted"]
+    assert "C:\\Users\\analyst" not in data["redacted"]
     assert "email-addresses" in data["applied_rules"]
     assert "user-profile-paths" in data["applied_rules"]
