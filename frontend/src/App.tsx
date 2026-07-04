@@ -2780,6 +2780,14 @@ function formatRunDate(value: string) {
   return parsed.toLocaleString();
 }
 
+type ReportReadinessSummary = {
+  title: string;
+  description: string;
+  ready: boolean;
+  module?: ReportModule;
+  executive?: boolean;
+};
+
 function ReportsWorkspace(props: {
   endpointReady: boolean;
   dnsReady: boolean;
@@ -2790,23 +2798,67 @@ function ReportsWorkspace(props: {
   onDownload: (reportType: ReportModule, format: ReportFormat) => void;
   onExecutiveDownload: (format: ReportFormat) => void;
 }) {
+  const reports: ReportReadinessSummary[] = [
+    { title: "Endpoint Report", description: "Endpoint posture and finding summary.", ready: props.endpointReady, module: "endpoint" },
+    { title: "DNS Hygiene Report", description: "DNS records, mismatches, and hygiene findings.", ready: props.dnsReady, module: "dns" },
+    { title: "Application Log Report", description: "Application/API runtime evidence and findings.", ready: props.appLogReady, module: "app-log" },
+    { title: "Windows Event Report", description: "Windows Event evidence and review findings.", ready: props.windowsEventReady, module: "windows-events" },
+    { title: "IIS/Application Report", description: "IIS site, app pool, and log evidence.", ready: props.iisReady, module: "iis" },
+    { title: "Executive Summary Pack", description: "Combined posture summary across loaded modules.", ready: props.executiveReady, executive: true }
+  ];
+
+  const readyCount = reports.filter((report) => report.ready).length;
+  const blockedCount = reports.length - readyCount;
+
   return (
-    <div className="workspace-content">
-      <section className="workspace-hero">
+    <div className="workspace-content report-archive-visual-content">
+      <section className="report-archive-hero">
         <div>
           <p className="eyebrow">Reports</p>
           <h2>Evidence Report Center</h2>
-          <p>Generate local HTML, Markdown, or JSON reports from the evidence currently loaded in each module.</p>
+          <p>Generate local HTML, Markdown, or JSON reports from currently loaded evidence. Report readiness is based on local module state.</p>
+        </div>
+        <div className="report-archive-hero-panel">
+          <span>Ready reports</span>
+          <strong>{readyCount}/{reports.length}</strong>
+          <p>{blockedCount === 0 ? "All report paths are ready" : `${blockedCount} awaiting evidence`}</p>
         </div>
       </section>
 
-      <section className="report-grid">
-        <ReportCard title="Endpoint Report" ready={props.endpointReady} onDownload={(format) => props.onDownload("endpoint", format)} />
-        <ReportCard title="DNS Hygiene Report" ready={props.dnsReady} onDownload={(format) => props.onDownload("dns", format)} />
-        <ReportCard title="Application Log Report" ready={props.appLogReady} onDownload={(format) => props.onDownload("app-log", format)} />
-        <ReportCard title="Windows Event Report" ready={props.windowsEventReady} onDownload={(format) => props.onDownload("windows-events", format)} />
-        <ReportCard title="IIS/Application Report" ready={props.iisReady} onDownload={(format) => props.onDownload("iis", format)} />
-        <ReportCard title="Executive Summary Pack" ready={props.executiveReady} onDownload={props.onExecutiveDownload} />
+      <section className="metric-grid report-archive-kpi-grid">
+        <ReportArchiveMetricCard label="Ready Reports" value={readyCount} note="Evidence available" tone="success" />
+        <ReportArchiveMetricCard label="Awaiting Evidence" value={blockedCount} note="No module evidence yet" tone="warning" />
+        <ReportArchiveMetricCard label="Export Formats" value={3} note="HTML / Markdown / JSON" tone="primary" />
+        <ReportArchiveMetricCard label="Report Types" value={reports.length} note="Module and executive reports" tone="purple" />
+      </section>
+
+      <section className="report-format-panel-grid">
+        <ReportFormatPanel format="HTML" description="Demo-friendly browser report for screenshots and review." />
+        <ReportFormatPanel format="Markdown" description="Portable technical write-up for notes and tickets." />
+        <ReportFormatPanel format="JSON" description="Structured report output for repeatable evidence handling." />
+      </section>
+
+      <section className="report-readiness-grid">
+        {reports.map((report) => {
+          const handleDownload = (format: ReportFormat) => {
+            if (report.executive) {
+              props.onExecutiveDownload(format);
+              return;
+            }
+
+            if (report.module) {
+              props.onDownload(report.module, format);
+            }
+          };
+
+          return (
+            <ReportReadinessCard
+              key={report.title}
+              report={report}
+              onDownload={handleDownload}
+            />
+          );
+        })}
       </section>
     </div>
   );
@@ -2819,20 +2871,47 @@ function ArchiveWorkspace(props: {
   onDownload: (entry: ArchiveEntry) => void;
   onDelete: (entry: ArchiveEntry) => void;
 }) {
+  const totalSize = props.entries.reduce((sum, entry) => sum + (entry.size_bytes ?? 0), 0);
+  const formatCounts = getArchiveDistribution(props.entries, "format");
+  const typeCounts = getArchiveDistribution(props.entries, "report_type");
+  const latestEntries = getLatestArchiveEntries(props.entries);
+  const latestEntry = latestEntries[0] ?? null;
+
   return (
-    <div className="workspace-content">
-      <section className="workspace-hero">
+    <div className="workspace-content report-archive-visual-content">
+      <section className="report-archive-hero">
         <div>
           <p className="eyebrow">Archive</p>
           <h2>Local Report Archive</h2>
-          <p>Open, download, or remove reports stored in the local CustosOps archive.</p>
+          <p>Open, download, or remove reports stored in the local CustosOps archive. Archive metrics are derived from local metadata only.</p>
         </div>
         <div className="workspace-actions">
           <button type="button" onClick={props.onRefresh}>Refresh</button>
         </div>
       </section>
 
-      <section className="card">
+      <section className="metric-grid report-archive-kpi-grid">
+        <ReportArchiveMetricCard label="Archived Reports" value={props.entries.length} note="Local archive entries" tone="primary" />
+        <ReportArchiveMetricCard label="Archive Size" value={formatBytes(totalSize)} note="Total stored report size" tone="teal" />
+        <ReportArchiveMetricCard label="Formats" value={formatCounts.length} note="Distinct output formats" tone="purple" />
+        <ReportArchiveMetricCard label="Latest Report" value={latestEntry ? formatArchiveDate(latestEntry.created_at) : "None"} note={latestEntry?.filename ?? "No archived reports yet"} tone="success" />
+      </section>
+
+      <section className="archive-analytics-grid">
+        <ArchiveDistributionPanel title="Formats" items={formatCounts} total={props.entries.length} />
+        <ArchiveDistributionPanel title="Report Types" items={typeCounts} total={props.entries.length} />
+        <LatestArchivePanel entries={latestEntries} onOpen={props.onOpen} onDownload={props.onDownload} />
+      </section>
+
+      <section className="card archive-table-card">
+        <div className="card-header">
+          <div>
+            <p className="eyebrow">Archive Table</p>
+            <h2>Stored Reports</h2>
+          </div>
+          <span className="pill">{props.entries.length} entries</span>
+        </div>
+
         <div className="archive-table">
           <div className="archive-head">
             <span>Report</span>
@@ -2841,7 +2920,7 @@ function ArchiveWorkspace(props: {
             <span>Actions</span>
           </div>
 
-          {props.entries.map((entry) => (
+          {latestEntries.map((entry) => (
             <div className="archive-row" key={entry.id}>
               <div className="archive-name">
                 <div className="doc-icon">DOC</div>
@@ -2867,6 +2946,161 @@ function ArchiveWorkspace(props: {
   );
 }
 
+function ReportArchiveMetricCard(props: { label: string; value: number | string; note: string; tone: string }) {
+  return (
+    <div className={`metric-card report-archive-metric tone-${props.tone}`}>
+      <span>{props.label}</span>
+      <strong>{props.value}</strong>
+      <p>{props.note}</p>
+    </div>
+  );
+}
+
+function ReportFormatPanel(props: { format: string; description: string }) {
+  return (
+    <section className="card report-format-panel">
+      <div className="doc-icon">{props.format.slice(0, 2).toUpperCase()}</div>
+      <div>
+        <strong>{props.format}</strong>
+        <span>{props.description}</span>
+      </div>
+    </section>
+  );
+}
+
+function ReportReadinessCard(props: {
+  report: ReportReadinessSummary;
+  onDownload: (format: ReportFormat) => void;
+}) {
+  return (
+    <section className={`card report-readiness-card ${props.report.ready ? "ready" : "blocked"}`}>
+      <div className="card-header">
+        <div>
+          <p className="eyebrow">{props.report.executive ? "Executive" : "Module Report"}</p>
+          <h2>{props.report.title}</h2>
+        </div>
+        <span className={props.report.ready ? "pill success" : "pill muted"}>{props.report.ready ? "Ready" : "No evidence"}</span>
+      </div>
+      <p>{props.report.description}</p>
+      <ReportButtons disabled={!props.report.ready} onDownload={props.onDownload} />
+    </section>
+  );
+}
+
+function ArchiveDistributionPanel(props: { title: string; items: { label: string; count: number }[]; total: number }) {
+  return (
+    <section className="card archive-distribution-panel">
+      <div className="card-header">
+        <div>
+          <p className="eyebrow">Archive</p>
+          <h2>{props.title}</h2>
+        </div>
+        <span className="pill">{props.items.length} groups</span>
+      </div>
+
+      <div className="archive-distribution-list">
+        {props.items.map((item) => (
+          <div className="archive-distribution-row" key={item.label}>
+            <div>
+              <strong>{item.label}</strong>
+              <span>{item.count} reports</span>
+            </div>
+            <div className="archive-distribution-track">
+              <span style={{ width: `${getArchivePercentage(item.count, props.total)}%` }} />
+            </div>
+          </div>
+        ))}
+
+        {props.items.length === 0 && <p className="empty-state">No archive groups yet.</p>}
+      </div>
+    </section>
+  );
+}
+
+function LatestArchivePanel(props: {
+  entries: ArchiveEntry[];
+  onOpen: (entry: ArchiveEntry) => void;
+  onDownload: (entry: ArchiveEntry) => void;
+}) {
+  return (
+    <section className="card latest-archive-panel">
+      <div className="card-header">
+        <div>
+          <p className="eyebrow">Latest</p>
+          <h2>Recent Reports</h2>
+        </div>
+        <span className="pill">{Math.min(props.entries.length, 5)} shown</span>
+      </div>
+
+      <div className="latest-archive-list">
+        {props.entries.slice(0, 5).map((entry) => (
+          <div className="latest-archive-row" key={entry.id}>
+            <div className="doc-icon">DOC</div>
+            <div>
+              <strong>{entry.filename}</strong>
+              <span>{entry.report_type ?? "report"} / {entry.format ?? "file"} - {formatBytes(entry.size_bytes)}</span>
+            </div>
+            <div className="row-actions">
+              <button type="button" onClick={() => props.onOpen(entry)}>Open</button>
+              <button type="button" onClick={() => props.onDownload(entry)}>Download</button>
+            </div>
+          </div>
+        ))}
+
+        {props.entries.length === 0 && <p className="empty-state">No archived reports yet.</p>}
+      </div>
+    </section>
+  );
+}
+
+function getArchiveDistribution(entries: ArchiveEntry[], key: "format" | "report_type") {
+  const counts = new Map<string, number>();
+
+  for (const entry of entries) {
+    const label = entry[key] || (key === "format" ? "file" : "report");
+    counts.set(label, (counts.get(label) ?? 0) + 1);
+  }
+
+  return Array.from(counts.entries())
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+}
+
+function getLatestArchiveEntries(entries: ArchiveEntry[]) {
+  return [...entries].sort((a, b) => getArchiveTime(b.created_at) - getArchiveTime(a.created_at) || a.filename.localeCompare(b.filename));
+}
+
+function getArchiveTime(value?: string) {
+  if (!value) {
+    return 0;
+  }
+
+  const parsed = new Date(value).getTime();
+
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function formatArchiveDate(value?: string) {
+  if (!value) {
+    return "n/a";
+  }
+
+  const parsed = new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  return parsed.toLocaleDateString();
+}
+
+function getArchivePercentage(count: number, total: number) {
+  if (total <= 0 || count <= 0) {
+    return 0;
+  }
+
+  return Math.max(4, Math.round((count / total) * 100));
+}
 function OverviewCard(props: {
   title: string;
   eyebrow: string;

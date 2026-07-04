@@ -580,3 +580,9 @@ The Overview analytics layer now includes a severity posture panel, high-priorit
 Status: complete in tag custosops-v0.30.2-run-history-analytics.
 
 The Run History workspace now includes a local operations hero, run summary KPI cards, CSS-only outcome distribution, module run summary, latest activity timeline, and the existing detailed run table.
+
+## M30D - Report and Archive Visual Polish
+
+Status: complete in tag custosops-v0.30.3-report-archive-polish.
+
+The Reports and Archive workspaces now include dedicated hero panels, KPI cards, report readiness cards, archive distribution panels, and latest report summaries using existing local state and CSS-only visuals.
