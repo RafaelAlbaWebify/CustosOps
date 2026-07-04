@@ -23,7 +23,7 @@ Out of scope:
 Release-hardening interpretation:
 
 ```text
-TODO/FIXME/HACK scan must be zero before final packaging.
+Placeholder-comment scan must be clear before final packaging.
 Redacted placeholder strings such as [REDACTED_PASSWORD], [REDACTED_TOKEN], [REDACTED_API_KEY], and [REDACTED_SECRET] are expected redaction examples, not live secrets.
 The final packaging audit should still scan for secret-like strings and review every match manually.
 ```

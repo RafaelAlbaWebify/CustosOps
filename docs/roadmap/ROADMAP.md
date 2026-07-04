@@ -542,3 +542,11 @@ The Desktop UI proof gate now directly captures and validates the IIS/Applicatio
 Status: complete in tag custosops-v0.28.0-release-audit-alignment.
 
 The release-hardening audit and platform contract audit were aligned with the IIS/Application workspace introduced in M27. The proof gate now expects 10 workspaces including IIS/Application.
+
+## M28B - Final Release Hygiene
+
+Status: complete in tag custosops-v0.28.1-release-hygiene-readme-demo.
+
+M28B aligns README, release notes, and demo guidance with the actual 10-workspace product. It also documents the expected redacted placeholder secret-scan matches and keeps final hardening focused on release hygiene rather than new features.
+
+Next: M29 portfolio/demo packaging.
