@@ -1920,6 +1920,9 @@ function OverviewWorkspace(props: {
   const runStatusNote = props.runHistory.length > 0
     ? `${completedRuns} completed / ${warningRuns} warning / ${failedRuns} failed`
     : "No recorded runs yet";
+  const priorityFindings = getPriorityFindings(allFindings, 6);
+  const highPriorityRatio = totalFindings > 0 ? Math.round((highPriorityFindings / totalFindings) * 100) : 0;
+  const dominantSeverity = getDominantSeverity(totalCounts);
 
   return (
     <div className="workspace-content overview-visual-content">
@@ -1975,6 +1978,22 @@ function OverviewWorkspace(props: {
             onOpen={() => props.onNavigate(module.workspace)}
           />
         ))}
+      </section>
+
+      <section className="severity-intelligence-grid">
+        <SeverityPosturePanel
+          counts={totalCounts}
+          totalFindings={totalFindings}
+          highPriorityFindings={highPriorityFindings}
+          highPriorityRatio={highPriorityRatio}
+          dominantSeverity={dominantSeverity}
+          activeSources={activeSources}
+          sourceCount={moduleSummaries.length}
+        />
+
+        <ModuleSeverityMatrix modules={moduleSummaries} />
+
+        <PriorityFindingsPanel findings={priorityFindings} />
       </section>
 
       <section className="overview-grid">
@@ -2123,6 +2142,163 @@ function WorkspaceCoverageCard(props: {
   );
 }
 
+function SeverityPosturePanel(props: {
+  counts: SeverityCounts;
+  totalFindings: number;
+  highPriorityFindings: number;
+  highPriorityRatio: number;
+  dominantSeverity: Severity;
+  activeSources: number;
+  sourceCount: number;
+}) {
+  const postureLabel = props.totalFindings === 0
+    ? "Awaiting evidence"
+    : props.highPriorityFindings > 0
+      ? "Attention needed"
+      : "Stable posture";
+  const dominantLabel = props.totalFindings === 0 ? "None" : capitalize(props.dominantSeverity);
+
+  return (
+    <section className="card severity-posture-card">
+      <div className="card-header">
+        <div>
+          <p className="eyebrow">Severity Posture</p>
+          <h2>{postureLabel}</h2>
+        </div>
+        <SeverityBadge severity={props.dominantSeverity} />
+      </div>
+
+      <div className="posture-score-row">
+        <div>
+          <span>High-priority ratio</span>
+          <strong>{props.highPriorityRatio}%</strong>
+        </div>
+        <div>
+          <span>Coverage</span>
+          <strong>{props.activeSources}/{props.sourceCount}</strong>
+        </div>
+      </div>
+
+      <div className="posture-meter" aria-label="High priority ratio">
+        <span style={{ width: `${props.highPriorityRatio}%` }} />
+      </div>
+
+      <div className="posture-detail-grid">
+        <div>
+          <span>Dominant severity</span>
+          <strong>{dominantLabel}</strong>
+        </div>
+        <div>
+          <span>Critical + High</span>
+          <strong>{props.highPriorityFindings}</strong>
+        </div>
+        <div>
+          <span>Total findings</span>
+          <strong>{props.totalFindings}</strong>
+        </div>
+      </div>
+
+      <div className="severity-chip-row">
+        {SEVERITY_ORDER.map((severity) => (
+          <span className={`severity-mini-chip severity-mini-${severity}`} key={severity}>
+            {capitalize(severity)} {props.counts[severity]}
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ModuleSeverityMatrix(props: {
+  modules: {
+    workspace: Workspace;
+    title: string;
+    counts: SeverityCounts;
+    findings: Finding[];
+  }[];
+}) {
+  return (
+    <section className="card module-severity-card">
+      <div className="card-header">
+        <div>
+          <p className="eyebrow">Workspace Severity Matrix</p>
+          <h2>Where risk is concentrated</h2>
+        </div>
+        <span className="pill">{props.modules.length} sources</span>
+      </div>
+
+      <div className="matrix-header">
+        <span>Workspace</span>
+        <span>Crit</span>
+        <span>High</span>
+        <span>Med</span>
+        <span>Low</span>
+        <span>Info</span>
+      </div>
+
+      <div className="module-severity-matrix">
+        {props.modules.map((module) => {
+          const total = totalSeverityCount(module.counts);
+          const maxSeverity = total > 0 ? getMaxSeverity(module.findings) : "info";
+
+          return (
+            <div className="matrix-row" key={module.workspace}>
+              <div className="matrix-workspace">
+                <SeverityDot severity={maxSeverity} />
+                <div>
+                  <strong>{module.title}</strong>
+                  <span>{total} findings</span>
+                </div>
+              </div>
+
+              {SEVERITY_ORDER.map((severity) => (
+                <span className={`matrix-count severity-cell-${severity}`} key={severity}>
+                  {module.counts[severity]}
+                </span>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function PriorityFindingsPanel(props: { findings: Finding[] }) {
+  return (
+    <section className="card priority-findings-card">
+      <div className="card-header">
+        <div>
+          <p className="eyebrow">Priority Queue</p>
+          <h2>Top findings to review</h2>
+        </div>
+        <span className="pill">{props.findings.length} shown</span>
+      </div>
+
+      <div className="priority-finding-list">
+        {props.findings.map((finding, index) => {
+          const severity = normalizeSeverity(finding.severity);
+
+          return (
+            <div className="priority-finding-row" key={`${finding.finding_id}-${index}`}>
+              <div className="priority-rank">{index + 1}</div>
+              <div className="priority-finding-main">
+                <div>
+                  <strong>{finding.title}</strong>
+                  <span>{finding.affected_asset || finding.category || "No asset provided"}</span>
+                </div>
+                <SeverityBadge severity={severity} />
+              </div>
+            </div>
+          );
+        })}
+
+        {props.findings.length === 0 && <p className="empty-state">No prioritized findings yet.</p>}
+      </div>
+    </section>
+  );
+}
+
 function SeverityDistribution(props: { counts: SeverityCounts }) {
   const total = totalSeverityCount(props.counts);
 
@@ -2240,6 +2416,24 @@ function getSeverityPercentage(count: number, total: number): number {
   }
 
   return Math.round((count / total) * 100);
+}
+
+function getPriorityFindings(findings: Finding[], limit = 6): Finding[] {
+  return sortFindings(findings).slice(0, limit);
+}
+
+function getDominantSeverity(counts: SeverityCounts): Severity {
+  let dominant: Severity = "info";
+  let dominantCount = 0;
+
+  for (const severity of SEVERITY_ORDER) {
+    if (counts[severity] > dominantCount) {
+      dominant = severity;
+      dominantCount = counts[severity];
+    }
+  }
+
+  return dominant;
 }
 
 function getTopFindingCategories(findings: Finding[]): { label: string; count: number }[] {

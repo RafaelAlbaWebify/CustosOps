@@ -568,3 +568,9 @@ CustosOps v1 is packaged for private-first GitHub publication and portfolio demo
 Status: complete in tag custosops-v0.30.0-overview-visual-refresh.
 
 The Overview workspace now includes aggregate local-state metrics, severity distribution bars, workspace coverage cards, top finding categories, and recent run previews without adding chart dependencies or backend feature changes.
+
+## M30B - Severity Analytics Polish
+
+Status: complete in tag custosops-v0.30.1-severity-analytics-polish.
+
+The Overview analytics layer now includes a severity posture panel, high-priority ratio meter, module-by-severity matrix, and priority findings queue using existing local state and CSS-only visuals.
