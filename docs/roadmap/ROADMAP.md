@@ -536,3 +536,9 @@ Status: complete in tag custosops-v0.27.2-iis-ui-proof-coverage.
 
 The Desktop UI proof gate now directly captures and validates the IIS/Application workspace added in M27B. The proof artifact checker now requires 10 workspaces, a passing IIS UI check, and the IIS workspace screenshot.
 
+
+## M28A - Release Audit Alignment
+
+Status: complete in tag custosops-v0.28.0-release-audit-alignment.
+
+The release-hardening audit and platform contract audit were aligned with the IIS/Application workspace introduced in M27. The proof gate now expects 10 workspaces including IIS/Application.

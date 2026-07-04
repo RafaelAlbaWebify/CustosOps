@@ -130,3 +130,13 @@ docs/architecture/EVIDENCE_MODULE_HELPER_CONTRACT.md
 ```
 
 Before adding future collectors such as IIS/Application local collection, modules should pass the evidence module contract audit.
+
+## M28A audit alignment note
+
+The IIS/Application workspace is now part of the direct UI proof and platform-audit coverage expectations.
+
+```text
+Workspace id: iis
+Navigation label: IIS/Application
+Proof artifact: screenshots/iis-iis-application.png
+```

@@ -13,6 +13,7 @@ EXPECTED_WORKSPACES = [
     "dns",
     "app-log",
     "windows-events",
+    "iis",
     "reports",
     "archive",
     "run-history",
