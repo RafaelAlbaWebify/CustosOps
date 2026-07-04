@@ -1714,3 +1714,234 @@ input[type="file"] {
     grid-template-columns: minmax(160px, 1fr) repeat(5, 44px);
   }
 }
+
+/* M30C run history analytics */
+
+.run-history-workspace {
+  gap: 20px;
+}
+
+.run-history-header {
+  align-items: flex-start;
+}
+
+.run-history-hero {
+  border: 1px solid rgba(59, 130, 246, 0.22);
+  border-radius: 24px;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top right, rgba(37, 99, 235, 0.24), transparent 34%),
+    linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.78));
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  box-shadow: 0 20px 54px rgba(0, 0, 0, 0.18);
+}
+
+.run-history-hero h3 {
+  margin: 0;
+  font-size: 28px;
+  letter-spacing: -0.03em;
+}
+
+.run-history-hero p {
+  max-width: 820px;
+  margin: 10px 0 0;
+  color: #9fb0c7;
+}
+
+.run-history-hero-panel {
+  min-width: 230px;
+  border: 1px solid rgba(125, 211, 252, 0.18);
+  border-radius: 20px;
+  padding: 18px;
+  background: rgba(15, 23, 42, 0.68);
+  display: grid;
+  align-content: center;
+  gap: 6px;
+}
+
+.run-history-hero-panel span,
+.run-history-hero-panel p,
+.run-history-metric p,
+.module-run-main span,
+.module-run-counts span,
+.run-timeline-row span,
+.run-outcome-legend em {
+  color: #9fb0c7;
+}
+
+.run-history-hero-panel strong {
+  display: block;
+  font-size: 20px;
+}
+
+.run-history-kpi-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.run-history-metric {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+}
+
+.run-history-metric p {
+  margin: 8px 0 0;
+  font-size: 12px;
+}
+
+.run-history-metric::after {
+  content: "";
+  position: absolute;
+  right: -26px;
+  bottom: -36px;
+  width: 96px;
+  height: 96px;
+  border-radius: 999px;
+  opacity: 0.14;
+  background: #38bdf8;
+}
+
+.run-history-metric.tone-warning::after {
+  background: #f59e0b;
+}
+
+.run-history-metric.tone-teal::after {
+  background: #14b8a6;
+}
+
+.run-history-metric.tone-purple::after {
+  background: #8b5cf6;
+}
+
+.run-history-analytics-grid {
+  display: grid;
+  grid-template-columns: 0.85fr 1.15fr 1fr;
+  gap: 18px;
+}
+
+.run-outcome-card,
+.module-run-card,
+.run-timeline-card {
+  min-height: 275px;
+}
+
+.run-outcome-bar {
+  overflow: hidden;
+  height: 16px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.16);
+  display: flex;
+  margin: 18px 0;
+}
+
+.run-outcome-segment {
+  min-width: 0;
+}
+
+.run-outcome-segment.success {
+  background: linear-gradient(90deg, #16a34a, #22c55e);
+}
+
+.run-outcome-segment.warning {
+  background: linear-gradient(90deg, #d97706, #f59e0b);
+}
+
+.run-outcome-segment.failed {
+  background: linear-gradient(90deg, #dc2626, #ef4444);
+}
+
+.run-outcome-legend {
+  display: grid;
+  gap: 12px;
+}
+
+.run-outcome-legend > div {
+  display: grid;
+  grid-template-columns: 16px 50px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.36);
+}
+
+.run-outcome-legend strong {
+  font-size: 20px;
+}
+
+.module-run-list,
+.run-timeline-list {
+  display: grid;
+  gap: 10px;
+}
+
+.module-run-row,
+.run-timeline-row {
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.36);
+  padding: 11px;
+}
+
+.module-run-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.module-run-main,
+.run-timeline-row {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.module-run-main > div,
+.run-timeline-row > div {
+  min-width: 0;
+}
+
+.module-run-main strong,
+.module-run-main span,
+.run-timeline-row strong,
+.run-timeline-row span {
+  display: block;
+}
+
+.module-run-main strong,
+.run-timeline-row strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.module-run-counts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.module-run-counts span {
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 999px;
+  padding: 5px 8px;
+  font-size: 11px;
+  font-weight: 800;
+  background: rgba(15, 23, 42, 0.44);
+}
+
+@media (max-width: 1500px) {
+  .run-history-analytics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .run-history-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

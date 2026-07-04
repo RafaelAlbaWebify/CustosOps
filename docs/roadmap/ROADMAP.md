@@ -574,3 +574,9 @@ The Overview workspace now includes aggregate local-state metrics, severity dist
 Status: complete in tag custosops-v0.30.1-severity-analytics-polish.
 
 The Overview analytics layer now includes a severity posture panel, high-priority ratio meter, module-by-severity matrix, and priority findings queue using existing local state and CSS-only visuals.
+
+## M30C - Run History Analytics
+
+Status: complete in tag custosops-v0.30.2-run-history-analytics.
+
+The Run History workspace now includes a local operations hero, run summary KPI cards, CSS-only outcome distribution, module run summary, latest activity timeline, and the existing detailed run table.
