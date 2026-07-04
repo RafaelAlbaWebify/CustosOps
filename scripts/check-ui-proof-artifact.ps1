@@ -76,7 +76,7 @@ if ($ProofOk) {
                 if ([int]$Summary.consoleErrorCount -ne 0) { Add-Fail "consoleErrorCount is not zero" }
                 if ([int]$Summary.pageErrorCount -ne 0) { Add-Fail "pageErrorCount is not zero" }
                 if ([int]$Summary.failedRequestCount -ne 0) { Add-Fail "failedRequestCount is not zero" }
-                if ([int]$Summary.workspaceCount -lt 9) { Add-Fail "workspaceCount is less than 9" }
+                if ([int]$Summary.workspaceCount -lt 10) { Add-Fail "workspaceCount is less than 10" }
             }
 
             if ($StartupText) {
@@ -93,6 +93,7 @@ if ($ProofOk) {
                     "dns",
                     "app-log",
                     "windows-events",
+                    "iis",
                     "reports",
                     "archive",
                     "run-history",
@@ -104,6 +105,13 @@ if ($ProofOk) {
                     if (-not $Match) {
                         Add-Fail "Missing passing UI check: $RequiredId"
                     }
+                }
+
+
+
+                $IisScreenshot = $Zip.Entries | Where-Object { $_.FullName.Replace("\","/") -eq "screenshots/iis-iis-application.png" } | Select-Object -First 1
+                if (-not $IisScreenshot) {
+                    Add-Fail "Missing IIS workspace screenshot"
                 }
 
                 $ExpectedRedaction = "Contact [REDACTED_EMAIL] from C:\Users\[REDACTED_USER]\Desktop"

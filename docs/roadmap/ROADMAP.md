@@ -529,3 +529,10 @@ CustosOps now has backend IIS/Application evidence schema, read-only local colle
 Status: complete in tag custosops-v0.27.1-iis-application-frontend-workspace.
 
 CustosOps now exposes IIS/Application evidence in the frontend workspace lifecycle with local collection, JSON import, report generation, session persistence, overview visibility, and run-history recording.
+
+## M27C - IIS UI Proof Coverage
+
+Status: complete in tag custosops-v0.27.2-iis-ui-proof-coverage.
+
+The Desktop UI proof gate now directly captures and validates the IIS/Application workspace added in M27B. The proof artifact checker now requires 10 workspaces, a passing IIS UI check, and the IIS workspace screenshot.
+
