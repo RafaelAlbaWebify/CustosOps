@@ -1,16 +1,24 @@
 # CustosOps
 
-CustosOps is a local-first cybersecurity evidence, posture, and reporting platform for Windows and Microsoft-oriented support environments.
+> My SOC / defensive security operations flagship.
 
-It collects or imports read-only operational evidence, classifies findings with confidence and limitations, and generates support-ready reports that can be reviewed, archived, redacted, and traced through run history.
+CustosOps is a local-first cybersecurity evidence, posture and reporting platform for Windows and Microsoft-oriented support environments.
 
-## Current stable baseline
+I am building it as my **SOC flagship**: a read-only defensive evidence console for SMB security hygiene reviews, local evidence analysis, finding classification, report generation and escalation-ready documentation.
+
+## Flagship Area
+
+| Area | Flagship | Target role |
+|---|---|---|
+| SOC - Security Operations | CustosOps | SOC Analyst |
+
+## Current Stable Baseline
 
 ```text
 custosops-v0.31.0-beginner-runbook-launch-audit
 ```
 
-## Who this is for
+## Who This Is For
 
 CustosOps is designed for:
 
@@ -22,7 +30,7 @@ CustosOps is designed for:
 - portfolio demonstrations
 ```
 
-## What CustosOps is not
+## What CustosOps Is Not
 
 CustosOps is not:
 
@@ -55,7 +63,7 @@ CustosOps exposes 10 UI workspaces:
 10. Redaction
 ```
 
-## Evidence modules
+## Evidence Modules
 
 ```text
 - Endpoint security evidence
@@ -65,7 +73,7 @@ CustosOps exposes 10 UI workspaces:
 - IIS/Application evidence
 ```
 
-## Core capabilities
+## Core Capabilities
 
 ```text
 - Read-only local collection and JSON import workflows
@@ -91,7 +99,7 @@ Recommended for a first run:
 
 No Docker, cloud account, credentials, or production environment is required.
 
-## Quick start for non-expert users
+## Quick Start For Non-Expert Users
 
 From the repository root, run:
 
@@ -115,7 +123,7 @@ On first run, the launcher will:
 
 Keep the backend and frontend PowerShell windows open while using the app.
 
-## Stop the app
+## Stop The App
 
 From the repository root, run:
 
@@ -125,7 +133,7 @@ From the repository root, run:
 
 This stops CustosOps processes listening on ports 8000 and 5173.
 
-## Important port note
+## Important Port Note
 
 CustosOps uses:
 
@@ -136,7 +144,7 @@ Frontend: http://localhost:5173
 
 The launcher is designed to stop stale CustosOps processes on those ports. If another non-CustosOps app is using one of those ports, the launcher will warn and stop instead of force-closing an unrelated process.
 
-## First thing to click
+## First Thing To Click
 
 After the browser opens:
 
@@ -176,7 +184,7 @@ Common causes:
 - The browser opened before the frontend fully refreshed.
 ```
 
-## Validation commands
+## Validation Commands
 
 Run backend tests:
 
@@ -216,7 +224,7 @@ Validate a UI proof ZIP:
 .\scripts\check-ui-proof-artifact.ps1 -ZipPath "$env:USERPROFILE\Downloads\CUSTOSOPS_UI_SMOKE_<timestamp>.zip"
 ```
 
-## Demo guidance
+## Demo Guidance
 
 Use synthetic or local sample evidence only. A good demo should show:
 
@@ -238,9 +246,11 @@ docs/demo/DEMO_WORKFLOW.md
 docs/demo/FINAL_VISUAL_DEMO_NOTES.md
 ```
 
-## SOC positioning
+## SOC Positioning
 
-CustosOps is positioned as a read-only defensive security evidence console for SMB security hygiene reviews, local evidence analysis, and escalation/report generation.
+CustosOps is positioned as my read-only defensive security evidence console for SMB security hygiene reviews, local evidence analysis and escalation/report generation.
+
+It supports my SOC Analyst development path, but it remains defensive and evidence-focused. I am not positioning it as a SIEM, EDR, MDR/MSSP platform or offensive security tool.
 
 See:
 
@@ -248,9 +258,9 @@ See:
 docs/portfolio/CUSTOSOPS_SOC_POSITIONING.md
 ```
 
-## GitHub publication status
+## GitHub Publication Status
 
-This repository is private-first. Keep it private until manual review is complete.
+This repository is private-first. I should keep it private until manual review is complete.
 
 Before making it public, verify:
 
