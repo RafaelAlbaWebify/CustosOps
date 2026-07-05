@@ -610,3 +610,9 @@ The real Overview now uses a compact command-center dashboard closer to the appr
 Status: complete in tag custosops-v0.30.7-professional-dashboard-fit-repair.
 
 The professional dashboard layout is repaired to keep the compact dashboard grid active at the normal browser/proof width, reduce card density, and fix the severity legend overlap while preserving the collapsible sidebar and all detailed workspaces.
+
+## M30H - Dashboard Chrome Cleanup
+
+Status: complete in tag custosops-v0.30.8-dashboard-chrome-cleanup.
+
+The dashboard chrome is cleaned up: duplicate Overview/topbar chrome is removed on the dashboard, duplicate local footer/status text is removed, sidebar spacing is tightened, and the empty Recent Evidence Runs state is improved while preserving the compact professional dashboard grid.

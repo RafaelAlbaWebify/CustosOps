@@ -3555,3 +3555,160 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* M30H dashboard chrome cleanup */
+
+.overview-main-area .topbar {
+  display: none;
+}
+
+.overview-main-area .professional-dashboard-shell {
+  height: 100vh;
+  max-height: 100vh;
+  grid-template-rows: 46px 74px minmax(186px, 0.95fr) minmax(218px, 1.05fr);
+  padding-top: 13px;
+  padding-bottom: 10px;
+}
+
+.professional-dashboard-header {
+  padding-bottom: 2px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+}
+
+.professional-dashboard-header .eyebrow {
+  font-size: 10px;
+}
+
+.professional-dashboard-header h2 {
+  font-size: 23px;
+}
+
+.professional-dashboard-header p {
+  max-width: 680px;
+}
+
+.sidebar {
+  padding-top: 18px;
+  padding-bottom: 14px;
+}
+
+.brand {
+  padding-bottom: 12px;
+}
+
+.brand-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+}
+
+.brand-text strong {
+  font-size: 15px;
+}
+
+.workspace-nav {
+  gap: 5px;
+}
+
+.workspace-nav button {
+  min-height: 38px;
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 0.01em;
+}
+
+.workspace-nav .nav-short {
+  flex-basis: 28px;
+  width: 28px;
+  height: 26px;
+  border-radius: 9px;
+  font-size: 10px;
+}
+
+.sidebar-card {
+  padding: 13px;
+  border-radius: 16px;
+}
+
+.sidebar-card strong {
+  font-size: 13px;
+}
+
+.sidebar-card p {
+  margin-top: 7px;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.mini-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 13px;
+  font-size: 12px;
+}
+
+.help-link {
+  min-height: 38px;
+  font-size: 12px;
+}
+
+.sidebar-collapsed .brand-icon {
+  width: 38px;
+  height: 38px;
+}
+
+.sidebar-collapsed .workspace-nav .nav-short {
+  flex-basis: 32px;
+  width: 32px;
+  height: 30px;
+}
+
+.dashboard-empty-run-state {
+  height: 100%;
+  min-height: 128px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 6px;
+  padding: 16px;
+  border: 1px dashed rgba(125, 211, 252, 0.22);
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.34);
+  text-align: center;
+}
+
+.dashboard-empty-run-state strong {
+  font-size: 14px;
+}
+
+.dashboard-empty-run-state span {
+  max-width: 320px;
+  color: #9fb0c7;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.dashboard-empty-run-state button {
+  min-height: 30px;
+  padding: 6px 10px;
+  font-size: 11px;
+}
+
+.recent-runs-dashboard-card:has(.dashboard-empty-run-state) .link-button {
+  display: none;
+}
+
+.professional-dashboard-footer {
+  display: none;
+}
+
+@media (max-width: 1180px) {
+  .overview-main-area .topbar {
+    display: flex;
+  }
+
+  .overview-main-area .professional-dashboard-shell {
+    height: auto;
+    max-height: none;
+  }
+}

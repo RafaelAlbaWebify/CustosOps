@@ -1624,7 +1624,7 @@ function App() {
         </button>
       </aside>
 
-      <main className="main-area">
+      <main className={activeWorkspace === "overview" ? "main-area overview-main-area" : "main-area"}>
         <header className="topbar">
           <div>
             <p className="eyebrow">Workspace</p>
@@ -1984,11 +1984,6 @@ function OverviewWorkspace(props: {
         <ArchiveReportSummaryDashboardCard archiveEntries={props.archiveEntries} onArchive={() => props.onNavigate("archive")} onReports={() => props.onNavigate("reports")} />
         <TopPriorityFindingsDashboardCard findings={priorityFindings} onOpen={() => props.onNavigate("endpoint")} />
       </section>
-
-      <section className="professional-dashboard-footer">
-        <span><span className="status-dot online" /> Data is processed locally. Nothing leaves your workstation.</span>
-        <span>CustosOps v0.30.6 - Professional dashboard layout</span>
-      </section>
     </div>
   );
 }
@@ -2140,7 +2135,13 @@ function RecentEvidenceRunsDashboardCard(props: { runs: EvidenceRun[]; onOpen: (
           </div>
         ))}
 
-        {sortedRuns.length === 0 && <p className="empty-state">No evidence runs recorded yet.</p>}
+        {sortedRuns.length === 0 && (
+          <div className="dashboard-empty-run-state">
+            <strong>No evidence runs yet</strong>
+            <span>Run history will populate after evidence is imported or collected.</span>
+            <button type="button" onClick={props.onOpen}>Open Run History</button>
+          </div>
+        )}
       </div>
 
       <button className="link-button" type="button" onClick={props.onOpen}>View run history</button>
