@@ -604,3 +604,9 @@ The real CustosOps GUI now has a collapsible sidebar, app-internal scrolling, co
 Status: complete in tag custosops-v0.30.6-professional-dashboard-layout.
 
 The real Overview now uses a compact command-center dashboard closer to the approved mock: small header, 5-card KPI row, severity/module/finding analytics row, recent runs/archive/priority findings row, collapsible sidebar preserved, and detailed workspaces retained.
+
+## M30G Repair - Professional Dashboard Fit
+
+Status: complete in tag custosops-v0.30.7-professional-dashboard-fit-repair.
+
+The professional dashboard layout is repaired to keep the compact dashboard grid active at the normal browser/proof width, reduce card density, and fix the severity legend overlap while preserving the collapsible sidebar and all detailed workspaces.
