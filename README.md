@@ -152,3 +152,14 @@ docs/release/GITHUB_PUBLISH_CHECKLIST.md
 docs/release/PRIVATE_FIRST_GITHUB_PUSH_GUIDE.md
 docs/release/FINAL_V1_CHECKLIST.md
 ```
+
+## SOC positioning
+
+CustosOps is positioned as a read-only defensive security evidence console for SMB security hygiene reviews, local evidence analysis, and escalation/report generation. It is not a SIEM, EDR, vulnerability scanner, MDR/MSSP platform, or offensive testing tool.
+
+See:
+
+```text
+docs/portfolio/CUSTOSOPS_SOC_POSITIONING.md
+docs/demo/FINAL_VISUAL_DEMO_NOTES.md
+```

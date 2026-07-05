@@ -616,3 +616,9 @@ The professional dashboard layout is repaired to keep the compact dashboard grid
 Status: complete in tag custosops-v0.30.8-dashboard-chrome-cleanup.
 
 The dashboard chrome is cleaned up: duplicate Overview/topbar chrome is removed on the dashboard, duplicate local footer/status text is removed, sidebar spacing is tightened, and the empty Recent Evidence Runs state is improved while preserving the compact professional dashboard grid.
+
+## M30I - Final Visual Demo Package
+
+Status: complete in tag custosops-v0.30.9-final-visual-demo-package.
+
+CustosOps now has final visual demo notes, SOC positioning, latest proof screenshots, and a final visual demo package suitable for portfolio/GitHub review.
