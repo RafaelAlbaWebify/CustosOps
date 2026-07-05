@@ -8,26 +8,32 @@ The goal is to demonstrate practical engineering discipline, not to claim Custos
 
 ## Demo rules
 
+```text
 - Use synthetic or local sample evidence only.
 - Do not use employer, customer, or production-sensitive data.
 - Keep the demo read-only.
 - Show evidence, findings, limitations, reports, archive, run history, and redaction.
+```
 
 ## Five-minute demo flow
 
-1. Open CustosOps and start on Overview.
-2. Explain the workspace map and local-first boundary.
-3. Open Endpoint or DNS Hygiene and show evidence import or sample findings.
-4. Open IIS/Application and explain zero-state behavior: no IIS, no appcmd, or no logs is a valid evidence state.
-5. Generate a report and show safe next steps and limitations.
-6. Open Archive and Run History to show traceability.
-7. Open Redaction and explain redaction-safe reporting.
-8. Show the Desktop UI proof ZIP summary with 10 workspace checks.
+```text
+1. Launch with LAUNCH_CUSTOSOPS.bat.
+2. Start on Overview and explain the local-first boundary.
+3. Show the KPI row, severity distribution, module health, and findings by module.
+4. Open Endpoint or DNS Hygiene and show evidence-style findings.
+5. Open Windows Events or IIS/Application and explain operational evidence review.
+6. Generate or review a report.
+7. Open Archive and Run History to show traceability.
+8. Open Redaction and explain public-safe reporting.
+9. Mention Desktop UI proof and contract audits as release gates.
+```
 
 ## Interview positioning
 
-CustosOps is useful to discuss for Application Support Engineer, Technical Support Engineer, Software Support, and Production Support roles because it shows:
+CustosOps is useful to discuss for Application Support Engineer, Technical Support Engineer, Software Support, Production Support, and SOC/security-operations learning roles because it shows:
 
+```text
 - structured troubleshooting
 - local evidence collection
 - API and UI integration
@@ -35,6 +41,7 @@ CustosOps is useful to discuss for Application Support Engineer, Technical Suppo
 - auditability
 - safe operational boundaries
 - testing and release discipline
+```
 
 ## Suggested closing line
 

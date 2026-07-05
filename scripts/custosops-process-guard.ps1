@@ -13,15 +13,18 @@ function Get-CustosOpsPortProcess {
         foreach ($Connection in $Connections) {
             $Process = Get-Process -Id $Connection.OwningProcess -ErrorAction SilentlyContinue
             $CommandLine = ""
+            $ExecutablePath = ""
 
             try {
                 $Cim = Get-CimInstance Win32_Process -Filter "ProcessId=$($Connection.OwningProcess)" -ErrorAction SilentlyContinue
                 if ($Cim) {
-                    $CommandLine = $Cim.CommandLine
+                    $CommandLine = [string]$Cim.CommandLine
+                    $ExecutablePath = [string]$Cim.ExecutablePath
                 }
             }
             catch {
                 $CommandLine = ""
+                $ExecutablePath = ""
             }
 
             $Items += [pscustomobject]@{
@@ -29,6 +32,7 @@ function Get-CustosOpsPortProcess {
                 PID = $Connection.OwningProcess
                 ProcessName = if ($Process) { $Process.ProcessName } else { "unknown" }
                 CommandLine = $CommandLine
+                ExecutablePath = $ExecutablePath
             }
         }
     }
@@ -36,24 +40,89 @@ function Get-CustosOpsPortProcess {
     return $Items
 }
 
+function Test-CustosOpsOwnedProcess {
+    param(
+        [Parameter(Mandatory=$true)]$Item,
+        [string]$RootHint = ""
+    )
+
+    $CommandLine = ([string]$Item.CommandLine)
+    $ExecutablePath = ([string]$Item.ExecutablePath)
+    $Combined = ($CommandLine + " " + $ExecutablePath).ToLowerInvariant()
+
+    if ($RootHint) {
+        $RootLower = $RootHint.TrimEnd('\').ToLowerInvariant()
+        if ($RootLower -and $Combined.Contains($RootLower)) {
+            return $true
+        }
+    }
+
+    if ($Combined -match 'custosops') {
+        return $true
+    }
+
+    if ($Combined -match 'uvicorn\s+app\.main:app') {
+        return $true
+    }
+
+    if ($Combined -match 'node_modules[\\\/]vite') {
+        return $true
+    }
+
+    if ($Combined -match 'run-backend\.ps1') {
+        return $true
+    }
+
+    if ($Combined -match 'run-frontend\.ps1') {
+        return $true
+    }
+
+    return $false
+}
+
 function Stop-CustosOpsPorts {
     param(
-        [int[]]$Ports = @(8000, 5173)
+        [int[]]$Ports = @(8000, 5173),
+        [string]$RootHint = "",
+        [switch]$OnlyCustosOps
     )
 
     $Items = @(Get-CustosOpsPortProcess -Ports $Ports)
 
     if ($Items.Count -eq 0) {
-        Write-Host "No CustosOps listener processes found on ports: $($Ports -join ', ')"
-        return
+        Write-Host "No listener processes found on ports: $($Ports -join ', ')"
+        return $true
     }
 
+    $SkippedForeign = 0
     $Groups = $Items | Group-Object PID
 
     foreach ($Group in $Groups) {
         $PidValue = [int]$Group.Name
         $PortsText = (($Group.Group | Select-Object -ExpandProperty Port) -join ", ")
         $Name = ($Group.Group | Select-Object -First 1).ProcessName
+        $CommandLine = ($Group.Group | Select-Object -First 1).CommandLine
+
+        $Owned = $false
+        foreach ($Item in $Group.Group) {
+            if (Test-CustosOpsOwnedProcess -Item $Item -RootHint $RootHint) {
+                $Owned = $true
+            }
+        }
+
+        if ($OnlyCustosOps -and (-not $Owned)) {
+            Write-Host ""
+            Write-Host "Port(s) $PortsText are already in use by a non-CustosOps process."
+            Write-Host "PID: $PidValue"
+            Write-Host "Process: $Name"
+            if ($CommandLine) {
+                Write-Host "Command line: $CommandLine"
+            }
+            Write-Host "CustosOps will not force-close this process."
+            Write-Host "Close that app or free the port, then launch CustosOps again."
+            $SkippedForeign++
+            continue
+        }
 
         Write-Host "Stopping PID $PidValue ($Name) listening on port(s): $PortsText"
 
@@ -66,6 +135,7 @@ function Stop-CustosOpsPorts {
     }
 
     Start-Sleep -Seconds 1
+    return ($SkippedForeign -eq 0)
 }
 
 function Wait-CustosOpsPort {
@@ -114,6 +184,10 @@ function Wait-CustosOpsHttp {
 }
 
 function Show-CustosOpsProcessStatus {
+    param(
+        [string]$RootHint = ""
+    )
+
     $Items = @(Get-CustosOpsPortProcess)
 
     if ($Items.Count -eq 0) {
@@ -121,5 +195,5 @@ function Show-CustosOpsProcessStatus {
         return
     }
 
-    $Items | Format-Table Port, PID, ProcessName, CommandLine -AutoSize
+    $Items | Select-Object Port, PID, ProcessName, CommandLine | Format-Table -AutoSize
 }

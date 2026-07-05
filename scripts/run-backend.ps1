@@ -5,6 +5,8 @@ $Root = Split-Path -Parent $ScriptRoot
 $BackendPath = Join-Path $Root "backend"
 $VenvPath = Join-Path $BackendPath ".venv"
 $PythonPath = Join-Path $VenvPath "Scripts\python.exe"
+$RequirementsPath = Join-Path $BackendPath "requirements.txt"
+$HashPath = Join-Path $BackendPath ".deps_installed.hash"
 
 Set-Location -LiteralPath $BackendPath
 
@@ -13,18 +15,51 @@ Write-Host "Starting CustosOps backend..."
 Write-Host "Backend path: $BackendPath"
 Write-Host ""
 
-if (-not (Test-Path -LiteralPath $PythonPath)) {
-    Write-Host "Creating backend virtual environment..."
-    python -m venv .venv
+if (-not (Test-Path -LiteralPath $RequirementsPath)) {
+    Write-Host "Missing backend requirements file: $RequirementsPath"
+    exit 1
 }
 
-if (-not (Test-Path -LiteralPath (Join-Path $BackendPath ".deps_installed"))) {
-    Write-Host "Installing backend dependencies..."
+if (-not (Test-Path -LiteralPath $PythonPath)) {
+    $PythonCommand = Get-Command python -ErrorAction SilentlyContinue
+
+    if (-not $PythonCommand) {
+        Write-Host "Python was not found on PATH."
+        Write-Host "Install Python 3.11 or newer and enable Add python.exe to PATH, then try again."
+        exit 1
+    }
+
+    Write-Host "Creating backend virtual environment..."
+    python -m venv .venv
+
+    if (-not (Test-Path -LiteralPath $PythonPath)) {
+        Write-Host "Backend virtual environment was not created successfully."
+        exit 1
+    }
+}
+
+$RequirementsHash = (Get-FileHash -LiteralPath $RequirementsPath -Algorithm SHA256).Hash
+$ExistingHash = ""
+
+if (Test-Path -LiteralPath $HashPath) {
+    $ExistingHash = (Get-Content -LiteralPath $HashPath -Raw).Trim()
+}
+
+$NeedInstall = (-not (Test-Path -LiteralPath $HashPath)) -or ($ExistingHash -ne $RequirementsHash)
+
+if ($NeedInstall) {
+    Write-Host "Installing or refreshing backend dependencies..."
     & $PythonPath -m pip install -r requirements.txt
-    New-Item -ItemType File -Path (Join-Path $BackendPath ".deps_installed") -Force | Out-Null
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Backend dependency installation failed."
+        exit 1
+    }
+
+    Set-Content -LiteralPath $HashPath -Value $RequirementsHash -Encoding ASCII
 }
 else {
-    Write-Host "Backend dependencies already installed. Skipping pip install."
+    Write-Host "Backend dependencies match requirements.txt. Skipping pip install."
 }
 
 Write-Host ""
@@ -39,6 +74,7 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Host ""
 Write-Host "Backend URL: http://127.0.0.1:8000"
+Write-Host "Health URL:  http://127.0.0.1:8000/api/health"
 Write-Host "Press CTRL+C in this window to stop the backend."
 Write-Host ""
 

@@ -15,6 +15,8 @@ CustosOps is a local-first cybersecurity evidence, posture, and reporting platfo
 - Redaction-safe output handling.
 - Run history and evidence traceability.
 - Windows/IIS/Application support awareness.
+- Professional dashboard UI.
+- Beginner-friendly launch packaging.
 - Release discipline with repeatable proof gates.
 ```
 
@@ -23,14 +25,14 @@ CustosOps is a local-first cybersecurity evidence, posture, and reporting platfo
 ```text
 Overview
 Endpoint
-DNS & Network
+DNS Hygiene
 Application Logs
 Windows Events
 IIS/Application
 Reports
 Archive
 Run History
-Redaction Settings
+Redaction
 ```
 
 ## Why it matters
@@ -40,19 +42,20 @@ CustosOps focuses on a real operational problem: turning local evidence into fin
 ## Demo story
 
 ```text
-1. Open Overview and explain local-first evidence handling.
-2. Import or collect sample evidence.
-3. Show findings and severity handling.
-4. Generate a report.
-5. Open Archive and Run History.
-6. Show Redaction Settings and explain public-safe reporting.
-7. Mention Desktop UI proof and contract audits as release gates.
+1. Launch with LAUNCH_CUSTOSOPS.bat.
+2. Open Overview and explain local-first evidence handling.
+3. Import or collect sample evidence.
+4. Show findings and severity handling.
+5. Generate a report.
+6. Open Archive and Run History.
+7. Show Redaction Settings and explain public-safe reporting.
+8. Mention Desktop UI proof and contract audits as release gates.
 ```
 
 ## Current release baseline
 
 ```text
-custosops-v0.29.1-final-github-portfolio-package
+custosops-v0.31.0-beginner-runbook-launch-audit
 ```
 
 ## Suggested GitHub repository description

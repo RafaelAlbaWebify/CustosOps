@@ -3,7 +3,7 @@
 ## Final v1 baseline
 
 ```text
-custosops-v0.29.1-final-github-portfolio-package
+custosops-v0.31.0-beginner-runbook-launch-audit
 ```
 
 ## Product status
@@ -15,8 +15,10 @@ Report/archive workflow: complete
 Run history workflow: complete
 Redaction workflow: complete
 Desktop UI proof gate: complete
-GitHub publish prep: complete
-Portfolio package: complete
+Professional dashboard UI: complete
+SOC positioning: complete
+Beginner runbook and launch audit: complete
+Private GitHub push: complete
 ```
 
 ## Validation gates
@@ -31,6 +33,21 @@ UI proof artifact checker
 public tracked-file scan
 ```
 
+## Beginner-readiness checks
+
+```text
+README explains requirements.
+README explains first launch.
+LAUNCH_CUSTOSOPS.bat exists.
+STOP_CUSTOSOPS.bat exists.
+GETTING_STARTED exists.
+TROUBLESHOOTING exists.
+FIRST_RUN_CHECKLIST exists.
+LAUNCHER_REFERENCE exists.
+DEMO_WORKFLOW exists.
+Old baseline references updated.
+```
+
 ## Not included in v1
 
 ```text
@@ -39,12 +56,14 @@ Multi-user auth
 Agent deployment
 Scheduled background collection
 SIEM replacement
+EDR replacement
+Vulnerability scanner
+MDR/MSSP workflow
 Remediation automation
-M30 visual analytics refresh
 ```
 
 ## Next optional track
 
 ```text
-M30 - Visual Analytics and SaaS-Style UI Polish
+M32 - Microsoft 365 / Entra evidence import
 ```

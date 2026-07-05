@@ -622,3 +622,9 @@ The dashboard chrome is cleaned up: duplicate Overview/topbar chrome is removed 
 Status: complete in tag custosops-v0.30.9-final-visual-demo-package.
 
 CustosOps now has final visual demo notes, SOC positioning, latest proof screenshots, and a final visual demo package suitable for portfolio/GitHub review.
+
+## M31 - Beginner Runbook and Launch Audit
+
+Status: complete in tag custosops-v0.31.0-beginner-runbook-launch-audit.
+
+The repository is updated for beginner review: current README baseline, clearer requirements, improved launcher safety, dependency refresh checks, onboarding docs, troubleshooting, first-run checklist, launcher reference, demo workflow, and stale release/portfolio docs updated.
