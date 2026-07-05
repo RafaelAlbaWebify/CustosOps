@@ -598,3 +598,9 @@ A CSS-first global design pass improves sidebar/topbar polish, card consistency,
 Status: complete in tag custosops-v0.30.5-dashboard-fit-collapsible-sidebar.
 
 The real CustosOps GUI now has a collapsible sidebar, app-internal scrolling, compact Overview dashboard fit, topbar evidence-source action, and reduced duplicated Overview sections while preserving the 10-workspace platform.
+
+## M30G - Professional Dashboard Layout
+
+Status: complete in tag custosops-v0.30.6-professional-dashboard-layout.
+
+The real Overview now uses a compact command-center dashboard closer to the approved mock: small header, 5-card KPI row, severity/module/finding analytics row, recent runs/archive/priority findings row, collapsible sidebar preserved, and detailed workspaces retained.

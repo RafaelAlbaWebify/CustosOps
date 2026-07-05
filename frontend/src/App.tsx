@@ -1943,168 +1943,312 @@ function OverviewWorkspace(props: {
   const dominantSeverity = getDominantSeverity(totalCounts);
 
   return (
-    <div className="workspace-content overview-visual-content">
-      <section className="visual-hero">
+    <div className="workspace-content professional-dashboard-shell">
+      <section className="professional-dashboard-header">
         <div>
-          <p className="eyebrow">Local-first evidence console</p>
-          <h2>Cybersecurity posture overview</h2>
-          <p>
-            A visual summary of loaded evidence, finding severity, report archive state, and local run history. All metrics are derived from local CustosOps state.
-          </p>
+          <p className="eyebrow">Workspace</p>
+          <h2>Overview</h2>
+          <p>Posture at a glance across all local evidence modules.</p>
         </div>
-        <div className="visual-hero-panel">
-          <span>Coverage</span>
-          <strong>{activeSources}/{moduleSummaries.length}</strong>
-          <p>evidence sources loaded</p>
+        <div className="professional-header-actions">
+          <span className="local-processing-pill">
+            <span className="status-dot online" />
+            Local evidence lab
+          </span>
+          <button type="button" onClick={() => props.onNavigate("endpoint")}>+ New Evidence Run</button>
         </div>
       </section>
 
-      <section className="visual-kpi-grid">
-        <VisualKpiCard icon="EV" label="Total Findings" value={String(totalFindings)} note="Across loaded evidence" tone="primary" />
-        <VisualKpiCard icon="HI" label="High Priority" value={String(highPriorityFindings)} note="Critical and high findings" tone={highPriorityFindings > 0 ? "danger" : "success"} />
-        <VisualKpiCard icon="RH" label="Evidence Runs" value={String(props.runHistory.length)} note={runStatusNote} tone="teal" />
-        <VisualKpiCard icon="AR" label="Archived Reports" value={String(props.archiveEntries.length)} note="Reports in local archive" tone="purple" />
+      <section className="professional-kpi-grid">
+        <VisualKpiCard icon="ER" label="Evidence Runs" value={String(props.runHistory.length)} note={runStatusNote} tone="primary" />
+        <VisualKpiCard icon="OK" label="Completed" value={String(completedRuns)} note={`${props.runHistory.length > 0 ? Math.round((completedRuns / props.runHistory.length) * 100) : 0}% success rate`} tone="success" />
+        <VisualKpiCard icon="WA" label="Warnings" value={String(warningRuns)} note={`${props.runHistory.length > 0 ? Math.round((warningRuns / props.runHistory.length) * 100) : 0}% of runs`} tone="warning" />
+        <VisualKpiCard icon="FA" label="Failed" value={String(failedRuns)} note={`${props.runHistory.length > 0 ? Math.round((failedRuns / props.runHistory.length) * 100) : 0}% of runs`} tone="danger" />
+        <VisualKpiCard icon="RP" label="Reports Generated" value={String(props.archiveEntries.length)} note="Local archive entries" tone="purple" />
       </section>
 
-      <section className="visual-overview-grid">
-        <section className="card analytics-card">
-          <div className="card-header">
-            <div>
-              <p className="eyebrow">Severity Analytics</p>
-              <h2>Findings by Severity</h2>
-            </div>
-            <span className="pill">{totalFindings} total</span>
-          </div>
-          <SeverityDistribution counts={totalCounts} />
-        </section>
-
-        <TopFindingCategories findings={allFindings} />
-
-        <RecentRunsPanel runs={props.runHistory} onNavigate={() => props.onNavigate("run-history")} />
-      </section>
-
-      <section className="workspace-coverage-grid">
-        {moduleSummaries.map((module) => (
-          <WorkspaceCoverageCard
-            key={module.workspace}
-            title={module.title}
-            eyebrow={module.eyebrow}
-            short={module.short}
-            counts={module.counts}
-            findings={module.findings}
-            note={module.note}
-            onOpen={() => props.onNavigate(module.workspace)}
-          />
-        ))}
-      </section>
-
-      <section className="severity-intelligence-grid">
-        <SeverityPosturePanel
-          counts={totalCounts}
-          totalFindings={totalFindings}
-          highPriorityFindings={highPriorityFindings}
-          highPriorityRatio={highPriorityRatio}
-          dominantSeverity={dominantSeverity}
+      <section className="professional-dashboard-grid">
+        <SeverityDonutDashboardCard counts={totalCounts} totalFindings={totalFindings} onOpen={() => props.onNavigate("endpoint")} />
+        <ModuleHealthDashboardCard
           activeSources={activeSources}
           sourceCount={moduleSummaries.length}
+          warningRuns={warningRuns}
+          failedRuns={failedRuns}
+          onOpen={() => props.onNavigate("run-history")}
         />
-
-        <ModuleSeverityMatrix modules={moduleSummaries} />
-
-        <PriorityFindingsPanel findings={priorityFindings} />
+        <FindingsByModuleDashboardCard modules={moduleSummaries} />
       </section>
 
-      <section className="overview-grid">
-        <OverviewCard
-          title="Endpoint Security Evidence"
-          eyebrow="Endpoint"
-          counts={props.endpointCounts}
-          findings={props.endpointFindings}
-          actionLabel="Open Endpoint Workspace"
-          onAction={() => props.onNavigate("endpoint")}
-        />
-
-        <OverviewCard
-          title="DNS Hygiene"
-          eyebrow="DNS Hygiene"
-          counts={props.dnsCounts}
-          findings={props.dnsFindings}
-          actionLabel="Open DNS Workspace"
-          onAction={() => props.onNavigate("dns")}
-        />
-
-        <OverviewCard
-          title="Application Log Evidence"
-          eyebrow="Application Evidence"
-          counts={props.appLogCounts}
-          findings={props.appLogFindings}
-          actionLabel="Open App Log Workspace"
-          onAction={() => props.onNavigate("app-log")}
-        />
-
-        <OverviewCard
-          title="Windows Event Evidence"
-          eyebrow="Windows Events"
-          counts={props.windowsEventCounts}
-          findings={props.windowsEventFindings}
-          actionLabel="Open Windows Events"
-          onAction={() => props.onNavigate("windows-events")}
-        />
-
-        <OverviewCard
-          title="IIS/Application Evidence"
-          eyebrow="IIS/Application"
-          counts={props.iisCounts}
-          findings={props.iisFindings}
-          actionLabel="Open IIS Workspace"
-          onAction={() => props.onNavigate("iis")}
-        />
-
-        <section className="card">
-          <div className="card-header">
-            <div>
-              <p className="eyebrow">Archive</p>
-              <h2>Latest Reports</h2>
-            </div>
-            <button type="button" onClick={() => props.onNavigate("archive")}>Open Archive</button>
-          </div>
-
-          <div className="archive-mini-list">
-            {props.archiveEntries.slice(0, 4).map((entry) => (
-              <div className="archive-mini-item" key={entry.id}>
-                <div className="doc-icon">DOC</div>
-                <div>
-                  <strong>{entry.filename}</strong>
-                  <span>{entry.report_type ?? "report"} - {entry.format ?? "file"}</span>
-                </div>
-              </div>
-            ))}
-
-            {props.archiveEntries.length === 0 && <p className="empty-state">No archived reports yet.</p>}
-          </div>
-        </section>
+      <section className="professional-lower-grid">
+        <RecentEvidenceRunsDashboardCard runs={props.runHistory} onOpen={() => props.onNavigate("run-history")} />
+        <ArchiveReportSummaryDashboardCard archiveEntries={props.archiveEntries} onArchive={() => props.onNavigate("archive")} onReports={() => props.onNavigate("reports")} />
+        <TopPriorityFindingsDashboardCard findings={priorityFindings} onOpen={() => props.onNavigate("endpoint")} />
       </section>
 
-      <section className="card module-overview">
-        <div className="card-header">
-          <div>
-            <p className="eyebrow">Modules</p>
-            <h2>Operational Modules</h2>
-          </div>
-          <span className="pill">{props.activeModuleCount} active</span>
-        </div>
-
-        <div className="module-list">
-          {props.modules.map((module, index) => (
-            <div className="module-item" key={`${module.name ?? module.module ?? "module"}-${index}`}>
-              <strong>{module.name ?? module.module ?? "Module"}</strong>
-              <span>{module.description ?? module.status ?? "Available"}</span>
-            </div>
-          ))}
-        </div>
+      <section className="professional-dashboard-footer">
+        <span><span className="status-dot online" /> Data is processed locally. Nothing leaves your workstation.</span>
+        <span>CustosOps v0.30.6 - Professional dashboard layout</span>
       </section>
     </div>
   );
+}
+function SeverityDonutDashboardCard(props: { counts: SeverityCounts; totalFindings: number; onOpen: () => void }) {
+  const background = getSeverityDonutBackground(props.counts);
+
+  return (
+    <section className="card professional-card severity-donut-dashboard-card">
+      <div className="professional-card-header">
+        <div>
+          <p className="eyebrow">Severity Distribution</p>
+          <h3>Findings by Severity</h3>
+        </div>
+        <span className="subtle-label">Current evidence</span>
+      </div>
+
+      <div className="dashboard-donut-layout">
+        <div className="dashboard-donut" style={{ background }}>
+          <div>
+            <strong>{props.totalFindings}</strong>
+            <span>Total Findings</span>
+          </div>
+        </div>
+
+        <div className="dashboard-donut-legend">
+          {SEVERITY_ORDER.map((severity) => (
+            <div key={severity}>
+              <SeverityDot severity={severity} />
+              <span>{capitalize(severity)}</span>
+              <strong>{props.counts[severity]}</strong>
+              <em>{getSeverityPercentage(props.counts[severity], props.totalFindings)}%</em>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <button className="link-button" type="button" onClick={props.onOpen}>View all findings</button>
+    </section>
+  );
+}
+
+function ModuleHealthDashboardCard(props: {
+  activeSources: number;
+  sourceCount: number;
+  warningRuns: number;
+  failedRuns: number;
+  onOpen: () => void;
+}) {
+  const health = props.sourceCount > 0 ? Math.round((props.activeSources / props.sourceCount) * 100) : 0;
+  const background = `conic-gradient(#22c55e 0deg ${Math.round((health / 100) * 360)}deg, rgba(30, 41, 59, 0.8) ${Math.round((health / 100) * 360)}deg 360deg)`;
+
+  return (
+    <section className="card professional-card module-health-dashboard-card">
+      <div className="professional-card-header">
+        <div>
+          <p className="eyebrow">Module Health</p>
+          <h3>Evidence coverage</h3>
+        </div>
+      </div>
+
+      <div className="module-health-layout">
+        <div className="dashboard-donut health-donut" style={{ background }}>
+          <div>
+            <strong>{health}%</strong>
+            <span>Covered</span>
+          </div>
+        </div>
+        <div className="module-health-list">
+          <div><span className="health-count success">{props.activeSources}</span><strong>Evidence loaded</strong></div>
+          <div><span className="health-count warning">{props.warningRuns}</span><strong>Warning runs</strong></div>
+          <div><span className="health-count danger">{props.failedRuns}</span><strong>Failed runs</strong></div>
+        </div>
+      </div>
+
+      <button className="link-button" type="button" onClick={props.onOpen}>View run health</button>
+    </section>
+  );
+}
+
+function FindingsByModuleDashboardCard(props: {
+  modules: {
+    workspace: Workspace;
+    title: string;
+    counts: SeverityCounts;
+    findings: Finding[];
+  }[];
+}) {
+  const maxFindings = Math.max(1, ...props.modules.map((module) => totalSeverityCount(module.counts)));
+
+  return (
+    <section className="card professional-card findings-by-module-dashboard-card">
+      <div className="professional-card-header">
+        <div>
+          <p className="eyebrow">Findings by Module</p>
+          <h3>Where attention is needed</h3>
+        </div>
+        <span className="subtle-label">Current evidence</span>
+      </div>
+
+      <div className="module-bar-list">
+        {props.modules.map((module) => {
+          const total = totalSeverityCount(module.counts);
+
+          return (
+            <div className="module-bar-row" key={module.workspace}>
+              <span>{module.title}</span>
+              <div className="module-bar-track">
+                <i style={{ width: `${getSeverityPercentage(total, maxFindings)}%` }} />
+              </div>
+              <strong>{total}</strong>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function RecentEvidenceRunsDashboardCard(props: { runs: EvidenceRun[]; onOpen: () => void }) {
+  const sortedRuns = [...props.runs].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5);
+
+  return (
+    <section className="card professional-card recent-runs-dashboard-card">
+      <div className="professional-card-header">
+        <div>
+          <p className="eyebrow">Recent Evidence Runs</p>
+          <h3>Latest local activity</h3>
+        </div>
+        <button type="button" onClick={props.onOpen}>View all runs</button>
+      </div>
+
+      <div className="dashboard-run-table">
+        <div className="dashboard-run-head">
+          <span>Run Name</span>
+          <span>Module</span>
+          <span>Status</span>
+          <span>Findings</span>
+        </div>
+
+        {sortedRuns.map((run) => (
+          <div className="dashboard-run-row" key={run.run_id}>
+            <div>
+              <strong>{run.module_name}</strong>
+              <span>{run.asset || run.source}</span>
+            </div>
+            <span>{run.source_type || run.module_id}</span>
+            <span className={`status-pill ${run.status}`}>{run.status}</span>
+            <strong>{run.finding_count}</strong>
+          </div>
+        ))}
+
+        {sortedRuns.length === 0 && <p className="empty-state">No evidence runs recorded yet.</p>}
+      </div>
+
+      <button className="link-button" type="button" onClick={props.onOpen}>View run history</button>
+    </section>
+  );
+}
+
+function ArchiveReportSummaryDashboardCard(props: { archiveEntries: ArchiveEntry[]; onArchive: () => void; onReports: () => void }) {
+  return (
+    <section className="card professional-card archive-report-dashboard-card">
+      <div className="professional-card-header">
+        <div>
+          <p className="eyebrow">Archive & Report Summary</p>
+          <h3>Output state</h3>
+        </div>
+      </div>
+
+      <div className="archive-report-summary-stack">
+        <button type="button" onClick={props.onArchive}>
+          <span className="doc-icon">AR</span>
+          <div>
+            <strong>{props.archiveEntries.length}</strong>
+            <span>Archived reports</span>
+          </div>
+        </button>
+        <button type="button" onClick={props.onReports}>
+          <span className="doc-icon">RP</span>
+          <div>
+            <strong>3</strong>
+            <span>Export formats</span>
+          </div>
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function TopPriorityFindingsDashboardCard(props: { findings: Finding[]; onOpen: () => void }) {
+  return (
+    <section className="card professional-card top-priority-dashboard-card">
+      <div className="professional-card-header">
+        <div>
+          <p className="eyebrow">Top Priority Findings</p>
+          <h3>Review queue</h3>
+        </div>
+        <button type="button" onClick={props.onOpen}>View all findings</button>
+      </div>
+
+      <div className="dashboard-priority-list">
+        {props.findings.slice(0, 5).map((finding, index) => {
+          const severity = normalizeSeverity(finding.severity);
+
+          return (
+            <div className="dashboard-priority-row" key={`${finding.finding_id}-${index}`}>
+              <SeverityBadge severity={severity} />
+              <div>
+                <strong>{finding.title}</strong>
+                <span>{finding.category || finding.affected_asset || "Evidence finding"}</span>
+              </div>
+              <em>{finding.affected_asset || "local"}</em>
+            </div>
+          );
+        })}
+
+        {props.findings.length === 0 && <p className="empty-state">No priority findings yet.</p>}
+      </div>
+
+      <button className="link-button" type="button" onClick={props.onOpen}>View all findings</button>
+    </section>
+  );
+}
+
+function getSeverityDonutBackground(counts: SeverityCounts) {
+  const total = totalSeverityCount(counts);
+
+  if (total <= 0) {
+    return "conic-gradient(rgba(100, 116, 139, 0.55) 0deg 360deg)";
+  }
+
+  let current = 0;
+  const segments = SEVERITY_ORDER.map((severity) => {
+    const start = current;
+    const degrees = Math.round((counts[severity] / total) * 360);
+    current += degrees;
+    return `${getSeverityChartColor(severity)} ${start}deg ${current}deg`;
+  });
+
+  if (current < 360) {
+    segments.push(`rgba(30, 41, 59, 0.8) ${current}deg 360deg`);
+  }
+
+  return `conic-gradient(${segments.join(", ")})`;
+}
+
+function getSeverityChartColor(severity: Severity) {
+  switch (severity) {
+    case "critical":
+      return "#f43f5e";
+    case "high":
+      return "#f97316";
+    case "medium":
+      return "#f59e0b";
+    case "low":
+      return "#3b82f6";
+    case "info":
+    default:
+      return "#8b5cf6";
+  }
 }
 
 function VisualKpiCard(props: { icon: string; label: string; value: string; note: string; tone: string }) {
