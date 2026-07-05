@@ -2536,3 +2536,308 @@ textarea:focus-visible {
     grid-template-columns: minmax(260px, 1.4fr) minmax(130px, 0.6fr) 86px minmax(210px, 0.8fr);
   }
 }
+
+/* M30F dashboard fit and collapsible sidebar */
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  overflow: hidden;
+}
+
+.app-shell {
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+  transition: grid-template-columns 0.18s ease;
+}
+
+.main-area {
+  height: 100vh;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sidebar {
+  position: relative;
+  height: 100vh;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  transition: width 0.18s ease, padding 0.18s ease;
+}
+
+.sidebar-toggle {
+  position: absolute;
+  right: 10px;
+  top: 18px;
+  z-index: 4;
+  width: 34px;
+  min-height: 34px;
+  padding: 0;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  color: #dbeafe;
+  background: rgba(15, 23, 42, 0.82);
+  border: 1px solid rgba(125, 211, 252, 0.20);
+}
+
+.brand {
+  padding-right: 40px;
+}
+
+.brand-text {
+  min-width: 0;
+}
+
+.brand-text strong,
+.brand-text span {
+  display: block;
+}
+
+.brand-text span {
+  color: #9fb0c7;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.workspace-nav button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.workspace-nav .nav-short {
+  flex: 0 0 31px;
+  width: 31px;
+}
+
+.workspace-nav .nav-label {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.help-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.help-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: rgba(15, 23, 42, 0.60);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.app-shell.sidebar-collapsed {
+  grid-template-columns: 76px minmax(0, 1fr);
+}
+
+.sidebar-collapsed .sidebar {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.sidebar-collapsed .sidebar-toggle {
+  right: 14px;
+}
+
+.sidebar-collapsed .brand {
+  justify-content: center;
+  padding: 8px 0 14px;
+}
+
+.sidebar-collapsed .brand-icon {
+  width: 42px;
+  height: 42px;
+}
+
+.sidebar-collapsed .brand-text,
+.sidebar-collapsed .nav-label,
+.sidebar-collapsed .sidebar-card,
+.sidebar-collapsed .help-label {
+  display: none;
+}
+
+.sidebar-collapsed .workspace-nav button {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.sidebar-collapsed .workspace-nav .nav-short {
+  flex-basis: 34px;
+  width: 34px;
+}
+
+.sidebar-collapsed .help-link {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.topbar-action {
+  min-height: 38px;
+  padding: 8px 14px;
+  white-space: nowrap;
+}
+
+.overview-visual-content {
+  gap: 12px;
+}
+
+.overview-visual-content .visual-hero {
+  min-height: unset;
+  padding: 16px 22px;
+  border-radius: 22px;
+  align-items: center;
+}
+
+.overview-visual-content .visual-hero h2 {
+  font-size: 25px;
+}
+
+.overview-visual-content .visual-hero p {
+  max-width: 900px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.overview-visual-content .visual-hero-panel {
+  min-width: 155px;
+  padding: 14px;
+  border-radius: 18px;
+}
+
+.overview-visual-content .visual-hero-panel strong {
+  font-size: 34px;
+}
+
+.overview-visual-content .visual-kpi-grid {
+  gap: 10px;
+}
+
+.overview-visual-content .visual-kpi-card {
+  min-height: 86px;
+  padding: 13px;
+  border-radius: 18px;
+}
+
+.overview-visual-content .visual-kpi-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  font-size: 12px;
+}
+
+.overview-visual-content .visual-kpi-card strong {
+  font-size: 24px;
+}
+
+.overview-visual-content .visual-kpi-card p {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.overview-visual-content .visual-overview-grid {
+  gap: 12px;
+  grid-template-columns: 1.05fr 0.95fr 0.95fr;
+}
+
+.overview-visual-content .analytics-card {
+  min-height: 224px;
+}
+
+.overview-visual-content .severity-distribution,
+.overview-visual-content .category-list,
+.overview-visual-content .recent-run-list {
+  gap: 9px;
+}
+
+.overview-visual-content .severity-bar-row {
+  grid-template-columns: 112px minmax(100px, 1fr) 34px;
+  gap: 8px;
+}
+
+.overview-visual-content .severity-bar-track,
+.overview-visual-content .category-bar-track {
+  height: 8px;
+}
+
+.overview-visual-content .workspace-coverage-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.overview-visual-content .workspace-coverage-card {
+  padding: 12px;
+  gap: 8px;
+  border-radius: 18px;
+}
+
+.overview-visual-content .coverage-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+}
+
+.overview-visual-content .coverage-card-top {
+  gap: 8px;
+}
+
+.overview-visual-content .coverage-card-top h3 {
+  font-size: 14px;
+}
+
+.overview-visual-content .coverage-card-main strong {
+  font-size: 26px;
+}
+
+.overview-visual-content .workspace-coverage-card p {
+  min-height: auto;
+  font-size: 12px;
+}
+
+.overview-visual-content > .overview-grid,
+.overview-visual-content > .module-overview {
+  display: none;
+}
+
+@media (min-width: 1500px) {
+  .overview-visual-content .visual-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 175px;
+  }
+
+  .overview-visual-content .card-header h2 {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 1500px) {
+  .app-shell.sidebar-collapsed {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+
+  .overview-visual-content .visual-overview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .overview-visual-content .workspace-coverage-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

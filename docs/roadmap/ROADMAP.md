@@ -592,3 +592,9 @@ The Reports and Archive workspaces now include dedicated hero panels, KPI cards,
 Status: complete in tag custosops-v0.30.4-full-ui-design-pass.
 
 A CSS-first global design pass improves sidebar/topbar polish, card consistency, button/focus states, table density, and cross-workspace visual cohesion without adding backend features or chart dependencies.
+
+## M30F - Dashboard Fit and Collapsible Sidebar
+
+Status: complete in tag custosops-v0.30.5-dashboard-fit-collapsible-sidebar.
+
+The real CustosOps GUI now has a collapsible sidebar, app-internal scrolling, compact Overview dashboard fit, topbar evidence-source action, and reduced duplicated Overview sections while preserving the 10-workspace platform.

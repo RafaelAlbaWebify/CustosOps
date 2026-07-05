@@ -166,6 +166,7 @@ const REVIEW_OPTIONS: { value: ReviewStatus; label: string }[] = [
 
 function App() {
   const [activeWorkspace, setActiveWorkspace] = useState<Workspace>(getWorkspaceFromHash());
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [backendOnline, setBackendOnline] = useState(false);
   const [modules, setModules] = useState<ModuleStatus[]>(DEFAULT_MODULES);
 
@@ -1577,11 +1578,24 @@ function App() {
   }
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
+    <div className={sidebarCollapsed ? "app-shell sidebar-collapsed" : "app-shell"}>
+      <aside className="sidebar" aria-label="Workspace navigation">
+        <button
+          aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="sidebar-toggle"
+          onClick={() => setSidebarCollapsed((value) => !value)}
+          title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          type="button"
+        >
+          {sidebarCollapsed ? ">" : "<"}
+        </button>
+
         <div className="brand">
           <div className="brand-icon">C</div>
-          <strong>CustosOps</strong>
+          <div className="brand-text">
+            <strong>CustosOps</strong>
+            <span>Evidence. Posture. Reports.</span>
+          </div>
         </div>
 
         <nav className="workspace-nav">
@@ -1592,8 +1606,8 @@ function App() {
               onClick={() => navigateTo(workspace.id)}
               type="button"
             >
-              <span>{workspace.short}</span>
-              {workspace.label}
+              <span className="nav-short">{workspace.short}</span>
+              <span className="nav-label">{workspace.label}</span>
             </button>
           ))}
         </nav>
@@ -1605,7 +1619,8 @@ function App() {
         </div>
 
         <button className="help-link" type="button">
-          ? Help and Docs
+          <span className="help-icon">?</span>
+          <span className="help-label">Help and Docs</span>
         </button>
       </aside>
 
@@ -1617,6 +1632,9 @@ function App() {
           </div>
 
           <div className="topbar-status">
+            <button className="topbar-action" type="button" onClick={() => navigateTo("endpoint")}>
+              + Evidence Sources
+            </button>
             <span className={backendOnline ? "status-dot online" : "status-dot offline"} />
             {backendOnline ? "Backend Online" : "Backend Offline"}
             <div className="avatar">AD</div>
