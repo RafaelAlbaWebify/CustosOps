@@ -628,3 +628,10 @@ CustosOps now has final visual demo notes, SOC positioning, latest proof screens
 Status: complete in tag custosops-v0.31.0-beginner-runbook-launch-audit.
 
 The repository is updated for beginner review: current README baseline, clearer requirements, improved launcher safety, dependency refresh checks, onboarding docs, troubleshooting, first-run checklist, launcher reference, demo workflow, and stale release/portfolio docs updated.
+
+
+## M31A - GUI Polish
+
+Status: complete in tag custosops-v0.31.1-gui-polish.
+
+This milestone polishes sidebar identity/readability, archive/report summary balance, module-chart spacing, and overview empty-state presentation while preserving the local-first defensive product boundary.

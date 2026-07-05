@@ -1594,7 +1594,7 @@ function App() {
           <div className="brand-icon">C</div>
           <div className="brand-text">
             <strong>CustosOps</strong>
-            <span>Evidence. Posture. Reports.</span>
+            <span>Local-first evidence console</span>
           </div>
         </div>
 
@@ -1614,8 +1614,8 @@ function App() {
 
         <div className="sidebar-card">
           <div className="mini-logo">CO</div>
-          <strong>CustosOps v1.0</strong>
-          <p>Cybersecurity Evidence and Posture Platform</p>
+          <strong>CustosOps</strong>
+          <p>Local-first cybersecurity evidence console</p>
         </div>
 
         <button className="help-link" type="button">
@@ -2138,8 +2138,8 @@ function RecentEvidenceRunsDashboardCard(props: { runs: EvidenceRun[]; onOpen: (
         {sortedRuns.length === 0 && (
           <div className="dashboard-empty-run-state">
             <strong>No evidence runs yet</strong>
-            <span>Run history will populate after evidence is imported or collected.</span>
-            <button type="button" onClick={props.onOpen}>Open Run History</button>
+            <span>Run history will populate after your first evidence run. Start with Endpoint or DNS Hygiene, then return here for traceability.</span>
+            <button type="button" onClick={props.onOpen}>View Run History</button>
           </div>
         )}
       </div>

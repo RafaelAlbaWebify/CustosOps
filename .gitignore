@@ -38,3 +38,7 @@ recovery_backup_*/
 *.zip
 CUSTOSOPS_*/
 CUSTOSOPS_*.zip
+
+# CustosOps generated dependency markers
+backend/.deps_installed.hash
+frontend/.deps_installed.hash
