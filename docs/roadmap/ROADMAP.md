@@ -635,3 +635,10 @@ The repository is updated for beginner review: current README baseline, clearer 
 Status: complete in tag custosops-v0.31.1-gui-polish.
 
 This milestone polishes sidebar identity/readability, archive/report summary balance, module-chart spacing, and overview empty-state presentation while preserving the local-first defensive product boundary.
+
+
+## M31B - GUI Cleanup
+
+Status: complete in tag custosops-v0.31.2-gui-cleanup.
+
+This milestone removes duplicated sidebar product identity, centers archive/report summary icons, and replaces the Findings by Module chart with a blue/red Module Health Score widget using a 10-point score per module.

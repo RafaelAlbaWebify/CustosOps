@@ -1611,13 +1611,6 @@ function App() {
             </button>
           ))}
         </nav>
-
-        <div className="sidebar-card">
-          <div className="mini-logo">CO</div>
-          <strong>CustosOps</strong>
-          <p>Local-first cybersecurity evidence console</p>
-        </div>
-
         <button className="help-link" type="button">
           <span className="help-icon">?</span>
           <span className="help-label">Help and Docs</span>
@@ -2071,29 +2064,43 @@ function FindingsByModuleDashboardCard(props: {
     findings: Finding[];
   }[];
 }) {
-  const maxFindings = Math.max(1, ...props.modules.map((module) => totalSeverityCount(module.counts)));
+  function getModuleScore(counts: SeverityCounts) {
+    const riskWeight =
+      counts.critical * 3 +
+      counts.high * 2 +
+      counts.medium * 1 +
+      counts.low * 0.5;
+
+    return Math.max(0, 10 - Math.min(10, Math.round(riskWeight)));
+  }
 
   return (
     <section className="card professional-card findings-by-module-dashboard-card">
       <div className="professional-card-header">
         <div>
-          <p className="eyebrow">Findings by Module</p>
-          <h3>Where attention is needed</h3>
+          <p className="eyebrow">Module Health Score</p>
+          <h3>Good vs risk posture</h3>
         </div>
-        <span className="subtle-label">Current evidence</span>
+        <span className="subtle-label">10-point score</span>
       </div>
 
-      <div className="module-bar-list">
+      <div className="module-score-list">
         {props.modules.map((module) => {
           const total = totalSeverityCount(module.counts);
+          const score = getModuleScore(module.counts);
+          const risk = 10 - score;
 
           return (
-            <div className="module-bar-row" key={module.workspace}>
-              <span>{module.title}</span>
-              <div className="module-bar-track">
-                <i style={{ width: `${getSeverityPercentage(total, maxFindings)}%` }} />
+            <div className="module-score-row" key={module.workspace}>
+              <div className="module-score-name">
+                <span>{module.title}</span>
+                <em>{total} findings</em>
               </div>
-              <strong>{total}</strong>
+              <div className="module-score-track" aria-label={`${module.title} score ${score} out of 10`}>
+                <i className="module-score-ok" style={{ width: `${score * 10}%` }} />
+                <i className="module-score-risk" style={{ width: `${risk * 10}%` }} />
+              </div>
+              <strong>{score}/10</strong>
             </div>
           );
         })}
