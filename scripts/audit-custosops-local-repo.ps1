@@ -151,7 +151,7 @@ function Search-PublicSafetyHits {
 
     $Patterns = [ordered]@{
         workplace_name = '(?i)(faurecia|forvia|stellantis|quental)'
-        secret_keyword = '(?i)(password|passwd|secret|token|apikey|api_key|client_secret)'
+        secret_assignment = '(?i)(password|passwd|secret|token|apikey|api_key|client_secret)\s*[:=]\s*["'']?[^"''\s]{8,}'
         windows_user_path = 'C:\\Users\\[^\\\s]+'
         private_ipv4 = '\b(?:10|172\.(?:1[6-9]|2[0-9]|3[0-1])|192\.168)\.\d{1,3}\.\d{1,3}\b'
         email_address = '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'
@@ -174,7 +174,7 @@ function Search-PublicSafetyHits {
             if ($Text -match $Patterns[$Name]) {
                 $Hits.Add([pscustomobject]@{ file = $Rel; check = $Name; pattern = $Patterns[$Name] }) | Out-Null
                 $Severity = 'MEDIUM'
-                if ($Name -in @('workplace_name', 'secret_keyword')) { $Severity = 'HIGH' }
+                if ($Name -in @('workplace_name', 'secret_assignment')) { $Severity = 'HIGH' }
                 Add-Finding -Severity $Severity -Area 'public-safety-scan' -Message ('Text scan hit: ' + $Name) -Evidence $Rel
             }
         }
@@ -260,6 +260,12 @@ $RequiredFiles = @(
     'frontend/package.json',
     'frontend/src/App.tsx',
     'frontend/src/styles.css',
+    'backend/app/schemas/risky_signin.py',
+    'backend/app/analyzers/risky_signin_evidence.py',
+    'backend/app/api/risky_signins.py',
+    'backend/app/services/risky_signin_report.py',
+    'backend/tests/test_risky_signin_evidence.py',
+    'samples/risky_signins/sample-risky-signins.json',
     'docs/portfolio/CUSTOSOPS_SOC_POSITIONING.md',
     'docs/demo/CUSTOSOPS_DEMO_SCRIPT.md',
     'docs/demo/DEMO_WORKFLOW.md',
@@ -268,6 +274,7 @@ $RequiredFiles = @(
     'docs/onboarding/TROUBLESHOOTING.md',
     'docs/launch/LAUNCHER_REFERENCE.md',
     'docs/roadmap/ROADMAP.md',
+    'docs/roadmap/MILESTONE_32_RISKY_SIGNIN_EVIDENCE_REVIEW.md',
     'docs/architecture/PLATFORM_MODULE_CONTRACT.md',
     'docs/architecture/EVIDENCE_MODULE_HELPER_CONTRACT.md'
 )
@@ -343,16 +350,16 @@ Add-Line '| Area | Judgement |'
 Add-Line '|---|---|'
 Add-Line '| Defensive boundary | Strong. Keep local-first and read-only. |'
 Add-Line '| Engineering proof | Strong if tests, build, contract audits, and UI proof pass. |'
-Add-Line '| SOC job proof | Good foundation, but needs explicit alert-triage scenarios. |'
-Add-Line '| Highest next ROI | Risky sign-in review or suspicious email triage with public-safe sample evidence. |'
+Add-Line '| SOC job proof | Improved with risky sign-in evidence review; next proof should add demo notes and escalation package. |'
+Add-Line '| Highest next ROI | Risky sign-in demo notes, escalation note, and then optional UI workspace. |'
 Add-Line '| Public readiness | Do not publish until local audit, proof ZIP checker, and manual safety review are clean. |'
 
 Add-Line ''
 Add-Line '## Recommended next work'
 Add-Line ''
-Add-Line '1. Reconcile README stable baseline with latest tag and roadmap milestone.'
-Add-Line '2. Add one SOC scenario package: risky sign-in review or phishing triage.'
-Add-Line '3. Add public-safe sample evidence and a sample SOC escalation report.'
+Add-Line '1. Validate the risky sign-in backend tests locally.'
+Add-Line '2. Review public_safety_scan_hits.json for false positives and true risks.'
+Add-Line '3. Add a risky sign-in demo note and escalation package.'
 Add-Line '4. Keep generated audit/proof ZIPs outside the repo.'
 
 if ($Findings.Count -gt 0) {
