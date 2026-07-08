@@ -199,41 +199,41 @@ Common causes:
 
 ## Validation Commands
 
-Run local repository audit:
+Run the full local repository audit from the repository root:
 
 ```powershell
-.\scripts\audit-custosops-local-repo.ps1 -Root . -RunExistingContractAudits
+.\AUDIT_CUSTOSOPS_FULL.bat
 ```
 
-Run full local repository audit with backend and frontend validation:
+You can also double-click `AUDIT_CUSTOSOPS_FULL.bat` in File Explorer. The launcher automatically uses the CustosOps repository folder, runs the contract audits, backend tests, and frontend build, then writes the audit ZIP package to Downloads.
+
+Advanced direct audit command:
 
 ```powershell
 .\scripts\audit-custosops-local-repo.ps1 -Root . -RunExistingContractAudits -RunBackendTests -RunFrontendBuild
 ```
 
-The local audit writes a ZIP package to Downloads and checks local Git state, required files, generated artifact risk, public-safety scan hits, contract audits, and optional build/test results.
-
-Run backend tests:
+Run backend tests only:
 
 ```powershell
 cd backend
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-Run frontend build:
+Run frontend build only:
 
 ```powershell
 cd frontend
 npm.cmd run build
 ```
 
-Run platform contract audit:
+Run platform contract audit only:
 
 ```powershell
 .\scripts\audit-platform-contract.ps1 -Root .
 ```
 
-Run evidence module contract audit:
+Run evidence module contract audit only:
 
 ```powershell
 .\scripts\audit-evidence-module-contract.ps1 -Root . -OutputDir "$env:USERPROFILE\Downloads"
