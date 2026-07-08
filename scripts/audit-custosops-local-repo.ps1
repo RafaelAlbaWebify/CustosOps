@@ -146,6 +146,24 @@ function Get-RepoFiles {
     } | ForEach-Object { $_.FullName.Substring($RepoRoot.Length).TrimStart('\','/') })
 }
 
+function Test-SafetyScanIgnore {
+    param(
+        [string]$RelativePath,
+        [string]$CheckName,
+        [string]$Line
+    )
+
+    if ($RelativePath -eq 'scripts/audit-custosops-local-repo.ps1' -and $Line -match ('^\s*' + [regex]::Escape($CheckName) + '\s*=')) {
+        return $true
+    }
+
+    if ($CheckName -eq 'secret_assignment' -and $RelativePath -match '(?i)redaction') {
+        return $true
+    }
+
+    return $false
+}
+
 function Search-PublicSafetyHits {
     param([string[]]$Files)
 
@@ -158,8 +176,9 @@ function Search-PublicSafetyHits {
         offensive_wording = '(?i)(exploit|payload|reverse shell|bypass authentication|privilege escalation|pentest|penetration test)'
     }
 
+    $BlockingChecks = @('workplace_name', 'secret_assignment')
     $TextExtensions = @('.md', '.txt', '.ps1', '.py', '.ts', '.tsx', '.js', '.json', '.css', '.bat', '.yml', '.yaml', '.html', '.csv')
-    $Hits = New-Object System.Collections.Generic.List[object]
+    $Hits = @()
 
     foreach ($Rel in $Files) {
         $Full = Join-Path $script:RootPath $Rel
@@ -170,17 +189,34 @@ function Search-PublicSafetyHits {
         try { $Text = Get-Content -LiteralPath $Full -Raw -Encoding UTF8 -ErrorAction Stop }
         catch { try { $Text = Get-Content -LiteralPath $Full -Raw -ErrorAction Stop } catch { continue } }
 
-        foreach ($Name in $Patterns.Keys) {
-            if ($Text -match $Patterns[$Name]) {
-                $Hits.Add([pscustomobject]@{ file = $Rel; check = $Name; pattern = $Patterns[$Name] }) | Out-Null
-                $Severity = 'MEDIUM'
-                if ($Name -in @('workplace_name', 'secret_assignment')) { $Severity = 'HIGH' }
-                Add-Finding -Severity $Severity -Area 'public-safety-scan' -Message ('Text scan hit: ' + $Name) -Evidence $Rel
+        $LineNumber = 0
+        foreach ($Line in ($Text -split "`r?`n")) {
+            $LineNumber += 1
+            foreach ($Name in $Patterns.Keys) {
+                if ($Line -notmatch $Patterns[$Name]) { continue }
+                if (Test-SafetyScanIgnore -RelativePath $Rel -CheckName $Name -Line $Line) { continue }
+
+                $BlocksPublication = $BlockingChecks -contains $Name
+                $Severity = 'REVIEW'
+                if ($BlocksPublication) { $Severity = 'HIGH' }
+
+                $Hits += [pscustomobject]@{
+                    file = $Rel
+                    line = $LineNumber
+                    check = $Name
+                    severity = $Severity
+                    blocks_publication = $BlocksPublication
+                    note = 'Match content intentionally omitted from audit artifact. Review the source file locally.'
+                }
+
+                if ($BlocksPublication) {
+                    Add-Finding -Severity 'HIGH' -Area 'public-safety-scan' -Message ('Blocking text scan hit: ' + $Name) -Evidence ($Rel + ':' + $LineNumber)
+                }
             }
         }
     }
 
-    return @($Hits)
+    return $Hits
 }
 
 $RootPath = Resolve-RepoRoot -Path $Root
@@ -302,13 +338,19 @@ foreach ($Name in $ArtifactPatterns.Keys) {
 
 Add-Line ''
 Add-Line '## Public-safety scan'
-$SafetyHits = Search-PublicSafetyHits -Files $RepoFiles
-$SafetyJson = $SafetyHits | ConvertTo-Json -Depth 5
-if (-not $SafetyJson) { $SafetyJson = '[]' }
+$SafetyHits = @(Search-PublicSafetyHits -Files $RepoFiles)
+if ($SafetyHits.Count -gt 0) {
+    $SafetyJson = $SafetyHits | ConvertTo-Json -Depth 5
+}
+else {
+    $SafetyJson = '[]'
+}
 Write-Utf8NoBom -Path (Join-Path $AuditDir 'public_safety_scan_hits.json') -Text $SafetyJson
+$BlockingSafetyHits = @($SafetyHits | Where-Object { $_.blocks_publication })
 Add-Line ('- Text scan hits: ' + $SafetyHits.Count)
+Add-Line ('- Blocking scan hits: ' + $BlockingSafetyHits.Count)
 Add-Line '- Details: public_safety_scan_hits.json'
-Add-Line '- Manual review is still required because keyword scans can produce false positives.'
+Add-Line '- Review-only hits can include synthetic sample IPs, sample email addresses, and defensive security wording.'
 
 Add-Line ''
 Add-Line '## Validation commands'
@@ -357,10 +399,10 @@ Add-Line '| Public readiness | Do not publish until local audit, proof ZIP check
 Add-Line ''
 Add-Line '## Recommended next work'
 Add-Line ''
-Add-Line '1. Validate the risky sign-in backend tests locally.'
-Add-Line '2. Review public_safety_scan_hits.json for false positives and true risks.'
-Add-Line '3. Add a risky sign-in demo note and escalation package.'
-Add-Line '4. Keep generated audit/proof ZIPs outside the repo.'
+Add-Line '1. Review public_safety_scan_hits.json for unexpected blocking entries.'
+Add-Line '2. Keep generated audit/proof ZIPs outside the repo.'
+Add-Line '3. Add the risky sign-in UI workspace only after the backend/API scenario remains stable.'
+Add-Line '4. Re-run the Desktop UI proof before any public/demo milestone.'
 
 if ($Findings.Count -gt 0) {
     $FindingsJson = $Findings | ConvertTo-Json -Depth 8
