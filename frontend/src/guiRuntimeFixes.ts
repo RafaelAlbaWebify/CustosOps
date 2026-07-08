@@ -44,14 +44,28 @@ const REPORT_FORMATS: ReportFormat[] = ["html", "markdown", "json"];
 let lastRunSync = 0;
 let lastArchiveSync = 0;
 let riskySamplePromise: Promise<RiskySigninSample> | null = null;
+let riskyInstallInFlight = false;
+let applyQueued = false;
 
 function startGuiRuntimeFixes() {
   applyGuiRuntimeFixes();
 
-  const observer = new MutationObserver(() => applyGuiRuntimeFixes());
+  const observer = new MutationObserver(() => queueGuiRuntimeFixes());
   observer.observe(document.body, { childList: true, subtree: true });
 
   window.setInterval(applyGuiRuntimeFixes, 2500);
+}
+
+function queueGuiRuntimeFixes() {
+  if (applyQueued) {
+    return;
+  }
+
+  applyQueued = true;
+  window.setTimeout(() => {
+    applyQueued = false;
+    applyGuiRuntimeFixes();
+  }, 250);
 }
 
 function applyGuiRuntimeFixes() {
@@ -135,8 +149,8 @@ function setKpiValue(label: string, value: string, note: string) {
     candidate.querySelector("span")?.textContent?.trim() === label
   );
 
-  card?.querySelector("strong")?.replaceChildren(document.createTextNode(value));
-  card?.querySelector("p")?.replaceChildren(document.createTextNode(note));
+  setText(card?.querySelector("strong"), value);
+  setText(card?.querySelector("p"), note);
 }
 
 function patchOverviewRecentRuns(runs: EvidenceRun[]) {
@@ -162,11 +176,11 @@ function patchOverviewRecentRuns(runs: EvidenceRun[]) {
       <span class="status-pill ${escapeAttribute(run.status)}"></span>
       <strong></strong>
     `;
-    row.querySelector("strong")!.textContent = run.module_name;
-    row.querySelector("div span")!.textContent = run.asset || run.source;
-    row.children[1].textContent = run.source_type;
-    row.children[2].textContent = run.status;
-    row.children[3].textContent = String(run.finding_count);
+    setText(row.querySelector("strong"), run.module_name);
+    setText(row.querySelector("div span"), run.asset || run.source);
+    setText(row.children[1], run.source_type);
+    setText(row.children[2], run.status);
+    setText(row.children[3], String(run.finding_count));
     head?.insertAdjacentElement("afterend", row);
   }
 }
@@ -203,8 +217,8 @@ async function syncArchiveSummary() {
       return;
     }
 
-    latestMetric.querySelector("strong")?.replaceChildren(document.createTextNode(getArchiveDisplayLabel(latest)));
-    latestMetric.querySelector("p")?.replaceChildren(document.createTextNode(latest.filename));
+    setText(latestMetric.querySelector("strong"), getArchiveDisplayLabel(latest));
+    setText(latestMetric.querySelector("p"), latest.filename);
   } catch {
     // Archive sync is visual polish only.
   }
@@ -218,35 +232,51 @@ async function installRiskySigninReportCard() {
     return;
   }
 
-  const sample = await getRiskySigninSample();
-  const ready = sample.findings.length > 0;
-  const card = document.createElement("section");
-  card.className = `card report-readiness-card risky-signin-report-card ${ready ? "ready" : "blocked"}`;
-  card.innerHTML = `
-    <div class="card-header">
-      <div>
-        <p class="eyebrow">SOC Scenario</p>
-        <h2>Risky Sign-In Report</h2>
-      </div>
-      <span class="${ready ? "pill success" : "pill muted"}">${ready ? "Ready" : "No evidence"}</span>
-    </div>
-    <p>Synthetic Entra-style risky sign-in triage evidence, safe escalation wording, limitations, and non-actions.</p>
-    <div class="report-buttons"></div>
-    <p class="runtime-sync-note">Backend/API scenario surfaced in the GUI report center.</p>
-  `;
-
-  const buttonContainer = card.querySelector(".report-buttons")!;
-  for (const format of REPORT_FORMATS) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.disabled = !ready;
-    button.textContent = format === "html" ? "HTML" : format === "markdown" ? "Markdown" : "JSON";
-    button.addEventListener("click", () => void downloadRiskySigninReport(format));
-    buttonContainer.appendChild(button);
+  if (riskyInstallInFlight) {
+    return;
   }
 
-  grid.insertBefore(card, grid.lastElementChild);
-  patchReportCenterCounts();
+  riskyInstallInFlight = true;
+
+  try {
+    const sample = await getRiskySigninSample();
+
+    if (document.querySelector(".risky-signin-report-card")) {
+      patchReportCenterCounts();
+      return;
+    }
+
+    const ready = sample.findings.length > 0;
+    const card = document.createElement("section");
+    card.className = `card report-readiness-card risky-signin-report-card ${ready ? "ready" : "blocked"}`;
+    card.innerHTML = `
+      <div class="card-header">
+        <div>
+          <p class="eyebrow">SOC Scenario</p>
+          <h2>Risky Sign-In Report</h2>
+        </div>
+        <span class="${ready ? "pill success" : "pill muted"}">${ready ? "Ready" : "No evidence"}</span>
+      </div>
+      <p>Synthetic Entra-style risky sign-in triage evidence, safe escalation wording, limitations, and non-actions.</p>
+      <div class="report-buttons"></div>
+      <p class="runtime-sync-note">Backend/API scenario surfaced in the GUI report center.</p>
+    `;
+
+    const buttonContainer = card.querySelector(".report-buttons")!;
+    for (const format of REPORT_FORMATS) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.disabled = !ready;
+      button.textContent = format === "html" ? "HTML" : format === "markdown" ? "Markdown" : "JSON";
+      button.addEventListener("click", () => void downloadRiskySigninReport(format));
+      buttonContainer.appendChild(button);
+    }
+
+    grid.insertBefore(card, grid.lastElementChild);
+    patchReportCenterCounts();
+  } finally {
+    riskyInstallInFlight = false;
+  }
 }
 
 function patchReportCenterCounts() {
@@ -266,8 +296,8 @@ function patchReportCenterCounts() {
   const blocked = cards.length - ready;
   const heroPanel = document.querySelector<HTMLElement>(".report-archive-hero-panel");
 
-  heroPanel?.querySelector("strong")?.replaceChildren(document.createTextNode(`${ready}/${cards.length}`));
-  heroPanel?.querySelector("p")?.replaceChildren(document.createTextNode(blocked === 0 ? "All report paths are ready" : `${blocked} awaiting evidence`));
+  setText(heroPanel?.querySelector("strong"), `${ready}/${cards.length}`);
+  setText(heroPanel?.querySelector("p"), blocked === 0 ? "All report paths are ready" : `${blocked} awaiting evidence`);
 
   setReportMetricValue("Ready Reports", String(ready), "Evidence available");
   setReportMetricValue("Awaiting Evidence", String(blocked), "No module evidence yet");
@@ -279,8 +309,8 @@ function setReportMetricValue(label: string, value: string, note: string) {
     candidate.querySelector("span")?.textContent?.trim() === label
   );
 
-  card?.querySelector("strong")?.replaceChildren(document.createTextNode(value));
-  card?.querySelector("p")?.replaceChildren(document.createTextNode(note));
+  setText(card?.querySelector("strong"), value);
+  setText(card?.querySelector("p"), note);
 }
 
 async function getRiskySigninSample(): Promise<RiskySigninSample> {
@@ -368,6 +398,14 @@ function getArchiveTime(value?: string) {
 
   const parsed = new Date(value).getTime();
   return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function setText(element: Element | null | undefined, value: string) {
+  if (!element || element.textContent === value) {
+    return;
+  }
+
+  element.textContent = value;
 }
 
 function escapeAttribute(value: string) {
