@@ -9,6 +9,7 @@ param(
     [string]$Root = '.',
     [string]$OutputDir = '',
     [string]$UiProofScript = '',
+    [int]$UiProofTimeoutSeconds = 600,
     [switch]$SkipUiProof,
     [switch]$RequireUiProof
 )
@@ -43,6 +44,34 @@ function Get-ChildPowerShellExe {
     return 'powershell.exe'
 }
 
+function Invoke-UiProofWithTimeout {
+    param(
+        [string]$ScriptPath,
+        [int]$TimeoutSeconds
+    )
+
+    $Psi = New-Object System.Diagnostics.ProcessStartInfo
+    $Psi.FileName = 'powershell.exe'
+    [void]$Psi.ArgumentList.Add('-NoProfile')
+    [void]$Psi.ArgumentList.Add('-ExecutionPolicy')
+    [void]$Psi.ArgumentList.Add('Bypass')
+    [void]$Psi.ArgumentList.Add('-File')
+    [void]$Psi.ArgumentList.Add($ScriptPath)
+    $Psi.UseShellExecute = $false
+
+    $Process = New-Object System.Diagnostics.Process
+    $Process.StartInfo = $Psi
+    [void]$Process.Start()
+
+    if (-not $Process.WaitForExit($TimeoutSeconds * 1000)) {
+        try { $Process.Kill($true) } catch { try { $Process.Kill() } catch {} }
+        Write-Host ('Desktop UI proof timed out after ' + $TimeoutSeconds + ' seconds.') -ForegroundColor Red
+        return 124
+    }
+
+    return $Process.ExitCode
+}
+
 $RootPath = Resolve-ProofRoot -Path $Root
 if (-not $OutputDir) {
     if ($env:USERPROFILE) { $OutputDir = Join-Path $env:USERPROFILE 'Downloads' }
@@ -62,6 +91,7 @@ Write-Host 'CustosOps full proof runner' -ForegroundColor Cyan
 Write-Host ('Repository: ' + $RootPath)
 Write-Host ('OutputDir:  ' + $OutputDir)
 Write-Host ('PowerShell: ' + $ChildPowerShell)
+Write-Host ('UI timeout: ' + $UiProofTimeoutSeconds + ' seconds')
 Write-Host ''
 
 if (-not (Test-Path -LiteralPath $AuditScript)) {
@@ -101,8 +131,7 @@ else {
         Write-Host 'Step 2/2: Running Desktop UI proof...' -ForegroundColor Cyan
         $BeforeProofZips = @(Get-ChildItem -LiteralPath $OutputDir -Filter 'CUSTOSOPS_UI_SMOKE_*.zip' -File -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
 
-        powershell.exe -NoProfile -ExecutionPolicy Bypass -File $UiProofScript
-        $UiProofExit = $LASTEXITCODE
+        $UiProofExit = Invoke-UiProofWithTimeout -ScriptPath $UiProofScript -TimeoutSeconds $UiProofTimeoutSeconds
         if ($UiProofExit -ne 0) {
             Set-Failed ('Desktop UI proof failed with exit code ' + $UiProofExit)
         }
