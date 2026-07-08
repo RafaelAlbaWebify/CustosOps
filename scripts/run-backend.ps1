@@ -1,5 +1,29 @@
 $ErrorActionPreference = "Stop"
 
+function Get-CustosOpsFileSha256 {
+    param([Parameter(Mandatory=$true)][string]$Path)
+
+    $GetFileHashCommand = Get-Command Get-FileHash -ErrorAction SilentlyContinue
+    if ($GetFileHashCommand) {
+        return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash
+    }
+
+    $Stream = [System.IO.File]::OpenRead($Path)
+    try {
+        $Sha = [System.Security.Cryptography.SHA256]::Create()
+        try {
+            $Bytes = $Sha.ComputeHash($Stream)
+            return (($Bytes | ForEach-Object { $_.ToString("x2") }) -join '').ToUpperInvariant()
+        }
+        finally {
+            $Sha.Dispose()
+        }
+    }
+    finally {
+        $Stream.Dispose()
+    }
+}
+
 $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Root = Split-Path -Parent $ScriptRoot
 $BackendPath = Join-Path $Root "backend"
@@ -38,7 +62,7 @@ if (-not (Test-Path -LiteralPath $PythonPath)) {
     }
 }
 
-$RequirementsHash = (Get-FileHash -LiteralPath $RequirementsPath -Algorithm SHA256).Hash
+$RequirementsHash = Get-CustosOpsFileSha256 -Path $RequirementsPath
 $ExistingHash = ""
 
 if (Test-Path -LiteralPath $HashPath) {
