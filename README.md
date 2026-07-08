@@ -207,10 +207,30 @@ Run the full local repository audit from the repository root:
 
 You can also double-click `AUDIT_CUSTOSOPS_FULL.bat` in File Explorer. The launcher automatically uses the CustosOps repository folder, runs the contract audits, backend tests, and frontend build, then writes the audit ZIP package to Downloads.
 
+Run the full demo/public-readiness proof from the repository root:
+
+```powershell
+.\PROVE_CUSTOSOPS_FULL.bat
+```
+
+This runs the same repository audit, then runs the external Desktop UI proof tool from:
+
+```text
+%USERPROFILE%\Desktop\CustosOps-UI-Tool\Run-CustosOps-UI-Smoke.ps1
+```
+
+After the UI proof ZIP is created, it validates the artifact with `scripts/check-ui-proof-artifact.ps1`. Use this before a demo, release tag, or public-review checkpoint.
+
 Advanced direct audit command:
 
 ```powershell
 .\scripts\audit-custosops-local-repo.ps1 -Root . -RunExistingContractAudits -RunBackendTests -RunFrontendBuild
+```
+
+Advanced direct proof command:
+
+```powershell
+.\scripts\prove-custosops-full.ps1 -Root . -RequireUiProof
 ```
 
 Run backend tests only:
