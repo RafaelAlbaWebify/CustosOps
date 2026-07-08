@@ -71,7 +71,20 @@ CustosOps exposes 10 UI workspaces:
 - Application log evidence
 - Windows Event evidence
 - IIS/Application evidence
+- Risky sign-in evidence review, currently backend/API scenario first
 ```
+
+## SOC Scenario Coverage
+
+```text
+- Endpoint baseline issue review
+- DNS/email-domain hygiene evidence review
+- Windows event evidence review
+- IIS/application security-relevant log review
+- Risky sign-in investigation using synthetic Microsoft 365 / Entra-style evidence
+```
+
+The risky sign-in scenario is intentionally backend/API first. It proves the evidence model, analyzer rules, report generation, redaction path, and tests before adding another UI workspace.
 
 ## Core Capabilities
 
@@ -251,6 +264,8 @@ Use synthetic or local sample evidence only. A good demo should show:
 6. Show Redaction controls.
 7. Run or show the Desktop UI proof ZIP with 10 checked workspaces.
 ```
+
+For the current risky sign-in scenario, the demo should emphasize backend/API evidence flow first: sample evidence, generated findings, report output, limitations, and safe escalation. It should not be presented as live tenant monitoring.
 
 More detailed demo guidance is available in:
 
