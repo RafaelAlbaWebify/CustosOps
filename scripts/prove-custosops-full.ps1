@@ -52,7 +52,7 @@ function Invoke-UiProofWithTimeout {
     )
 
     $Psi = New-Object System.Diagnostics.ProcessStartInfo
-    $Psi.FileName = 'powershell.exe'
+    $Psi.FileName = Get-ChildPowerShellExe
     [void]$Psi.ArgumentList.Add('-NoProfile')
     [void]$Psi.ArgumentList.Add('-ExecutionPolicy')
     [void]$Psi.ArgumentList.Add('Bypass')
@@ -99,8 +99,9 @@ function Start-CustosOpsProofProcess {
         [string]$Name
     )
 
-    Write-Host ('Starting ' + $Name + ' for proof...') -ForegroundColor Cyan
-    Start-Process powershell.exe -ArgumentList @(
+    $PowerShellExe = Get-ChildPowerShellExe
+    Write-Host ('Starting ' + $Name + ' for proof with ' + $PowerShellExe + '...') -ForegroundColor Cyan
+    Start-Process $PowerShellExe -ArgumentList @(
         '-NoExit',
         '-ExecutionPolicy', 'Bypass',
         '-File', $ScriptPath
