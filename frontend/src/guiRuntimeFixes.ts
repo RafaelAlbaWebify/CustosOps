@@ -57,6 +57,7 @@ function startGuiRuntimeFixes() {
 function applyGuiRuntimeFixes() {
   wireHelpAndDocsButton();
   enableLoadedModuleReportButtons();
+  patchReportCenterCounts();
   void syncOverviewRuns();
   void syncArchiveSummary();
   void installRiskySigninReportCard();
@@ -213,6 +214,7 @@ async function installRiskySigninReportCard() {
   const grid = document.querySelector<HTMLElement>(".report-readiness-grid");
 
   if (!grid || document.querySelector(".risky-signin-report-card")) {
+    patchReportCenterCounts();
     return;
   }
 
@@ -244,6 +246,41 @@ async function installRiskySigninReportCard() {
   }
 
   grid.insertBefore(card, grid.lastElementChild);
+  patchReportCenterCounts();
+}
+
+function patchReportCenterCounts() {
+  const grid = document.querySelector<HTMLElement>(".report-readiness-grid");
+
+  if (!grid) {
+    return;
+  }
+
+  const cards = Array.from(grid.querySelectorAll<HTMLElement>(".report-readiness-card"));
+
+  if (cards.length === 0) {
+    return;
+  }
+
+  const ready = cards.filter((card) => card.classList.contains("ready")).length;
+  const blocked = cards.length - ready;
+  const heroPanel = document.querySelector<HTMLElement>(".report-archive-hero-panel");
+
+  heroPanel?.querySelector("strong")?.replaceChildren(document.createTextNode(`${ready}/${cards.length}`));
+  heroPanel?.querySelector("p")?.replaceChildren(document.createTextNode(blocked === 0 ? "All report paths are ready" : `${blocked} awaiting evidence`));
+
+  setReportMetricValue("Ready Reports", String(ready), "Evidence available");
+  setReportMetricValue("Awaiting Evidence", String(blocked), "No module evidence yet");
+  setReportMetricValue("Report Types", String(cards.length), "Module, SOC scenario, and executive reports");
+}
+
+function setReportMetricValue(label: string, value: string, note: string) {
+  const card = Array.from(document.querySelectorAll<HTMLElement>(".report-archive-metric")).find((candidate) =>
+    candidate.querySelector("span")?.textContent?.trim() === label
+  );
+
+  card?.querySelector("strong")?.replaceChildren(document.createTextNode(value));
+  card?.querySelector("p")?.replaceChildren(document.createTextNode(note));
 }
 
 async function getRiskySigninSample(): Promise<RiskySigninSample> {
