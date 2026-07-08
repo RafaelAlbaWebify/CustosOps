@@ -5,7 +5,10 @@ rem CustosOps full local audit launcher.
 rem Run this file from Explorer or any terminal. It uses the repository folder automatically.
 
 set "REPO_ROOT=%~dp0"
-set "AUDIT_SCRIPT=%REPO_ROOT%scripts\audit-custosops-local-repo.ps1"
+rem Remove trailing slash so quoted PowerShell arguments are parsed reliably.
+if "%REPO_ROOT:~-1%"=="\" set "REPO_ROOT=%REPO_ROOT:~0,-1%"
+
+set "AUDIT_SCRIPT=%REPO_ROOT%\scripts\audit-custosops-local-repo.ps1"
 
 if not exist "%AUDIT_SCRIPT%" (
     echo ERROR: Audit script not found:
