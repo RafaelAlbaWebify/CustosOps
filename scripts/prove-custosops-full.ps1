@@ -33,6 +33,16 @@ function Set-Failed {
     Write-Host $Message -ForegroundColor Red
 }
 
+function Get-ChildPowerShellExe {
+    $Pwsh = Get-Command pwsh.exe -ErrorAction SilentlyContinue
+    if ($Pwsh) { return $Pwsh.Source }
+
+    $WindowsPowerShell = Get-Command powershell.exe -ErrorAction SilentlyContinue
+    if ($WindowsPowerShell) { return $WindowsPowerShell.Source }
+
+    return 'powershell.exe'
+}
+
 $RootPath = Resolve-ProofRoot -Path $Root
 if (-not $OutputDir) {
     if ($env:USERPROFILE) { $OutputDir = Join-Path $env:USERPROFILE 'Downloads' }
@@ -45,11 +55,13 @@ if (-not (Test-Path -LiteralPath $OutputDir)) {
 
 $AuditScript = Join-Path $RootPath 'scripts\audit-custosops-local-repo.ps1'
 $ProofChecker = Join-Path $RootPath 'scripts\check-ui-proof-artifact.ps1'
+$ChildPowerShell = Get-ChildPowerShellExe
 
 Write-Host ''
 Write-Host 'CustosOps full proof runner' -ForegroundColor Cyan
 Write-Host ('Repository: ' + $RootPath)
 Write-Host ('OutputDir:  ' + $OutputDir)
+Write-Host ('PowerShell: ' + $ChildPowerShell)
 Write-Host ''
 
 if (-not (Test-Path -LiteralPath $AuditScript)) {
@@ -57,7 +69,7 @@ if (-not (Test-Path -LiteralPath $AuditScript)) {
 }
 else {
     Write-Host 'Step 1/2: Running full local repository audit...' -ForegroundColor Cyan
-    & $AuditScript -Root $RootPath -OutputDir $OutputDir -RunExistingContractAudits -RunBackendTests -RunFrontendBuild
+    & $ChildPowerShell -NoProfile -ExecutionPolicy Bypass -File $AuditScript -Root $RootPath -OutputDir $OutputDir -RunExistingContractAudits -RunBackendTests -RunFrontendBuild
     $AuditExit = $LASTEXITCODE
     if ($AuditExit -ne 0) {
         Set-Failed ('Local repository audit failed with exit code ' + $AuditExit)
@@ -111,7 +123,7 @@ else {
         }
         else {
             Write-Host ('Desktop UI proof ZIP: ' + $LatestProofZip.FullName)
-            & $ProofChecker -ZipPath $LatestProofZip.FullName
+            & $ChildPowerShell -NoProfile -ExecutionPolicy Bypass -File $ProofChecker -ZipPath $LatestProofZip.FullName
             $ProofCheckExit = $LASTEXITCODE
             if ($ProofCheckExit -ne 0) {
                 Set-Failed ('Desktop UI proof artifact check failed with exit code ' + $ProofCheckExit)
