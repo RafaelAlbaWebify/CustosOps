@@ -10,6 +10,7 @@ param(
     [string]$OutputDir = '',
     [string]$UiProofScript = '',
     [int]$UiProofTimeoutSeconds = 600,
+    [int]$AppStartupTimeoutSeconds = 180,
     [switch]$SkipUiProof,
     [switch]$RequireUiProof
 )
@@ -72,6 +73,96 @@ function Invoke-UiProofWithTimeout {
     return $Process.ExitCode
 }
 
+function Test-HttpReady {
+    param([string]$Url)
+
+    try {
+        $Response = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop
+        return ($Response.StatusCode -ge 200 -and $Response.StatusCode -lt 500)
+    }
+    catch {
+        return $false
+    }
+}
+
+function Test-PortReady {
+    param([int]$Port)
+
+    $Connection = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
+    return [bool]$Connection
+}
+
+function Start-CustosOpsProofProcess {
+    param(
+        [string]$ScriptPath,
+        [string]$WorkingDirectory,
+        [string]$Name
+    )
+
+    Write-Host ('Starting ' + $Name + ' for proof...') -ForegroundColor Cyan
+    Start-Process powershell.exe -ArgumentList @(
+        '-NoExit',
+        '-ExecutionPolicy', 'Bypass',
+        '-File', $ScriptPath
+    ) -WorkingDirectory $WorkingDirectory | Out-Null
+}
+
+function Ensure-CustosOpsReadyForProof {
+    param(
+        [string]$RootPath,
+        [int]$TimeoutSeconds
+    )
+
+    $BackendScript = Join-Path $RootPath 'scripts\run-backend.ps1'
+    $FrontendScript = Join-Path $RootPath 'scripts\run-frontend.ps1'
+    $GuardScript = Join-Path $RootPath 'scripts\custosops-process-guard.ps1'
+
+    if (-not (Test-Path -LiteralPath $BackendScript)) {
+        Set-Failed ('Backend launcher not found: ' + $BackendScript)
+        return $false
+    }
+
+    if (-not (Test-Path -LiteralPath $FrontendScript)) {
+        Set-Failed ('Frontend launcher not found: ' + $FrontendScript)
+        return $false
+    }
+
+    if (Test-Path -LiteralPath $GuardScript) {
+        . $GuardScript
+        Stop-CustosOpsPorts -Ports @(8000, 5173) -RootHint $RootPath -OnlyCustosOps | Out-Null
+    }
+
+    Start-CustosOpsProofProcess -ScriptPath $BackendScript -WorkingDirectory $RootPath -Name 'backend'
+
+    $BackendDeadline = (Get-Date).AddSeconds([Math]::Min($TimeoutSeconds, 120))
+    while ((Get-Date) -lt $BackendDeadline) {
+        if (Test-HttpReady -Url 'http://127.0.0.1:8000/api/health') {
+            Write-Host 'Backend proof preflight: OK' -ForegroundColor Green
+            break
+        }
+        Start-Sleep -Milliseconds 700
+    }
+
+    if (-not (Test-HttpReady -Url 'http://127.0.0.1:8000/api/health')) {
+        Set-Failed 'Backend did not become ready before UI proof.'
+        return $false
+    }
+
+    Start-CustosOpsProofProcess -ScriptPath $FrontendScript -WorkingDirectory $RootPath -Name 'frontend'
+
+    $FrontendDeadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $FrontendDeadline) {
+        if (Test-PortReady -Port 5173) {
+            Write-Host 'Frontend proof preflight: OK' -ForegroundColor Green
+            return $true
+        }
+        Start-Sleep -Milliseconds 700
+    }
+
+    Set-Failed 'Frontend did not open port 5173 before UI proof.'
+    return $false
+}
+
 $RootPath = Resolve-ProofRoot -Path $Root
 if (-not $OutputDir) {
     if ($env:USERPROFILE) { $OutputDir = Join-Path $env:USERPROFILE 'Downloads' }
@@ -91,6 +182,7 @@ Write-Host 'CustosOps full proof runner' -ForegroundColor Cyan
 Write-Host ('Repository: ' + $RootPath)
 Write-Host ('OutputDir:  ' + $OutputDir)
 Write-Host ('PowerShell: ' + $ChildPowerShell)
+Write-Host ('App startup timeout: ' + $AppStartupTimeoutSeconds + ' seconds')
 Write-Host ('UI timeout: ' + $UiProofTimeoutSeconds + ' seconds')
 Write-Host ''
 
@@ -127,38 +219,49 @@ else {
     elseif (-not (Test-Path -LiteralPath $ProofChecker)) {
         Set-Failed ('ERROR: UI proof checker not found: ' + $ProofChecker)
     }
-    else {
-        Write-Host 'Step 2/2: Running Desktop UI proof...' -ForegroundColor Cyan
-        $BeforeProofZips = @(Get-ChildItem -LiteralPath $OutputDir -Filter 'CUSTOSOPS_UI_SMOKE_*.zip' -File -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
+    elseif ($ProofOk) {
+        Write-Host 'Step 2/2: Preparing app for Desktop UI proof...' -ForegroundColor Cyan
+        $AppReady = Ensure-CustosOpsReadyForProof -RootPath $RootPath -TimeoutSeconds $AppStartupTimeoutSeconds
 
-        $UiProofExit = Invoke-UiProofWithTimeout -ScriptPath $UiProofScript -TimeoutSeconds $UiProofTimeoutSeconds
-        if ($UiProofExit -ne 0) {
-            Set-Failed ('Desktop UI proof failed with exit code ' + $UiProofExit)
-        }
+        if ($AppReady) {
+            Write-Host 'Step 2/2: Running Desktop UI proof...' -ForegroundColor Cyan
+            $BeforeProofZips = @(Get-ChildItem -LiteralPath $OutputDir -Filter 'CUSTOSOPS_UI_SMOKE_*.zip' -File -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
 
-        $LatestProofZip = Get-ChildItem -LiteralPath $OutputDir -Filter 'CUSTOSOPS_UI_SMOKE_*.zip' -File -ErrorAction SilentlyContinue |
-            Where-Object { $BeforeProofZips -notcontains $_.FullName } |
-            Sort-Object LastWriteTime -Descending |
-            Select-Object -First 1
+            $UiProofExit = Invoke-UiProofWithTimeout -ScriptPath $UiProofScript -TimeoutSeconds $UiProofTimeoutSeconds
+            if ($UiProofExit -ne 0) {
+                Set-Failed ('Desktop UI proof failed with exit code ' + $UiProofExit)
+            }
 
-        if (-not $LatestProofZip) {
             $LatestProofZip = Get-ChildItem -LiteralPath $OutputDir -Filter 'CUSTOSOPS_UI_SMOKE_*.zip' -File -ErrorAction SilentlyContinue |
+                Where-Object { $BeforeProofZips -notcontains $_.FullName } |
                 Sort-Object LastWriteTime -Descending |
                 Select-Object -First 1
-        }
 
-        if (-not $LatestProofZip) {
-            Set-Failed 'Desktop UI proof ZIP not found in output directory.'
-        }
-        else {
-            Write-Host ('Desktop UI proof ZIP: ' + $LatestProofZip.FullName)
-            & $ChildPowerShell -NoProfile -ExecutionPolicy Bypass -File $ProofChecker -ZipPath $LatestProofZip.FullName
-            $ProofCheckExit = $LASTEXITCODE
-            if ($ProofCheckExit -ne 0) {
-                Set-Failed ('Desktop UI proof artifact check failed with exit code ' + $ProofCheckExit)
+            if (-not $LatestProofZip) {
+                $LatestProofZip = Get-ChildItem -LiteralPath $OutputDir -Filter 'CUSTOSOPS_UI_SMOKE_*.zip' -File -ErrorAction SilentlyContinue |
+                    Sort-Object LastWriteTime -Descending |
+                    Select-Object -First 1
+            }
+
+            if (-not $LatestProofZip) {
+                Set-Failed 'Desktop UI proof ZIP not found in output directory.'
             }
             else {
-                Write-Host 'Desktop UI proof artifact check: OK' -ForegroundColor Green
+                $ProofStatusFile = Join-Path $OutputDir ('CUSTOSOPS_UI_PROOF_CHECK_STATUS_' + (Get-Date -Format 'yyyyMMdd_HHmmss') + '.txt')
+                Write-Host ('Desktop UI proof ZIP: ' + $LatestProofZip.FullName)
+                & $ChildPowerShell -NoProfile -ExecutionPolicy Bypass -File $ProofChecker -ZipPath $LatestProofZip.FullName -StatusFile $ProofStatusFile
+                $ProofCheckExit = $LASTEXITCODE
+                $ProofCheckStatus = ''
+                if (Test-Path -LiteralPath $ProofStatusFile) {
+                    $ProofCheckStatus = (Get-Content -LiteralPath $ProofStatusFile -Raw).Trim()
+                }
+
+                if ($ProofCheckExit -ne 0 -or $ProofCheckStatus -ne 'OK') {
+                    Set-Failed ('Desktop UI proof artifact check failed. Exit code: ' + $ProofCheckExit + '. Status: ' + $ProofCheckStatus)
+                }
+                else {
+                    Write-Host 'Desktop UI proof artifact check: OK' -ForegroundColor Green
+                }
             }
         }
     }
