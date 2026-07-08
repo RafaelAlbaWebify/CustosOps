@@ -107,8 +107,6 @@ if ($ProofOk) {
                     }
                 }
 
-
-
                 $IisScreenshot = $Zip.Entries | Where-Object { $_.FullName.Replace("\","/") -eq "screenshots/iis-iis-application.png" } | Select-Object -First 1
                 if (-not $IisScreenshot) {
                     Add-Fail "Missing IIS workspace screenshot"
@@ -149,9 +147,8 @@ if ($StatusFile) {
 
 if ($ProofOk) {
     Write-Host "UI proof artifact check: OK" -ForegroundColor Green
-}
-else {
-    Write-Host "UI proof artifact check: FAILED" -ForegroundColor Red
+    exit 0
 }
 
-$ProofOk
+Write-Host "UI proof artifact check: FAILED" -ForegroundColor Red
+exit 1
