@@ -8,6 +8,7 @@ from app.api.iis import router as iis_router
 from app.api.modules import router as modules_router
 from app.api.reports import router as reports_router
 from app.api.redaction_settings import router as redaction_settings_router
+from app.api.risky_signins import router as risky_signins_router
 from app.api.windows_events import router as windows_events_router
 from app.api.evidence_runs import router as evidence_runs_router
 from app.api.app_log import router as app_log_router
@@ -35,3 +36,4 @@ app.include_router(redaction_settings_router)
 app.include_router(windows_events_router)
 app.include_router(evidence_runs_router)
 app.include_router(app_log_router)
+app.include_router(risky_signins_router)
