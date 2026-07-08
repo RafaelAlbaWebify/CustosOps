@@ -188,7 +188,7 @@ export function RunHistoryWorkspace(props: {
 
       <div className="panel">
         {props.runs.length === 0 ? (
-          <p className="muted">No evidence runs recorded yet. Automatic workflow recording will be added in the next slice.</p>
+          <p className="muted">Evidence imports and local collections will appear here after they run.</p>
         ) : (
           <div className="table-scroll">
             <table className="data-table">
