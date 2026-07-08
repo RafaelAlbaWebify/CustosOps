@@ -15,7 +15,7 @@ I am building it as my **SOC flagship**: a read-only defensive evidence console 
 ## Current Stable Baseline
 
 ```text
-custosops-v0.31.0-beginner-runbook-launch-audit
+custosops-v0.31.2-gui-cleanup
 ```
 
 ## Who This Is For
@@ -186,6 +186,20 @@ Common causes:
 
 ## Validation Commands
 
+Run local repository audit:
+
+```powershell
+.\scripts\audit-custosops-local-repo.ps1 -Root . -RunExistingContractAudits
+```
+
+Run full local repository audit with backend and frontend validation:
+
+```powershell
+.\scripts\audit-custosops-local-repo.ps1 -Root . -RunExistingContractAudits -RunBackendTests -RunFrontendBuild
+```
+
+The local audit writes a ZIP package to Downloads and checks local Git state, required files, generated artifact risk, public-safety scan hits, contract audits, and optional build/test results.
+
 Run backend tests:
 
 ```powershell
@@ -267,6 +281,7 @@ Before making it public, verify:
 ```text
 - README renders correctly.
 - Launcher docs are clear.
+- Local repository audit ZIP has been reviewed.
 - No generated ZIPs or local proof artifacts are tracked.
 - No private local paths or workplace/customer names appear.
 - Latest tag is present.
