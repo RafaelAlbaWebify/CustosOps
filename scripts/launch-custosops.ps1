@@ -1,12 +1,25 @@
 $ErrorActionPreference = "Stop"
 
+function Get-CustosOpsPowerShellExe {
+    $Pwsh = Get-Command pwsh.exe -ErrorAction SilentlyContinue
+    if ($Pwsh) { return $Pwsh.Source }
+
+    $WindowsPowerShell = Get-Command powershell.exe -ErrorAction SilentlyContinue
+    if ($WindowsPowerShell) { return $WindowsPowerShell.Source }
+
+    return "powershell.exe"
+}
+
 $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Root = Split-Path -Parent $ScriptRoot
 . (Join-Path $ScriptRoot "custosops-process-guard.ps1")
 
+$PowerShellExe = Get-CustosOpsPowerShellExe
+
 Write-Host ""
 Write-Host "Launching CustosOps..."
 Write-Host "Project root: $Root"
+Write-Host "PowerShell: $PowerShellExe"
 Write-Host ""
 Write-Host "First run note:"
 Write-Host "- Backend dependencies may be installed into backend\.venv."
@@ -41,7 +54,7 @@ if (-not (Test-Path -LiteralPath $FrontendScript)) {
 
 Write-Host ""
 Write-Host "Starting backend window..."
-Start-Process powershell.exe -ArgumentList @(
+Start-Process $PowerShellExe -ArgumentList @(
     "-NoExit",
     "-ExecutionPolicy", "Bypass",
     "-File", $BackendScript
@@ -62,7 +75,7 @@ Write-Host "Backend is healthy."
 
 Write-Host ""
 Write-Host "Starting frontend window..."
-Start-Process powershell.exe -ArgumentList @(
+Start-Process $PowerShellExe -ArgumentList @(
     "-NoExit",
     "-ExecutionPolicy", "Bypass",
     "-File", $FrontendScript
