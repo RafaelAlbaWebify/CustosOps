@@ -1,0 +1,221 @@
+{
+  "source_file": "sample-risky-signins.json",
+  "source_type": "m365_entra_signin_export",
+  "tenant_label": "synthetic-smb-tenant",
+  "raw_record_count": 8,
+  "parsed_record_count": 8,
+  "parser_warnings": [],
+  "records": [
+    {
+      "sign_in_id": "signin-1001",
+      "created_at": "2026-07-07T08:14:23Z",
+      "user_principal_name": "alex.rivera@example.test",
+      "user_display_name": "Alex Rivera",
+      "app_display_name": "Microsoft Office 365 Portal",
+      "ip_address": "203.0.113.45",
+      "location": {
+        "city": "Madrid",
+        "state": "Madrid",
+        "country_or_region": "ES"
+      },
+      "client_app_used": "Browser",
+      "device_detail": {
+        "display_name": "ALEX-LAPTOP",
+        "operating_system": "Windows 11",
+        "browser": "Edge",
+        "is_managed": true,
+        "is_compliant": true
+      },
+      "status": "success",
+      "risk_level_aggregated": "none",
+      "risk_state": "none",
+      "conditional_access_status": "success",
+      "mfa_required": true,
+      "mfa_satisfied": true,
+      "is_interactive": true,
+      "risk_event_types": []
+    },
+    {
+      "sign_in_id": "signin-1002",
+      "created_at": "2026-07-07T09:02:12Z",
+      "user_principal_name": "marta.lee@example.test",
+      "user_display_name": "Marta Lee",
+      "app_display_name": "Exchange Online",
+      "ip_address": "198.51.100.77",
+      "location": {
+        "city": "Lagos",
+        "country_or_region": "NG"
+      },
+      "client_app_used": "Browser",
+      "device_detail": {
+        "operating_system": "Windows",
+        "browser": "Chrome",
+        "is_managed": false,
+        "is_compliant": false
+      },
+      "status": "success",
+      "risk_level_aggregated": "high",
+      "risk_state": "at_risk",
+      "conditional_access_status": "failure",
+      "mfa_required": true,
+      "mfa_satisfied": false,
+      "is_interactive": true,
+      "risk_event_types": ["unfamiliarFeatures", "anonymousIpAddress"]
+    },
+    {
+      "sign_in_id": "signin-1003",
+      "created_at": "2026-07-07T09:07:55Z",
+      "user_principal_name": "marta.lee@example.test",
+      "user_display_name": "Marta Lee",
+      "app_display_name": "Exchange Online",
+      "ip_address": "198.51.100.77",
+      "location": {
+        "city": "Lagos",
+        "country_or_region": "NG"
+      },
+      "client_app_used": "IMAP",
+      "device_detail": {
+        "operating_system": "Unknown",
+        "browser": "Unknown",
+        "is_managed": false,
+        "is_compliant": false
+      },
+      "status": "failure",
+      "failure_reason": "Invalid username or password",
+      "risk_level_aggregated": "medium",
+      "risk_state": "at_risk",
+      "conditional_access_status": "notApplied",
+      "mfa_required": false,
+      "mfa_satisfied": false,
+      "is_interactive": false,
+      "risk_event_types": ["passwordSpray"]
+    },
+    {
+      "sign_in_id": "signin-1004",
+      "created_at": "2026-07-07T09:08:41Z",
+      "user_principal_name": "marta.lee@example.test",
+      "user_display_name": "Marta Lee",
+      "app_display_name": "Exchange Online",
+      "ip_address": "198.51.100.78",
+      "location": {
+        "city": "Lagos",
+        "country_or_region": "NG"
+      },
+      "client_app_used": "IMAP",
+      "status": "failure",
+      "failure_reason": "Invalid username or password",
+      "risk_level_aggregated": "medium",
+      "risk_state": "at_risk",
+      "conditional_access_status": "notApplied",
+      "mfa_required": false,
+      "mfa_satisfied": false,
+      "is_interactive": false,
+      "risk_event_types": ["passwordSpray"]
+    },
+    {
+      "sign_in_id": "signin-1005",
+      "created_at": "2026-07-07T09:09:10Z",
+      "user_principal_name": "marta.lee@example.test",
+      "user_display_name": "Marta Lee",
+      "app_display_name": "Exchange Online",
+      "ip_address": "198.51.100.79",
+      "location": {
+        "city": "Lagos",
+        "country_or_region": "NG"
+      },
+      "client_app_used": "IMAP",
+      "status": "failure",
+      "failure_reason": "Invalid username or password",
+      "risk_level_aggregated": "medium",
+      "risk_state": "at_risk",
+      "conditional_access_status": "notApplied",
+      "mfa_required": false,
+      "mfa_satisfied": false,
+      "is_interactive": false,
+      "risk_event_types": ["passwordSpray"]
+    },
+    {
+      "sign_in_id": "signin-1006",
+      "created_at": "2026-07-07T10:31:45Z",
+      "user_principal_name": "alex.rivera@example.test",
+      "user_display_name": "Alex Rivera",
+      "app_display_name": "Microsoft Teams",
+      "ip_address": "192.0.2.24",
+      "location": {
+        "city": "Dublin",
+        "country_or_region": "IE"
+      },
+      "client_app_used": "Browser",
+      "device_detail": {
+        "operating_system": "macOS",
+        "browser": "Safari",
+        "is_managed": false,
+        "is_compliant": false
+      },
+      "status": "interrupted",
+      "risk_level_aggregated": "medium",
+      "risk_state": "at_risk",
+      "conditional_access_status": "failure",
+      "mfa_required": true,
+      "mfa_satisfied": false,
+      "is_interactive": true,
+      "risk_event_types": ["unfamiliarFeatures"]
+    },
+    {
+      "sign_in_id": "signin-1007",
+      "created_at": "2026-07-07T11:04:18Z",
+      "user_principal_name": "alex.rivera@example.test",
+      "user_display_name": "Alex Rivera",
+      "app_display_name": "Microsoft Teams",
+      "ip_address": "203.0.113.46",
+      "location": {
+        "city": "Madrid",
+        "country_or_region": "ES"
+      },
+      "client_app_used": "Browser",
+      "device_detail": {
+        "display_name": "ALEX-LAPTOP",
+        "operating_system": "Windows 11",
+        "browser": "Edge",
+        "is_managed": true,
+        "is_compliant": true
+      },
+      "status": "success",
+      "risk_level_aggregated": "none",
+      "risk_state": "none",
+      "conditional_access_status": "success",
+      "mfa_required": true,
+      "mfa_satisfied": true,
+      "is_interactive": true,
+      "risk_event_types": []
+    },
+    {
+      "sign_in_id": "signin-1008",
+      "created_at": "2026-07-07T12:22:01Z",
+      "user_principal_name": "service.reports@example.test",
+      "user_display_name": "Service Reports",
+      "app_display_name": "Legacy Mail Connector",
+      "ip_address": "203.0.113.90",
+      "location": {
+        "city": "Lisbon",
+        "country_or_region": "PT"
+      },
+      "client_app_used": "SMTP",
+      "device_detail": {
+        "operating_system": "Unknown",
+        "browser": "Unknown",
+        "is_managed": null,
+        "is_compliant": null
+      },
+      "status": "failure",
+      "failure_reason": "Blocked by policy",
+      "risk_level_aggregated": "low",
+      "risk_state": "at_risk",
+      "conditional_access_status": "failure",
+      "mfa_required": false,
+      "mfa_satisfied": false,
+      "is_interactive": false,
+      "risk_event_types": ["legacyAuthentication"]
+    }
+  ]
+}
