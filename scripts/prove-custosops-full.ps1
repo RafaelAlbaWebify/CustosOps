@@ -107,6 +107,34 @@ function Start-CustosOpsProofProcess {
     ) -WorkingDirectory $WorkingDirectory | Out-Null
 }
 
+function Wait-ForBackendReady {
+    param([int]$TimeoutSeconds)
+
+    $Deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $Deadline) {
+        if (Test-HttpReady -Url 'http://127.0.0.1:8000/api/health') {
+            return $true
+        }
+        Start-Sleep -Milliseconds 700
+    }
+
+    return $false
+}
+
+function Wait-ForFrontendReady {
+    param([int]$TimeoutSeconds)
+
+    $Deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $Deadline) {
+        if (Test-PortReady -Port 5173) {
+            return $true
+        }
+        Start-Sleep -Milliseconds 700
+    }
+
+    return $false
+}
+
 function Ensure-CustosOpsReadyForProof {
     param(
         [string]$RootPath,
@@ -127,40 +155,63 @@ function Ensure-CustosOpsReadyForProof {
         return $false
     }
 
-    if (Test-Path -LiteralPath $GuardScript) {
-        . $GuardScript
-        Stop-CustosOpsPorts -Ports @(8000, 5173) -RootHint $RootPath -OnlyCustosOps | Out-Null
+    $BackendReady = Test-HttpReady -Url 'http://127.0.0.1:8000/api/health'
+    $FrontendReady = Test-PortReady -Port 5173
+
+    if ($BackendReady) {
+        Write-Host 'Backend proof preflight: already ready' -ForegroundColor Green
     }
 
-    Start-CustosOpsProofProcess -ScriptPath $BackendScript -WorkingDirectory $RootPath -Name 'backend'
+    if ($FrontendReady) {
+        Write-Host 'Frontend proof preflight: already listening' -ForegroundColor Green
+    }
 
-    $BackendDeadline = (Get-Date).AddSeconds([Math]::Min($TimeoutSeconds, 120))
-    while ((Get-Date) -lt $BackendDeadline) {
-        if (Test-HttpReady -Url 'http://127.0.0.1:8000/api/health') {
-            Write-Host 'Backend proof preflight: OK' -ForegroundColor Green
-            break
+    $PortsToClear = @()
+    if (-not $BackendReady) { $PortsToClear += 8000 }
+    if (-not $FrontendReady) { $PortsToClear += 5173 }
+
+    if ($PortsToClear.Count -gt 0 -and (Test-Path -LiteralPath $GuardScript)) {
+        . $GuardScript
+        $PortsOk = Stop-CustosOpsPorts -Ports $PortsToClear -RootHint $RootPath -OnlyCustosOps
+
+        if (-not $PortsOk) {
+            $BackendReady = Test-HttpReady -Url 'http://127.0.0.1:8000/api/health'
+            $FrontendReady = Test-PortReady -Port 5173
+
+            if (($PortsToClear -contains 8000) -and (-not $BackendReady)) {
+                Set-Failed 'Port 8000 is occupied and no healthy CustosOps backend answered /api/health.'
+                return $false
+            }
+
+            if (($PortsToClear -contains 5173) -and (-not $FrontendReady)) {
+                Set-Failed 'Port 5173 is occupied and no frontend listener is available.'
+                return $false
+            }
         }
-        Start-Sleep -Milliseconds 700
     }
 
     if (-not (Test-HttpReady -Url 'http://127.0.0.1:8000/api/health')) {
-        Set-Failed 'Backend did not become ready before UI proof.'
-        return $false
-    }
+        Start-CustosOpsProofProcess -ScriptPath $BackendScript -WorkingDirectory $RootPath -Name 'backend'
 
-    Start-CustosOpsProofProcess -ScriptPath $FrontendScript -WorkingDirectory $RootPath -Name 'frontend'
-
-    $FrontendDeadline = (Get-Date).AddSeconds($TimeoutSeconds)
-    while ((Get-Date) -lt $FrontendDeadline) {
-        if (Test-PortReady -Port 5173) {
-            Write-Host 'Frontend proof preflight: OK' -ForegroundColor Green
-            return $true
+        if (-not (Wait-ForBackendReady -TimeoutSeconds ([Math]::Min($TimeoutSeconds, 120)))) {
+            Set-Failed 'Backend did not become ready before UI proof.'
+            return $false
         }
-        Start-Sleep -Milliseconds 700
     }
 
-    Set-Failed 'Frontend did not open port 5173 before UI proof.'
-    return $false
+    Write-Host 'Backend proof preflight: OK' -ForegroundColor Green
+
+    if (-not (Test-PortReady -Port 5173)) {
+        Start-CustosOpsProofProcess -ScriptPath $FrontendScript -WorkingDirectory $RootPath -Name 'frontend'
+
+        if (-not (Wait-ForFrontendReady -TimeoutSeconds $TimeoutSeconds)) {
+            Set-Failed 'Frontend did not open port 5173 before UI proof.'
+            return $false
+        }
+    }
+
+    Write-Host 'Frontend proof preflight: OK' -ForegroundColor Green
+    return $true
 }
 
 $RootPath = Resolve-ProofRoot -Path $Root
