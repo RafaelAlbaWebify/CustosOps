@@ -9,6 +9,7 @@ updates:
       time: "07:15"
       timezone: Europe/Madrid
     open-pull-requests-limit: 5
+    rebase-strategy: auto
     commit-message:
       prefix: deps(python)
     groups:
@@ -27,6 +28,7 @@ updates:
       time: "07:45"
       timezone: Europe/Madrid
     open-pull-requests-limit: 5
+    rebase-strategy: auto
     commit-message:
       prefix: deps(frontend)
     groups:
@@ -45,6 +47,7 @@ updates:
       time: "08:15"
       timezone: Europe/Madrid
     open-pull-requests-limit: 5
+    rebase-strategy: auto
     commit-message:
       prefix: deps(actions)
     groups:
