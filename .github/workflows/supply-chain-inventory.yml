@@ -1,0 +1,116 @@
+name: Supply Chain Inventory
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - backend/requirements.txt
+      - frontend/package.json
+      - frontend/package-lock.json
+      - .github/workflows/supply-chain-inventory.yml
+  push:
+    branches:
+      - master
+      - agent/**
+    paths:
+      - backend/requirements.txt
+      - frontend/package.json
+      - frontend/package-lock.json
+      - .github/workflows/supply-chain-inventory.yml
+  schedule:
+    - cron: "47 6 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: custosops-sbom-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  generate-sbom:
+    name: Generate Python and npm CycloneDX inventories
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install Python inventory tooling
+        run: python -m pip install pip-audit
+
+      - name: Generate Python CycloneDX inventory
+        run: |
+          python -m pip_audit \
+            -r backend/requirements.txt \
+            --format cyclonedx-json \
+            --output python-sbom.cdx.json
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies deterministically
+        working-directory: frontend
+        run: npm ci
+
+      - name: Generate frontend CycloneDX inventory
+        working-directory: frontend
+        run: npm sbom --sbom-format cyclonedx > ../frontend-sbom.cdx.json
+
+      - name: Validate inventories and create summary
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          inventories = [
+              ("Python", Path("python-sbom.cdx.json")),
+              ("Frontend npm", Path("frontend-sbom.cdx.json")),
+          ]
+
+          lines = ["# CustosOps supply-chain inventory", ""]
+          for label, path in inventories:
+              data = json.loads(path.read_text(encoding="utf-8"))
+              if data.get("bomFormat") != "CycloneDX":
+                  raise SystemExit(f"{path} is not a CycloneDX inventory")
+              components = data.get("components", [])
+              lines.append(f"- {label} components: **{len(components)}**")
+              lines.append(f"- {label} serial number present: **{bool(data.get('serialNumber'))}**")
+
+          lines.extend([
+              "",
+              "The complete CycloneDX JSON inventories are retained as workflow artifacts.",
+          ])
+          summary = "\n".join(lines) + "\n"
+          Path("supply-chain-inventory-summary.md").write_text(summary, encoding="utf-8")
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as handle:
+              handle.write(summary)
+          PY
+
+      - name: Upload supply-chain inventories
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: custosops-supply-chain-inventory
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            python-sbom.cdx.json
+            frontend-sbom.cdx.json
+            supply-chain-inventory-summary.md
