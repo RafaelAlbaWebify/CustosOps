@@ -15,6 +15,7 @@ exports/
 reports/
 history/
 *.log
+!samples/app_logs/*.log
 
 # Local evidence
 *.local.json
