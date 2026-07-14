@@ -36,7 +36,10 @@ jobs:
 
       - name: Run backend tests
         working-directory: backend
-        run: python -m pytest -q
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m pytest -q 2>&1 | tee ../backend-test.log
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -51,7 +54,10 @@ jobs:
 
       - name: Build frontend
         working-directory: frontend
-        run: npm run build
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run build 2>&1 | tee ../frontend-build.log
 
       - name: Install Playwright Chromium
         working-directory: frontend
@@ -108,6 +114,8 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
           path: |
+            backend-test.log
+            frontend-build.log
             backend-ci.log
             frontend-ci.log
             backend-health.json
