@@ -134,27 +134,31 @@ jobs:
       - name: Validate PowerShell syntax
         shell: pwsh
         run: |
-          $allErrors = @()
-          Get-ChildItem -Path . -Recurse -Filter *.ps1 | ForEach-Object {
-            $tokens = $null
-            $parseErrors = $null
-            [System.Management.Automation.Language.Parser]::ParseFile(
-              $_.FullName,
-              [ref]$tokens,
-              [ref]$parseErrors
-            ) | Out-Null
+          $ErrorActionPreference = "Stop"
+          $Failures = @()
+          $Files = Get-ChildItem -Path . -Filter *.ps1 -Recurse -File |
+            Where-Object { $_.FullName -notmatch '[\\/](node_modules|\.venv|dist|reports)[\\/]' }
 
-            foreach ($parseError in $parseErrors) {
-              $allErrors += "{0}:{1}:{2} {3}" -f $_.FullName, $parseError.Extent.StartLineNumber, $parseError.Extent.StartColumnNumber, $parseError.Message
+          foreach ($File in $Files) {
+            $Tokens = $null
+            $Errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($File.FullName, [ref]$Tokens, [ref]$Errors)
+
+            if ($Errors.Count -gt 0) {
+              foreach ($ParseError in $Errors) {
+                $Failures += "{0}:{1}:{2}: {3}" -f $File.FullName, $ParseError.Extent.StartLineNumber, $ParseError.Extent.StartColumnNumber, $ParseError.Message
+              }
             }
           }
 
-          if ($allErrors.Count -gt 0) {
-            $allErrors | Tee-Object -FilePath powershell-syntax-errors.log
+          "PowerShell files checked: $($Files.Count)" | Tee-Object -FilePath powershell-syntax.log
+
+          if ($Failures.Count -gt 0) {
+            $Failures | Tee-Object -FilePath powershell-syntax.log -Append
             throw "PowerShell syntax validation failed."
           }
 
-          "All PowerShell scripts parsed successfully." | Tee-Object -FilePath powershell-syntax.log
+          "PowerShell syntax validation passed." | Tee-Object -FilePath powershell-syntax.log -Append
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -165,14 +169,13 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: backend
-        shell: pwsh
         run: python -m pip install -r requirements.txt
 
       - name: Run backend tests on Windows
         working-directory: backend
         shell: pwsh
         run: |
-          python -m pytest -q 2>&1 | Tee-Object -FilePath ..\backend-test-windows.log
+          python -m pytest -q 2>&1 | Tee-Object -FilePath ../backend-test-windows.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Set up Node.js
@@ -184,14 +187,13 @@ jobs:
 
       - name: Install frontend dependencies
         working-directory: frontend
-        shell: pwsh
         run: npm install
 
       - name: Build frontend on Windows
         working-directory: frontend
         shell: pwsh
         run: |
-          npm run build 2>&1 | Tee-Object -FilePath ..\frontend-build-windows.log
+          npm run build 2>&1 | Tee-Object -FilePath ../frontend-build-windows.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Upload Windows verification evidence
@@ -203,6 +205,5 @@ jobs:
           retention-days: 14
           path: |
             powershell-syntax.log
-            powershell-syntax-errors.log
             backend-test-windows.log
             frontend-build-windows.log
