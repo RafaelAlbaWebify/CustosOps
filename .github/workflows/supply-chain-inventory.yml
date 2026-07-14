@@ -12,7 +12,6 @@ on:
   push:
     branches:
       - master
-      - agent/**
     paths:
       - backend/requirements.txt
       - frontend/package.json
@@ -83,7 +82,6 @@ jobs:
               ("Python", Path("python-sbom.cdx.json")),
               ("Frontend npm", Path("frontend-sbom.cdx.json")),
           ]
-
           lines = ["# CustosOps supply-chain inventory", ""]
           for label, path in inventories:
               data = json.loads(path.read_text(encoding="utf-8"))
