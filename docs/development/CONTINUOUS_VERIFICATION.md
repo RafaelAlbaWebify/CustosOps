@@ -76,6 +76,22 @@ The baseline remediation upgraded:
 
 The verified baseline reports zero Python and zero npm vulnerabilities.
 
+## Supply-chain inventories
+
+The supply-chain workflow produces CycloneDX JSON software bills of materials for:
+
+- Python dependencies resolved from `backend/requirements.txt`;
+- the complete npm dependency graph resolved from `frontend/package-lock.json`.
+
+It runs when dependency files change, on manual request, and every Monday after merge into the default branch. Each inventory is parsed and validated before upload, and the workflow records component counts in the GitHub job summary.
+
+The current verified inventories contain:
+
+- 26 Python components;
+- 31 frontend npm components.
+
+Both inventories include CycloneDX serial numbers and are retained with a Markdown summary for 30 days. The SBOM records what dependencies exist; the dependency-security audit separately evaluates whether known vulnerabilities are reported.
+
 ## Automated dependency maintenance
 
 Dependabot checks three ecosystems every Monday in the `Europe/Madrid` timezone:
@@ -132,6 +148,6 @@ The report proof confirms that analyst review metadata is carried into the gener
 3. Add or update tests.
 4. Implement the smallest coherent change.
 5. Push and inspect GitHub Actions.
-6. Use retained logs, screenshots, traces, security reports, and generated evidence to diagnose failures.
+6. Use retained logs, screenshots, traces, security reports, SBOM inventories, and generated evidence to diagnose failures.
 7. Correct the branch and rerun verification.
 8. Request one focused local acceptance check only when a genuine local-only risk remains.
