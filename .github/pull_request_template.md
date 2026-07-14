@@ -9,13 +9,15 @@ Describe the user or operational problem this pull request addresses.
 
 ## Automated evidence
 
+- [ ] Repository-hygiene checks pass.
 - [ ] Backend tests pass.
 - [ ] Deterministic frontend installation passes with `npm ci`.
 - [ ] Frontend production build passes.
 - [ ] Linux application and browser verification passes when relevant.
 - [ ] Windows PowerShell and cross-platform verification passes when relevant.
 - [ ] Dependency-security audit passes when dependency files changed.
-- [ ] Generated logs, reports, screenshots, or traces were inspected when relevant.
+- [ ] CycloneDX supply-chain inventories generate when dependency files changed.
+- [ ] Generated logs, reports, screenshots, traces, security reports, or SBOM files were inspected when relevant.
 
 ## Data-safety review
 
