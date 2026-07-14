@@ -32,6 +32,10 @@ function captureBrowserFailures(page: import("@playwright/test").Page) {
   return { consoleErrors, failedRequests };
 }
 
+function navigationButton(page: import("@playwright/test").Page, label: string) {
+  return page.getByRole("button", { name: new RegExp(`\\b${label.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")}$`) });
+}
+
 test("CustosOps loads with a healthy backend and no browser errors", async ({ page, request }) => {
   const { consoleErrors, failedRequests } = captureBrowserFailures(page);
 
@@ -55,9 +59,9 @@ test("all CustosOps workspaces render and produce visual audit evidence", async 
   await page.goto("/", { waitUntil: "networkidle" });
 
   for (const workspace of WORKSPACES) {
-    const navigationButton = page.getByRole("button", { name: workspace.label, exact: true });
-    await expect(navigationButton).toBeVisible();
-    await navigationButton.click();
+    const button = navigationButton(page, workspace.label);
+    await expect(button).toBeVisible();
+    await button.click();
     await expect(page).toHaveURL(new RegExp(`#${workspace.hash}$`));
     await expect(page.locator("main h1")).toHaveText(workspace.label);
     await expect(page.locator("main")).not.toContainText("Backend Offline");
@@ -81,9 +85,9 @@ test("application-log evidence completes a defensive triage and reporting workfl
   const logInput = page.locator('input[type="file"][accept*=".log"]');
   await logInput.setInputFiles(sampleLog);
 
-  await expect(page.getByText("Application log contains HTTP server errors", { exact: true })).toBeVisible();
-  await expect(page.getByText("Application log contains authentication or authorization failures", { exact: true })).toBeVisible();
-  await expect(page.getByText("Application log contains TLS or certificate errors", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Application log contains HTTP server errors/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Application log contains authentication or authorization failures/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Application log contains TLS or certificate errors/ })).toBeVisible();
   await expect(page.getByText(/\d+ findings/).first()).toBeVisible();
 
   await page.getByLabel("Status").selectOption("needs_follow_up");
@@ -99,12 +103,12 @@ test("application-log evidence completes a defensive triage and reporting workfl
   await expect(page.getByText("app-log markdown report created and archived.", { exact: true })).toBeVisible();
   await page.screenshot({ path: "test-results/soc-app-log-triage.png", fullPage: true });
 
-  await page.getByRole("button", { name: "Archive", exact: true }).click();
+  await navigationButton(page, "Archive").click();
   await expect(page).toHaveURL(/#archive$/);
   await expect(page.locator("main")).toContainText(/app.*log/i);
   await page.screenshot({ path: "test-results/soc-app-log-archive.png", fullPage: true });
 
-  await page.getByRole("button", { name: "Run History", exact: true }).click();
+  await navigationButton(page, "Run History").click();
   await expect(page).toHaveURL(/#run-history$/);
   await expect(page.locator("main")).toContainText("Application Logs");
   await page.screenshot({ path: "test-results/soc-app-log-run-history.png", fullPage: true });
