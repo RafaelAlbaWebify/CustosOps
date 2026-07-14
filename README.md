@@ -1,28 +1,58 @@
 # CustosOps
 
-> My SOC / defensive security operations flagship.
+CustosOps is a local-first defensive security evidence console for Windows and Microsoft support environments.
+
+It structures evidence from endpoint, DNS, application-log, Windows-event, IIS/application, reporting, redaction, history, and archive workflows. The project uses synthetic public-safe samples and does not require production credentials or private infrastructure data.
+
+## Start the application
+
+On Windows, run:
+
+```text
+START-CUSTOSOPS.cmd
+```
+
+The launcher starts:
+
+- FastAPI backend: `http://127.0.0.1:8000`
+- Backend health endpoint: `http://127.0.0.1:8000/api/health`
+- React frontend: `http://127.0.0.1:5173`
 
 ## Continuous verification
 
-CustosOps uses GitHub Actions as the default verification environment before any local acceptance request.
+GitHub Actions verifies routine development without requiring repeated local PowerShell packages or manual ZIP uploads.
 
 The automated proof includes:
 
-- backend tests on Linux and Windows;
+- repository syntax and structure hygiene;
+- Python backend tests on Linux and Windows;
 - deterministic frontend installation with `npm ci`;
-- production frontend builds on Linux and Windows;
-- PowerShell syntax validation;
-- real FastAPI and Vite startup;
-- backend health verification;
+- TypeScript and Vite production builds on Linux and Windows;
+- PowerShell parser validation;
+- unattended FastAPI and Vite startup;
+- backend health checks;
 - Chromium smoke and workspace audits;
-- screenshots for all current workspaces;
 - browser console-error and failed-request detection;
-- an application-log defensive triage workflow;
+- screenshots for all current workspaces;
+- a complete application-log defensive triage workflow;
 - analyst disposition and review-note persistence;
-- generated Markdown report content verification;
+- Markdown report download and content verification;
 - archive and run-history verification;
-- Python and npm dependency vulnerability auditing.
+- Python and npm dependency-security audits;
+- zero-vulnerability enforcement after retained evidence upload;
+- CycloneDX supply-chain inventories for Python and npm dependencies;
+- grouped weekly Dependabot maintenance for Python, npm, and GitHub Actions.
 
-Dependency audits run when dependency files change, can be launched manually, and run weekly after merge into the default branch. Machine-readable audit evidence is retained before the workflow enforces a clean result.
+The current verified baseline reports:
 
-See [`docs/development/CONTINUOUS_VERIFICATION.md`](docs/development/CONTINUOUS_VERIFICATION.md) for the verification policy and proof chain.
+- 71 backend tests passing on Linux and Windows;
+- 0 Python dependency vulnerabilities;
+- 0 npm dependency vulnerabilities;
+- 26 Python components in the CycloneDX inventory;
+- 31 frontend npm components in the CycloneDX inventory.
+
+Generated GitHub artifacts retain logs, reports, browser traces, screenshots, security-audit JSON, CycloneDX SBOM files, and Windows verification evidence.
+
+Local testing is reserved for behaviour that cannot be reproduced faithfully in GitHub, such as real desktop launcher interaction, endpoint-security interference, Windows collectors against the operator machine, device integrations, and final analyst UX judgement.
+
+See [`docs/development/CONTINUOUS_VERIFICATION.md`](docs/development/CONTINUOUS_VERIFICATION.md) for the verification, security, maintenance, and evidence policy.
