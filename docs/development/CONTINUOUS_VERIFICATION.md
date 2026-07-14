@@ -76,21 +76,15 @@ The baseline remediation upgraded:
 
 The verified baseline reports zero Python and zero npm vulnerabilities.
 
-## Supply-chain inventories
+## Supply-chain inventory
 
-The supply-chain workflow produces CycloneDX JSON software bills of materials for:
+The supply-chain workflow generates CycloneDX JSON inventories for the Python requirements and the complete npm dependency graph.
 
-- Python dependencies resolved from `backend/requirements.txt`;
-- the complete npm dependency graph resolved from `frontend/package-lock.json`.
+It runs when dependency manifests or its workflow change, on manual request, and every Monday after merge into the default branch. The inventories and Markdown component summary are retained for 30 days.
 
-It runs when dependency files change, on manual request, and every Monday after merge into the default branch. Each inventory is parsed and validated before upload, and the workflow records component counts in the GitHub job summary.
+The verified baseline contains 26 Python components and 31 frontend npm components. Both inventories validate as CycloneDX documents and include unique serial numbers.
 
-The current verified inventories contain:
-
-- 26 Python components;
-- 31 frontend npm components.
-
-Both inventories include CycloneDX serial numbers and are retained with a Markdown summary for 30 days. The SBOM records what dependencies exist; the dependency-security audit separately evaluates whether known vulnerabilities are reported.
+The SBOM answers which components are present. The dependency audit separately checks whether those dependency ecosystems currently report known vulnerabilities.
 
 ## Automated dependency maintenance
 
@@ -102,7 +96,7 @@ Dependabot checks three ecosystems every Monday in the `Europe/Madrid` timezone:
 
 Minor and patch updates are grouped by ecosystem to reduce pull-request noise. Major upgrades remain separate so compatibility changes receive focused review.
 
-Dependabot pull requests are not trusted merely because they were generated automatically. They must pass the same repository-hygiene, backend, deterministic frontend, browser, Windows, and dependency-security gates that apply to human-authored changes.
+Dependabot pull requests are not trusted merely because they were generated automatically. They must pass the same repository-hygiene, backend, deterministic frontend, browser, Windows, dependency-security, and supply-chain gates that apply to human-authored changes.
 
 ## Pull-request evidence policy
 
@@ -115,6 +109,12 @@ The repository pull-request template requires authors to state:
 - rollback or recovery considerations.
 
 Local testing must identify one narrow risk and expected result. It must not replace available GitHub verification.
+
+## Scope-integrity review
+
+Before declaring an infrastructure PR complete, compare it with the target branch and review disproportionate additions or deletions. Automation work must not silently replace product, launcher, troubleshooting, demo, or publication documentation.
+
+The verification-baseline PR used this review to detect and reverse an unintended replacement of the operational README. The original README is preserved byte-for-byte; detailed automation guidance remains in this document and the pull-request evidence.
 
 ## Evidence fixture policy
 
@@ -148,6 +148,7 @@ The report proof confirms that analyst review metadata is carried into the gener
 3. Add or update tests.
 4. Implement the smallest coherent change.
 5. Push and inspect GitHub Actions.
-6. Use retained logs, screenshots, traces, security reports, SBOM inventories, and generated evidence to diagnose failures.
-7. Correct the branch and rerun verification.
-8. Request one focused local acceptance check only when a genuine local-only risk remains.
+6. Use retained logs, screenshots, traces, security reports, SBOMs, and generated evidence to diagnose failures.
+7. Compare the feature branch with its target and inspect disproportionate changes for scope loss.
+8. Correct the branch and rerun verification.
+9. Request one focused local acceptance check only when a genuine local-only risk remains.
