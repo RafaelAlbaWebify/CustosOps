@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { expect, test } from "@playwright/test";
@@ -14,6 +15,8 @@ const WORKSPACES = [
   { label: "Run History", hash: "run-history" },
   { label: "Archive", hash: "archive" }
 ] as const;
+
+const ANALYST_NOTE = "Validate the affected endpoint, authentication context, and dependency timeline before escalation.";
 
 function captureBrowserFailures(page: import("@playwright/test").Page) {
   const consoleErrors: string[] = [];
@@ -78,6 +81,7 @@ test("all CustosOps workspaces render and produce visual audit evidence", async 
 test("application-log evidence completes a defensive triage and reporting workflow", async ({ page }) => {
   const { consoleErrors, failedRequests } = captureBrowserFailures(page);
   const sampleLog = path.resolve("..", "samples", "app_logs", "fastapi-api-errors.log");
+  const reportPath = "test-results/application-log-evidence-report.md";
 
   await page.goto("/#app-log", { waitUntil: "networkidle" });
   await expect(page.getByRole("heading", { name: "Application Log Evidence" })).toBeVisible();
@@ -91,14 +95,19 @@ test("application-log evidence completes a defensive triage and reporting workfl
   await expect(page.getByText(/\d+ findings/).first()).toBeVisible();
 
   await page.getByLabel("Status").selectOption("needs_follow_up");
-  await page.getByLabel("Notes").fill("Validate the affected endpoint, authentication context, and dependency timeline before escalation.");
+  await page.getByLabel("Notes").fill(ANALYST_NOTE);
   await expect(page.getByLabel("Status")).toHaveValue("needs_follow_up");
 
   const downloadPromise = page.waitForEvent("download");
   await page.locator(".workspace-actions").getByRole("button", { name: "Markdown", exact: true }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/app.*log.*\.md$/i);
-  await download.saveAs("test-results/application-log-evidence-report.md");
+  await download.saveAs(reportPath);
+
+  const reportContent = await readFile(reportPath, "utf-8");
+  expect(reportContent).toContain("needs_follow_up");
+  expect(reportContent).toContain(ANALYST_NOTE);
+  expect(reportContent).toMatch(/Application log contains HTTP server errors/i);
 
   await expect(page.getByText("app-log markdown report created and archived.", { exact: true })).toBeVisible();
   await page.screenshot({ path: "test-results/soc-app-log-triage.png", fullPage: true });
