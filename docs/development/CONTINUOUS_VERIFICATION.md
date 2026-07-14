@@ -8,6 +8,17 @@ Do not request local acceptance testing until every feasible automated check has
 
 Local testing is reserved for behaviour that cannot be reproduced faithfully in GitHub, including real desktop launcher interaction, local security-software interference, Windows collectors against the operator's machine, device integrations, and final analyst UX judgement.
 
+## Repository hygiene gate
+
+A fast Ubuntu job runs before the heavier Linux and Windows verification jobs. It verifies:
+
+- Python source and tests compile successfully;
+- frontend `package.json` and `package-lock.json` parse as valid JSON;
+- GitHub workflow and configuration files parse as valid YAML;
+- no unresolved Git merge-conflict markers remain in tracked files.
+
+The Linux and Windows verification jobs depend on this gate, so malformed repository state fails before browser installation or cross-platform builds consume additional time.
+
 ## Linux verification
 
 The Ubuntu job verifies:
@@ -64,6 +75,30 @@ The baseline remediation upgraded:
 - `@vitejs/plugin-react` to the compatible 6.0.3 line.
 
 The verified baseline reports zero Python and zero npm vulnerabilities.
+
+## Automated dependency maintenance
+
+Dependabot checks three ecosystems every Monday in the `Europe/Madrid` timezone:
+
+- Python dependencies in `/backend`;
+- npm dependencies in `/frontend`;
+- GitHub Actions used by repository workflows.
+
+Minor and patch updates are grouped by ecosystem to reduce pull-request noise. Major upgrades remain separate so compatibility changes receive focused review.
+
+Dependabot pull requests are not trusted merely because they were generated automatically. They must pass the same repository-hygiene, backend, deterministic frontend, browser, Windows, and dependency-security gates that apply to human-authored changes.
+
+## Pull-request evidence policy
+
+The repository pull-request template requires authors to state:
+
+- purpose and scope;
+- automated evidence completed;
+- public-safe data review;
+- whether any local-only acceptance risk remains;
+- rollback or recovery considerations.
+
+Local testing must identify one narrow risk and expected result. It must not replace available GitHub verification.
 
 ## Evidence fixture policy
 
