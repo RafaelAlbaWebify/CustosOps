@@ -14,10 +14,10 @@ permissions:
   contents: read
 
 jobs:
-  verify:
-    name: Backend, frontend and browser smoke test
+  verify-linux:
+    name: Linux backend, frontend and browser verification
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     steps:
       - name: Check out repository
@@ -100,17 +100,17 @@ jobs:
           cat frontend-ci.log || true
           exit 1
 
-      - name: Run Playwright smoke test
+      - name: Run Playwright workspace audit
         working-directory: frontend
         env:
           CUSTOSOPS_BASE_URL: http://127.0.0.1:5173
         run: npm run test:e2e
 
-      - name: Upload verification evidence
+      - name: Upload Linux verification evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: custosops-continuous-verification
+          name: custosops-linux-verification
           if-no-files-found: warn
           retention-days: 14
           path: |
@@ -121,3 +121,88 @@ jobs:
             backend-health.json
             frontend/playwright-report/
             frontend/test-results/
+
+  verify-windows:
+    name: Windows scripts and cross-platform build verification
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate PowerShell syntax
+        shell: pwsh
+        run: |
+          $allErrors = @()
+          Get-ChildItem -Path . -Recurse -Filter *.ps1 | ForEach-Object {
+            $tokens = $null
+            $parseErrors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              $_.FullName,
+              [ref]$tokens,
+              [ref]$parseErrors
+            ) | Out-Null
+
+            foreach ($parseError in $parseErrors) {
+              $allErrors += "{0}:{1}:{2} {3}" -f $_.FullName, $parseError.Extent.StartLineNumber, $parseError.Extent.StartColumnNumber, $parseError.Message
+            }
+          }
+
+          if ($allErrors.Count -gt 0) {
+            $allErrors | Tee-Object -FilePath powershell-syntax-errors.log
+            throw "PowerShell syntax validation failed."
+          }
+
+          "All PowerShell scripts parsed successfully." | Tee-Object -FilePath powershell-syntax.log
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install backend dependencies
+        working-directory: backend
+        shell: pwsh
+        run: python -m pip install -r requirements.txt
+
+      - name: Run backend tests on Windows
+        working-directory: backend
+        shell: pwsh
+        run: |
+          python -m pytest -q 2>&1 | Tee-Object -FilePath ..\backend-test-windows.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        shell: pwsh
+        run: npm install
+
+      - name: Build frontend on Windows
+        working-directory: frontend
+        shell: pwsh
+        run: |
+          npm run build 2>&1 | Tee-Object -FilePath ..\frontend-build-windows.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Upload Windows verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: custosops-windows-verification
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            powershell-syntax.log
+            powershell-syntax-errors.log
+            backend-test-windows.log
+            frontend-build-windows.log
