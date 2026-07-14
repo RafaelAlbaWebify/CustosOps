@@ -98,6 +98,37 @@ The risky sign-in scenario is intentionally backend/API first. It proves the evi
 - Desktop UI proof artifacts with screenshots, HTML captures, network logs, console logs, and workspace checks
 ```
 
+## Automated Continuous Verification
+
+CustosOps now has a GitHub-based continuous verification baseline intended to replace repetitive local patch-and-test loops.
+
+For every supported branch or pull request, GitHub can automatically verify:
+
+```text
+- complete backend pytest suite on Ubuntu and Windows
+- frontend TypeScript and production builds on Ubuntu and Windows
+- PowerShell syntax for every tracked .ps1 file
+- unattended FastAPI and Vite startup
+- backend health
+- Chromium application loading
+- all 10 workspace routes
+- browser console and failed-request checks
+- full-page workspace screenshots
+- application-log defensive triage
+- analyst disposition and review notes
+- Markdown report generation
+- report archive visibility
+- evidence run-history visibility
+```
+
+The generated CI evidence contains logs, screenshots, Playwright reports, failure traces and videos, and the generated SOC evidence report.
+
+See:
+
+```text
+docs/development/CONTINUOUS_VERIFICATION.md
+```
+
 ## Requirements
 
 Recommended for a first run:
