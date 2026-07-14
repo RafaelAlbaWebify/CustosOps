@@ -133,3 +133,17 @@ jobs:
             npm-dependency-audit.json
             npm-dependency-audit.exit-code
             dependency-audit-summary.md
+
+      - name: Enforce clean dependency audit
+        if: always()
+        shell: bash
+        run: |
+          python_status=$(cat python-dependency-audit.exit-code)
+          npm_status=$(cat npm-dependency-audit.exit-code)
+
+          if [ "$python_status" -ne 0 ] || [ "$npm_status" -ne 0 ]; then
+            echo "Dependency audit reported vulnerabilities. Review the retained JSON evidence."
+            exit 1
+          fi
+
+          echo "Dependency audit passed with no reported vulnerabilities."
