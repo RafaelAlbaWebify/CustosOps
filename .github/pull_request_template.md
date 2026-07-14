@@ -16,8 +16,14 @@ Describe the user or operational problem this pull request addresses.
 - [ ] Linux application and browser verification passes when relevant.
 - [ ] Windows PowerShell and cross-platform verification passes when relevant.
 - [ ] Dependency-security audit passes when dependency files changed.
-- [ ] CycloneDX supply-chain inventories generate when dependency files changed.
-- [ ] Generated logs, reports, screenshots, traces, security reports, or SBOM files were inspected when relevant.
+- [ ] CycloneDX inventories generate when dependency files changed.
+- [ ] Generated logs, reports, screenshots, traces, security reports, or SBOMs were inspected when relevant.
+
+## Scope-integrity review
+
+- [ ] The branch was compared with its target branch.
+- [ ] Disproportionate additions or deletions were reviewed.
+- [ ] Existing product, launcher, troubleshooting, demo, and publication documentation was preserved unless its removal is intentional and explained.
 
 ## Data-safety review
 
