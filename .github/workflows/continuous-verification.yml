@@ -128,6 +128,7 @@ jobs:
             frontend-ci.log
             backend-health.json
             frontend-lockfile-drift.patch
+            frontend/package-lock.json
             frontend/playwright-report/
             frontend/test-results/
 
