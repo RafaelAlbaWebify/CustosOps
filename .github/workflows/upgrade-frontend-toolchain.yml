@@ -1,0 +1,53 @@
+name: Upgrade Frontend Toolchain
+
+on:
+  push:
+    branches:
+      - agent/continuous-verification-baseline
+    paths:
+      - .github/workflows/upgrade-frontend-toolchain.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/continuous-verification-baseline
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Upgrade Vite and compatible React plugin
+        working-directory: frontend
+        run: npm install vite@^8.1.4 @vitejs/plugin-react@latest --save
+
+      - name: Verify deterministic install and production build
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Commit upgraded frontend dependency graph
+        shell: bash
+        run: |
+          if git diff --quiet -- frontend/package.json frontend/package-lock.json; then
+            echo "Frontend toolchain already upgraded."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/package.json frontend/package-lock.json
+          git commit -m "Upgrade audited frontend toolchain"
+          git push origin HEAD:agent/continuous-verification-baseline
