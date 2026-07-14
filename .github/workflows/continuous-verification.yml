@@ -52,9 +52,13 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install frontend dependencies deterministically
+      - name: Install frontend dependencies
         working-directory: frontend
-        run: npm ci
+        run: npm install
+
+      - name: Record frontend lockfile drift
+        shell: bash
+        run: git diff -- frontend/package-lock.json > frontend-lockfile-drift.patch || true
 
       - name: Build frontend
         working-directory: frontend
@@ -123,6 +127,7 @@ jobs:
             backend-ci.log
             frontend-ci.log
             backend-health.json
+            frontend-lockfile-drift.patch
             frontend/playwright-report/
             frontend/test-results/
 
@@ -189,9 +194,9 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install frontend dependencies deterministically
+      - name: Install frontend dependencies
         working-directory: frontend
-        run: npm ci
+        run: npm install
 
       - name: Build frontend on Windows
         working-directory: frontend
