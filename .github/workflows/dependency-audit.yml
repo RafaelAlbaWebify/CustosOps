@@ -1,0 +1,148 @@
+name: Dependency Security Audit
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - backend/requirements.txt
+      - frontend/package.json
+      - frontend/package-lock.json
+      - .github/workflows/dependency-audit.yml
+  push:
+    branches:
+      - master
+    paths:
+      - backend/requirements.txt
+      - frontend/package.json
+      - frontend/package-lock.json
+      - .github/workflows/dependency-audit.yml
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: custosops-dependency-audit-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Python and npm dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install Python audit tooling
+        run: python -m pip install pip-audit
+
+      - name: Audit Python dependencies
+        shell: bash
+        run: |
+          set +e
+          python -m pip_audit -r backend/requirements.txt --format json --output python-dependency-audit.json
+          status=$?
+          echo "$status" > python-dependency-audit.exit-code
+          exit 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies deterministically
+        working-directory: frontend
+        run: npm ci
+
+      - name: Audit npm dependencies
+        working-directory: frontend
+        shell: bash
+        run: |
+          set +e
+          npm audit --json > ../npm-dependency-audit.json
+          status=$?
+          echo "$status" > ../npm-dependency-audit.exit-code
+          exit 0
+
+      - name: Create audit summary
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          def read_json(path):
+              try:
+                  return json.loads(Path(path).read_text(encoding="utf-8"))
+              except Exception as exc:
+                  return {"_parse_error": str(exc)}
+
+          python_audit = read_json("python-dependency-audit.json")
+          npm_audit = read_json("npm-dependency-audit.json")
+
+          python_dependencies = python_audit.get("dependencies", []) if isinstance(python_audit, dict) else []
+          python_vulnerabilities = sum(len(item.get("vulns", [])) for item in python_dependencies if isinstance(item, dict))
+
+          metadata = npm_audit.get("metadata", {}) if isinstance(npm_audit, dict) else {}
+          vulnerabilities = metadata.get("vulnerabilities", {}) if isinstance(metadata, dict) else {}
+
+          lines = [
+              "# CustosOps dependency audit",
+              "",
+              f"- Python vulnerabilities reported: **{python_vulnerabilities}**",
+              f"- npm total vulnerabilities reported: **{vulnerabilities.get('total', 'unknown')}**",
+              f"- npm critical: **{vulnerabilities.get('critical', 'unknown')}**",
+              f"- npm high: **{vulnerabilities.get('high', 'unknown')}**",
+              f"- npm moderate: **{vulnerabilities.get('moderate', 'unknown')}**",
+              f"- npm low: **{vulnerabilities.get('low', 'unknown')}**",
+              "",
+              "The complete machine-readable reports are retained as workflow artifacts.",
+          ]
+
+          summary = "\n".join(lines) + "\n"
+          Path("dependency-audit-summary.md").write_text(summary, encoding="utf-8")
+          with Path(__import__("os").environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as handle:
+              handle.write(summary)
+          PY
+
+      - name: Upload dependency audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: custosops-dependency-audit
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            python-dependency-audit.json
+            python-dependency-audit.exit-code
+            npm-dependency-audit.json
+            npm-dependency-audit.exit-code
+            dependency-audit-summary.md
+
+      - name: Enforce clean dependency audit
+        if: always()
+        shell: bash
+        run: |
+          python_status=$(cat python-dependency-audit.exit-code)
+          npm_status=$(cat npm-dependency-audit.exit-code)
+
+          if [ "$python_status" -ne 0 ] || [ "$npm_status" -ne 0 ]; then
+            echo "Dependency audit reported vulnerabilities. Review the retained JSON evidence."
+            exit 1
+          fi
+
+          echo "Dependency audit passed with no reported vulnerabilities."
