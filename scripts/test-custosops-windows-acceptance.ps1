@@ -90,15 +90,85 @@ function Test-HttpEndpoint {
     }
 }
 
-function Test-PortClosed {
-    param([int]$Port)
+function Get-CustosOpsListenerEvidence {
+    param([int[]]$Ports = @(8000, 5173))
 
-    try {
-        $Connection = Test-NetConnection -ComputerName "127.0.0.1" -Port $Port -WarningAction SilentlyContinue
-        return (-not $Connection.TcpTestSucceeded)
+    $Items = @()
+    $Connections = Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue |
+        Where-Object { $_.LocalPort -in $Ports }
+
+    foreach ($Connection in $Connections) {
+        $ProcessName = $null
+        $CommandLine = $null
+        $ExecutablePath = $null
+        $ParentProcessId = $null
+
+        try {
+            $Process = Get-Process -Id $Connection.OwningProcess -ErrorAction SilentlyContinue
+            if ($Process) {
+                $ProcessName = $Process.ProcessName
+            }
+        }
+        catch {}
+
+        try {
+            $Cim = Get-CimInstance Win32_Process -Filter "ProcessId=$($Connection.OwningProcess)" -ErrorAction SilentlyContinue
+            if ($Cim) {
+                $CommandLine = [string]$Cim.CommandLine
+                $ExecutablePath = [string]$Cim.ExecutablePath
+                $ParentProcessId = [int]$Cim.ParentProcessId
+            }
+        }
+        catch {}
+
+        $Items += [pscustomobject]@{
+            LocalAddress = $Connection.LocalAddress
+            LocalPort = [int]$Connection.LocalPort
+            OwningProcess = [int]$Connection.OwningProcess
+            ParentProcessId = $ParentProcessId
+            ProcessName = $ProcessName
+            CommandLine = $CommandLine
+            ExecutablePath = $ExecutablePath
+            State = [string]$Connection.State
+        }
     }
-    catch {
-        return $false
+
+    return @($Items | Sort-Object LocalPort, OwningProcess)
+}
+
+function Wait-CustosOpsPortsClosed {
+    param(
+        [int[]]$Ports = @(8000, 5173),
+        [int]$TimeoutSeconds = 15
+    )
+
+    $Deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    $Samples = @()
+
+    do {
+        $Listeners = @(Get-CustosOpsListenerEvidence -Ports $Ports)
+        $Samples += [pscustomobject]@{
+            timestamp = (Get-Date).ToString("o")
+            listeners = $Listeners
+        }
+
+        if ($Listeners.Count -eq 0) {
+            return [pscustomobject]@{
+                Closed = $true
+                FinalListeners = @()
+                Samples = $Samples
+            }
+        }
+
+        Start-Sleep -Milliseconds 500
+    }
+    while ((Get-Date) -lt $Deadline)
+
+    $FinalListeners = @(Get-CustosOpsListenerEvidence -Ports $Ports)
+    return [pscustomobject]@{
+        Closed = ($FinalListeners.Count -eq 0)
+        FinalListeners = $FinalListeners
+        Samples = $Samples
     }
 }
 
@@ -162,11 +232,9 @@ try {
     $Result.health_passed = [bool]$Health.Passed
     $Result.frontend_passed = [bool]$Frontend.Passed
 
-    Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue |
-        Where-Object { $_.LocalPort -in @(8000, 5173) } |
-        Select-Object LocalAddress, LocalPort, OwningProcess, State |
-        ConvertTo-Json -Depth 4 |
-        Set-Content -LiteralPath (Join-Path $EvidenceRoot "listening-ports-before-stop.json") -Encoding UTF8
+    @(Get-CustosOpsListenerEvidence) |
+        ConvertTo-Json -Depth 6 |
+        Set-Content -LiteralPath (Join-Path $EvidenceRoot "listening-processes-before-stop.json") -Encoding UTF8
 
     Write-Host "Stopping CustosOps..."
     & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $StopScript
@@ -175,9 +243,12 @@ try {
     }
     $Result.stop_completed = $true
 
-    Start-Sleep -Seconds 3
-    $Result.backend_port_closed = Test-PortClosed -Port 8000
-    $Result.frontend_port_closed = Test-PortClosed -Port 5173
+    $Closure = Wait-CustosOpsPortsClosed -Ports @(8000, 5173) -TimeoutSeconds 15
+    $Closure | ConvertTo-Json -Depth 8 |
+        Set-Content -LiteralPath (Join-Path $EvidenceRoot "port-closure-after-stop.json") -Encoding UTF8
+
+    $Result.backend_port_closed = (-not (@($Closure.FinalListeners | Where-Object { $_.LocalPort -eq 8000 }).Count -gt 0))
+    $Result.frontend_port_closed = (-not (@($Closure.FinalListeners | Where-Object { $_.LocalPort -eq 5173 }).Count -gt 0))
 
     $Result.overall_passed = (
         $Result.launch_completed -and
