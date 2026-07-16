@@ -66,7 +66,7 @@ test("Overview is readable at 1280x720 without horizontal clipping", async ({ pa
   await expect(page.getByRole("heading", { name: "Review queue" })).toBeVisible();
 
   for (const severity of ["Critical", "High", "Medium", "Low", "Info"]) {
-    await expect(page.locator(".dashboard-donut-legend").getByText(severity, { exact: true })).toBeVisible();
+    await expect(page.locator(".dashboard-donut-legend > div > span:not(.severity-dot)", { hasText: severity })).toBeVisible();
   }
 
   const layout = await page.evaluate(() => {
