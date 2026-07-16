@@ -56,6 +56,47 @@ test("CustosOps loads with a healthy backend and no browser errors", async ({ pa
   expect(consoleErrors, `Browser console errors:\n${consoleErrors.join("\n")}`).toEqual([]);
 });
 
+test("Overview is readable at 1280x720 without horizontal clipping", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto("/#overview", { waitUntil: "networkidle" });
+
+  await expect(page.getByRole("heading", { name: "Findings by Severity" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Evidence coverage" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Good vs risk posture" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Review queue" })).toBeVisible();
+
+  for (const severity of ["Critical", "High", "Medium", "Low", "Info"]) {
+    await expect(page.locator(".dashboard-donut-legend > div > span:not(.severity-dot)", { hasText: severity })).toBeVisible();
+  }
+
+  const layout = await page.evaluate(() => {
+    const viewportWidth = document.documentElement.clientWidth;
+    const cards = Array.from(document.querySelectorAll<HTMLElement>(".professional-dashboard-shell .professional-card")).map((card) => {
+      const rect = card.getBoundingClientRect();
+      return { left: rect.left, right: rect.right, width: rect.width };
+    });
+
+    return {
+      viewportWidth,
+      documentScrollWidth: document.documentElement.scrollWidth,
+      bodyScrollWidth: document.body.scrollWidth,
+      cards
+    };
+  });
+
+  expect(layout.documentScrollWidth).toBeLessThanOrEqual(layout.viewportWidth);
+  expect(layout.bodyScrollWidth).toBeLessThanOrEqual(layout.viewportWidth);
+  expect(layout.cards.length).toBeGreaterThan(0);
+
+  for (const card of layout.cards) {
+    expect(card.width).toBeGreaterThan(0);
+    expect(card.left).toBeGreaterThanOrEqual(0);
+    expect(card.right).toBeLessThanOrEqual(layout.viewportWidth + 1);
+  }
+
+  await page.screenshot({ path: "test-results/overview-1280x720.png", fullPage: true });
+});
+
 test("all CustosOps workspaces render and produce visual audit evidence", async ({ page }) => {
   const { consoleErrors, failedRequests } = captureBrowserFailures(page);
 

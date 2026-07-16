@@ -1,0 +1,86 @@
+/* Focused Overview dashboard repair for the standard 1280x720 audit viewport. */
+
+@media (min-width: 1181px) and (max-width: 1350px) {
+  body {
+    min-width: 0;
+  }
+
+  .app-shell {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+
+  .sidebar {
+    width: 220px;
+  }
+
+  .overview-main-area .professional-dashboard-shell {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    grid-template-rows: none;
+    padding: 14px 18px 24px;
+    gap: 12px;
+  }
+
+  .professional-dashboard-header {
+    align-items: center;
+  }
+
+  .professional-kpi-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .professional-dashboard-grid,
+  .professional-lower-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+  }
+
+  .findings-by-module-dashboard-card,
+  .top-priority-dashboard-card {
+    grid-column: 1 / -1;
+  }
+
+  .professional-card {
+    overflow: visible;
+  }
+
+  .dashboard-donut-layout {
+    grid-template-columns: 126px minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .dashboard-donut,
+  .health-donut {
+    width: 126px;
+    height: 126px;
+  }
+
+  .module-health-layout {
+    grid-template-columns: 126px minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .dashboard-donut-legend > div {
+    grid-template-columns: 10px minmax(72px, 1fr) 28px 36px;
+  }
+
+  .module-health-list strong,
+  .module-score-name span,
+  .dashboard-priority-row strong,
+  .dashboard-priority-row span,
+  .dashboard-priority-row em {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  .module-score-row {
+    grid-template-columns: minmax(170px, 0.9fr) minmax(180px, 1.2fr) 48px;
+  }
+
+  .dashboard-priority-row {
+    grid-template-columns: 72px minmax(0, 1fr) minmax(86px, 0.32fr);
+    min-height: 46px;
+  }
+}
