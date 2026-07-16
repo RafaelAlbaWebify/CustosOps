@@ -79,7 +79,7 @@ jobs:
 
       - name: Upload repository hygiene evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: custosops-repository-hygiene
           if-no-files-found: warn
@@ -185,7 +185,7 @@ jobs:
 
       - name: Upload Linux verification evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: custosops-linux-verification
           if-no-files-found: warn
@@ -276,7 +276,7 @@ jobs:
 
       - name: Upload Windows verification evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: custosops-windows-verification
           if-no-files-found: warn
