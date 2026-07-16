@@ -32,6 +32,12 @@ updates:
     commit-message:
       prefix: deps(frontend)
     groups:
+      react-family:
+        patterns:
+          - react
+          - react-dom
+          - "@types/react"
+          - "@types/react-dom"
       frontend-minor-and-patch:
         patterns:
           - "*"
