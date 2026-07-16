@@ -1,11 +1,11 @@
 2026-06-30 08:00:01 INFO 192.0.2.10 "GET /api/health HTTP/1.1" 200 latency=18ms
-2026-06-30 08:00:05 ERROR 192.0.2.25 "POST /api/login HTTP/1.1" 401 latency=42ms authorization: Bearer sampletokenvalue1234567890
+2026-06-30 08:00:05 ERROR 192.0.2.25 "POST /api/login HTTP/1.1" 401 latency=42ms authorization: Bearer SYNTHETIC_REDACTED_VALUE
 2026-06-30 08:00:07 WARNING 192.0.2.25 "GET /api/admin HTTP/1.1" 403 latency=36ms
 2026-06-30 08:00:10 ERROR 192.0.2.30 "POST /api/orders HTTP/1.1" 500 latency=2450ms Unhandled exception while processing request
 2026-06-30 08:00:12 ERROR dependency timeout while calling inventory-service; deadline exceeded
-2026-06-30 08:00:14 ERROR socket.gaierror: [Errno -2] Name or service not known for inventory.internal
+2026-06-30 08:00:14 ERROR socket.gaierror: [Errno -2] Name or service not known for inventory.example.test
 2026-06-30 08:00:16 ERROR TLS handshake failed: certificate verify failed for https://payments.example.test
-2026-06-30 08:00:18 ERROR could not connect to database; SQL connection pool exhausted server=db.example.test database=custosops_demo uid=demo pwd=not-a-real-secret
+2026-06-30 08:00:18 ERROR could not connect to database; SQL connection pool exhausted server=db.example.test database=custosops_demo uid=demo pwd=SYNTHETIC_REDACTED_VALUE
 2026-06-30 08:00:20 ERROR Traceback: RuntimeError: sample unhandled application exception
 2026-06-30 08:00:22 WARNING "GET /missing-route HTTP/1.1" 404 latency=15ms
 2026-06-30 08:00:23 WARNING "GET /missing-route HTTP/1.1" 404 latency=16ms
