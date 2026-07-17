@@ -4,8 +4,6 @@ CustosOps v1 Clean-Machine Acceptance Runner
 Creates a fresh public clone, validates launch and stop behavior, runs the full
 repository audit, executes the repository-owned Playwright workspace/SOC suite,
 records evidence hashes, and writes one acceptance ZIP directly to Downloads.
-
-This script does not modify the caller's checkout and never opens Downloads.
 #>
 
 [CmdletBinding()]
@@ -34,30 +32,22 @@ $FailureMessage = ''
 
 function Require-Command {
     param([Parameter(Mandatory = $true)][string]$Name)
-
     $Command = Get-Command $Name -ErrorAction SilentlyContinue
-    if (-not $Command) {
-        throw ('Required command not found: ' + $Name)
-    }
-
+    if (-not $Command) { throw ('Required command not found: ' + $Name) }
     return $Command.Source
 }
 
 function Test-HttpReady {
     param([Parameter(Mandatory = $true)][string]$Url)
-
     try {
         $Response = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop
         return ($Response.StatusCode -ge 200 -and $Response.StatusCode -lt 500)
     }
-    catch {
-        return $false
-    }
+    catch { return $false }
 }
 
 function Test-PortReady {
     param([Parameter(Mandatory = $true)][int]$Port)
-
     return [bool](Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue)
 }
 
@@ -67,15 +57,11 @@ function Wait-ForCondition {
         [Parameter(Mandatory = $true)][int]$TimeoutSeconds,
         [Parameter(Mandatory = $true)][string]$Description
     )
-
     $Deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     while ((Get-Date) -lt $Deadline) {
-        if (& $Condition) {
-            return $true
-        }
+        if (& $Condition) { return }
         Start-Sleep -Milliseconds 750
     }
-
     throw ($Description + ' did not become ready within ' + $TimeoutSeconds + ' seconds.')
 }
 
@@ -85,27 +71,19 @@ function Invoke-NativeChecked {
         [Parameter(Mandatory = $true)][string[]]$Arguments,
         [Parameter(Mandatory = $true)][string]$Description
     )
-
     Write-Host $Description -ForegroundColor Cyan
     & $FilePath @Arguments
     $ExitCode = $LASTEXITCODE
-    if ($ExitCode -ne 0) {
-        throw ($Description + ' failed with exit code ' + $ExitCode)
-    }
+    if ($ExitCode -ne 0) { throw ($Description + ' failed with exit code ' + $ExitCode) }
 }
 
 function Stop-FreshCustosOps {
     param([Parameter(Mandatory = $true)][string]$RootPath)
-
     $StopBat = Join-Path $RootPath 'STOP_CUSTOSOPS.bat'
-    if (-not (Test-Path -LiteralPath $StopBat)) {
-        return
-    }
-
+    if (-not (Test-Path -LiteralPath $StopBat)) { return }
     & cmd.exe /d /c ('"' + $StopBat + '"')
-    if ($LASTEXITCODE -ne 0) {
-        throw ('STOP_CUSTOSOPS.bat returned exit code ' + $LASTEXITCODE)
-    }
+    $ExitCode = $LASTEXITCODE
+    if ($ExitCode -ne 0) { throw ('STOP_CUSTOSOPS.bat returned exit code ' + $ExitCode) }
 }
 
 function Copy-DirectoryIfPresent {
@@ -113,7 +91,6 @@ function Copy-DirectoryIfPresent {
         [Parameter(Mandatory = $true)][string]$Source,
         [Parameter(Mandatory = $true)][string]$Destination
     )
-
     if (Test-Path -LiteralPath $Source) {
         Copy-Item -LiteralPath $Source -Destination $Destination -Recurse -Force
     }
@@ -123,7 +100,6 @@ try {
     if (-not $OutputDir) {
         $OutputDir = Join-Path ([Environment]::GetFolderPath('UserProfile')) 'Downloads'
     }
-
     if (-not (Test-Path -LiteralPath $OutputDir)) {
         New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
     }
@@ -151,14 +127,10 @@ try {
     ) -Description 'Cloning a fresh public repository checkout...'
 
     $HeadSha = (& $GitExe -C $CloneRoot rev-parse HEAD).Trim()
-    if ($LASTEXITCODE -ne 0 -or -not $HeadSha) {
-        throw 'Could not resolve fresh-clone HEAD.'
-    }
+    if ($LASTEXITCODE -ne 0 -or -not $HeadSha) { throw 'Could not resolve fresh-clone HEAD.' }
 
     $DirtyLines = @(& $GitExe -C $CloneRoot status --porcelain)
-    if ($LASTEXITCODE -ne 0) {
-        throw 'Could not inspect fresh-clone status.'
-    }
+    if ($LASTEXITCODE -ne 0) { throw 'Could not inspect fresh-clone status.' }
     if (@($DirtyLines | Where-Object { $_ -and $_.Trim() }).Count -gt 0) {
         throw 'Fresh clone is unexpectedly dirty.'
     }
@@ -166,16 +138,8 @@ try {
     $LaunchBat = Join-Path $CloneRoot 'LAUNCH_CUSTOSOPS.bat'
     $AuditScript = Join-Path $CloneRoot 'scripts\audit-custosops-local-repo.ps1'
     $FrontendRoot = Join-Path $CloneRoot 'frontend'
-
-    if (-not (Test-Path -LiteralPath $LaunchBat)) {
-        throw ('Launcher not found: ' + $LaunchBat)
-    }
-    if (-not (Test-Path -LiteralPath $AuditScript)) {
-        throw ('Audit runner not found: ' + $AuditScript)
-    }
-    if (-not (Test-Path -LiteralPath (Join-Path $FrontendRoot 'package.json'))) {
-        throw ('Frontend package not found: ' + $FrontendRoot)
-    }
+    if (-not (Test-Path -LiteralPath $LaunchBat)) { throw ('Launcher not found: ' + $LaunchBat) }
+    if (-not (Test-Path -LiteralPath $AuditScript)) { throw ('Audit runner not found: ' + $AuditScript) }
 
     $BeforeZips = @(
         Get-ChildItem -LiteralPath $OutputDir -Filter 'CUSTOSOPS_*.zip' -File -ErrorAction SilentlyContinue |
@@ -184,28 +148,20 @@ try {
 
     Write-Host 'Validating documented launcher workflow...' -ForegroundColor Cyan
     & cmd.exe /d /c ('"' + $LaunchBat + '"')
-    if ($LASTEXITCODE -ne 0) {
-        throw ('LAUNCH_CUSTOSOPS.bat returned exit code ' + $LASTEXITCODE)
-    }
+    if ($LASTEXITCODE -ne 0) { throw ('LAUNCH_CUSTOSOPS.bat returned exit code ' + $LASTEXITCODE) }
 
-    [void](Wait-ForCondition -TimeoutSeconds $StartupTimeoutSeconds -Description 'Backend health endpoint' -Condition {
+    Wait-ForCondition -TimeoutSeconds $StartupTimeoutSeconds -Description 'Backend health endpoint' -Condition {
         Test-HttpReady -Url 'http://127.0.0.1:8000/api/health'
-    })
-    [void](Wait-ForCondition -TimeoutSeconds $StartupTimeoutSeconds -Description 'Frontend listener' -Condition {
+    }
+    Wait-ForCondition -TimeoutSeconds $StartupTimeoutSeconds -Description 'Frontend listener' -Condition {
         Test-PortReady -Port 5173
-    })
+    }
 
     Write-Host 'Documented launcher acceptance: OK' -ForegroundColor Green
     Stop-FreshCustosOps -RootPath $CloneRoot
-
     Start-Sleep -Seconds 2
-    if (Test-PortReady -Port 8000) {
-        throw 'Port 8000 is still listening after STOP_CUSTOSOPS.bat.'
-    }
-    if (Test-PortReady -Port 5173) {
-        throw 'Port 5173 is still listening after STOP_CUSTOSOPS.bat.'
-    }
-
+    if (Test-PortReady -Port 8000) { throw 'Port 8000 is still listening after STOP_CUSTOSOPS.bat.' }
+    if (Test-PortReady -Port 5173) { throw 'Port 5173 is still listening after STOP_CUSTOSOPS.bat.' }
     Write-Host 'Documented stop acceptance: OK' -ForegroundColor Green
 
     Write-Host 'Running full local repository audit...' -ForegroundColor Cyan
@@ -215,25 +171,19 @@ try {
         -RunExistingContractAudits `
         -RunBackendTests `
         -RunFrontendBuild
-
-    if ($LASTEXITCODE -ne 0) {
-        throw ('Full local repository audit failed with exit code ' + $LASTEXITCODE)
-    }
-
+    if ($LASTEXITCODE -ne 0) { throw ('Full local repository audit failed with exit code ' + $LASTEXITCODE) }
     Write-Host 'Full local repository audit: OK' -ForegroundColor Green
 
     Write-Host 'Preparing application for local Playwright proof...' -ForegroundColor Cyan
     & cmd.exe /d /c ('"' + $LaunchBat + '"')
-    if ($LASTEXITCODE -ne 0) {
-        throw ('LAUNCH_CUSTOSOPS.bat returned exit code ' + $LASTEXITCODE + ' before Playwright proof')
-    }
+    if ($LASTEXITCODE -ne 0) { throw ('LAUNCH_CUSTOSOPS.bat returned exit code ' + $LASTEXITCODE + ' before Playwright proof') }
 
-    [void](Wait-ForCondition -TimeoutSeconds $StartupTimeoutSeconds -Description 'Backend health endpoint for Playwright' -Condition {
+    Wait-ForCondition -TimeoutSeconds $StartupTimeoutSeconds -Description 'Backend health endpoint for Playwright' -Condition {
         Test-HttpReady -Url 'http://127.0.0.1:8000/api/health'
-    })
-    [void](Wait-ForCondition -TimeoutSeconds $StartupTimeoutSeconds -Description 'Frontend listener for Playwright' -Condition {
+    }
+    Wait-ForCondition -TimeoutSeconds $StartupTimeoutSeconds -Description 'Frontend listener for Playwright' -Condition {
         Test-PortReady -Port 5173
-    })
+    }
 
     Push-Location $FrontendRoot
     try {
@@ -258,8 +208,11 @@ try {
                 throw ('Playwright proof timed out after ' + $PlaywrightTimeoutSeconds + ' seconds.')
             }
 
-            if ($Process.ExitCode -ne 0) {
-                throw ('Playwright proof failed with exit code ' + $Process.ExitCode)
+            $Process.WaitForExit()
+            $Process.Refresh()
+            $PlaywrightExitCode = [int]$Process.ExitCode
+            if ($PlaywrightExitCode -ne 0) {
+                throw ('Playwright proof failed with exit code ' + $PlaywrightExitCode)
             }
         }
         finally {
@@ -281,10 +234,7 @@ try {
             Where-Object { $BeforeZips -notcontains $_.FullName } |
             Sort-Object LastWriteTime
     )
-
-    if ($NewZips.Count -eq 0) {
-        throw 'No new CustosOps audit ZIP was created in Downloads.'
-    }
+    if ($NewZips.Count -eq 0) { throw 'No new CustosOps audit ZIP was created in Downloads.' }
 
     $EvidenceRecords = @()
     foreach ($Zip in $NewZips) {
@@ -301,10 +251,10 @@ try {
     $CompletedAt = Get-Date
     $SummaryLines = New-Object 'System.Collections.Generic.List[string]'
     $SummaryLines.Add('CUSTOSOPS V1 CLEAN-MACHINE ACCEPTANCE')
-    $SummaryLines.Add('Generated: ' + $CompletedAt.ToString('yyyy-MM-dd HH:mm:ss zzz'))
-    $SummaryLines.Add('Repository: ' + $RepositoryUrl)
-    $SummaryLines.Add('Branch: ' + $Branch)
-    $SummaryLines.Add('Fresh-clone HEAD: ' + $HeadSha)
+    $SummaryLines.Add(('Generated: ' + $CompletedAt.ToString('yyyy-MM-dd HH:mm:ss zzz')))
+    $SummaryLines.Add(('Repository: ' + $RepositoryUrl))
+    $SummaryLines.Add(('Branch: ' + $Branch))
+    $SummaryLines.Add(('Fresh-clone HEAD: ' + $HeadSha))
     $SummaryLines.Add('Launcher acceptance: PASS')
     $SummaryLines.Add('Stop acceptance: PASS')
     $SummaryLines.Add('Full local audit: PASS')
@@ -312,23 +262,20 @@ try {
     $SummaryLines.Add('Downloads auto-opened: NO')
     $SummaryLines.Add('')
     $SummaryLines.Add('EVIDENCE PACKAGES')
-
     foreach ($Record in $EvidenceRecords) {
         $SummaryLines.Add($Record.name)
-        $SummaryLines.Add('  SHA-256: ' + $Record.sha256)
-        $SummaryLines.Add('  Size: ' + $Record.size_bytes + ' bytes')
+        $SummaryLines.Add(('  SHA-256: ' + $Record.sha256))
+        $SummaryLines.Add(('  Size: ' + $Record.size_bytes + ' bytes'))
     }
-
     $SummaryLines | Out-File -LiteralPath $SummaryPath -Encoding utf8
 
     [pscustomobject]@{
-        schema_version = 2
+        schema_version = 3
         generated_at = $CompletedAt.ToString('o')
         status = 'PASS'
         repository_url = $RepositoryUrl
         branch = $Branch
         head_sha = $HeadSha
-        fresh_clone_path = $CloneRoot
         launcher_acceptance = $true
         stop_acceptance = $true
         full_local_audit = $true
@@ -338,34 +285,27 @@ try {
     } | ConvertTo-Json -Depth 6 | Out-File -LiteralPath $JsonPath -Encoding utf8
 
     $FinalZip = Join-Path $OutputDir ('CUSTOSOPS_V1_ACCEPTANCE_' + $Stamp + '.zip')
-    if (Test-Path -LiteralPath $FinalZip) {
-        Remove-Item -LiteralPath $FinalZip -Force
-    }
+    if (Test-Path -LiteralPath $FinalZip) { Remove-Item -LiteralPath $FinalZip -Force }
     Compress-Archive -Path (Join-Path $EvidenceRoot '*') -DestinationPath $FinalZip -Force
 
     Write-Host ''
     Write-Host 'CUSTOSOPS V1 CLEAN-MACHINE ACCEPTANCE: PASS' -ForegroundColor Green
     Write-Host ('Fresh-clone HEAD: ' + $HeadSha)
     Write-Host ('Acceptance ZIP: ' + $FinalZip)
-
-    foreach ($Record in $EvidenceRecords) {
-        Write-Host ($Record.name + '  SHA-256 ' + $Record.sha256)
-    }
 }
 catch {
     $FailureMessage = $_.Exception.Message
-
     if (-not (Test-Path -LiteralPath $EvidenceRoot)) {
         New-Item -ItemType Directory -Path $EvidenceRoot -Force | Out-Null
     }
 
     @(
         'CUSTOSOPS V1 CLEAN-MACHINE ACCEPTANCE',
-        'Generated: ' + (Get-Date).ToString('yyyy-MM-dd HH:mm:ss zzz'),
+        ('Generated: ' + (Get-Date).ToString('yyyy-MM-dd HH:mm:ss zzz')),
         'Status: FAIL',
-        'Repository: ' + $RepositoryUrl,
-        'Branch: ' + $Branch,
-        'Fresh-clone HEAD: ' + $HeadSha,
+        ('Repository: ' + $RepositoryUrl),
+        ('Branch: ' + $Branch),
+        ('Fresh-clone HEAD: ' + $HeadSha),
         '',
         'FAILURE',
         $FailureMessage
@@ -373,38 +313,25 @@ catch {
 
     if ($OutputDir -and (Test-Path -LiteralPath $OutputDir)) {
         $FinalZip = Join-Path $OutputDir ('CUSTOSOPS_V1_ACCEPTANCE_FAILED_' + $Stamp + '.zip')
-        if (Test-Path -LiteralPath $FinalZip) {
-            Remove-Item -LiteralPath $FinalZip -Force
-        }
+        if (Test-Path -LiteralPath $FinalZip) { Remove-Item -LiteralPath $FinalZip -Force }
         Compress-Archive -Path (Join-Path $EvidenceRoot '*') -DestinationPath $FinalZip -Force
     }
 
     Write-Host ''
     Write-Host ('CUSTOSOPS V1 CLEAN-MACHINE ACCEPTANCE: FAIL - ' + $FailureMessage) -ForegroundColor Red
-    if ($FinalZip) {
-        Write-Host ('Failure evidence ZIP: ' + $FinalZip) -ForegroundColor Yellow
-    }
+    if ($FinalZip) { Write-Host ('Failure evidence ZIP: ' + $FinalZip) -ForegroundColor Yellow }
 }
 finally {
     try {
-        if (Test-Path -LiteralPath $CloneRoot) {
-            Stop-FreshCustosOps -RootPath $CloneRoot
-        }
+        if (Test-Path -LiteralPath $CloneRoot) { Stop-FreshCustosOps -RootPath $CloneRoot }
     }
     catch {}
 
     Set-Location $StartLocation
-
     if (-not $KeepFreshClone -and (Test-Path -LiteralPath $FreshRoot)) {
-        try {
-            Remove-Item -LiteralPath $FreshRoot -Recurse -Force
-        }
-        catch {}
+        try { Remove-Item -LiteralPath $FreshRoot -Recurse -Force } catch {}
     }
 }
 
-if ($FailureMessage) {
-    exit 1
-}
-
+if ($FailureMessage) { exit 1 }
 exit 0
