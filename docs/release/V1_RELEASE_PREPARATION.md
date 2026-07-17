@@ -24,7 +24,7 @@ CustosOps v1.0.0 is the first portfolio-ready release of a local-first, read-onl
 - Endpoint, DNS/email-domain, application-log, Windows Event, and IIS/application evidence scenarios.
 - Synthetic Microsoft 365 / Entra-style risky-sign-in evidence review through the backend/API scenario.
 - Windows launch and stop workflows.
-- Full local repository audit and Desktop UI proof workflows.
+- Full local repository audit and self-contained Playwright workspace/SOC proof.
 - Linux and Windows continuous verification.
 - Browser-based workspace and SOC workflow checks.
 - Dependency security audit and CycloneDX inventory generation.
@@ -36,6 +36,7 @@ CustosOps v1.0.0 is the first portfolio-ready release of a local-first, read-onl
 - TypeScript 7.0.2
 - Vite 8
 - FastAPI backend
+- Playwright browser validation
 - PowerShell 5.1-compatible Windows automation
 
 ### Product Boundary
@@ -49,10 +50,10 @@ It does not unlock accounts, reset credentials, change DNS or IP settings, remed
 - Windows 10 or Windows 11
 - PowerShell 5.1 or newer
 - Python 3.11 or newer on `PATH`
-- Node.js LTS with npm on `PATH`
+- Node.js LTS with npm/npx on `PATH`
 - Git when cloning the repository
 
-No Docker, cloud account, production credential, or production environment is required.
+No Docker, cloud account, production credential, external UI-proof package, or production environment is required.
 
 ### First Run
 
@@ -80,11 +81,13 @@ Run final clean-machine acceptance with:
 .\ACCEPT_CUSTOSOPS_V1.bat
 ```
 
+The acceptance runner creates a fresh public clone, validates launch and stop behavior, runs the full local audit, installs Playwright Chromium, executes the repository-owned browser proof, hashes generated evidence packages, and writes one acceptance ZIP directly to Downloads.
+
 ### Known Limitations
 
 - The risky-sign-in scenario is synthetic and backend/API first; it is not live tenant monitoring.
 - The platform is local-first and evidence-focused rather than a real-time detection system.
-- The Desktop UI proof requires the companion `CustosOps-UI-Tool` on Windows.
+- Browser proof uses the repository-owned Chromium Playwright project; it is not a cross-browser certification.
 - Findings support review and escalation; they do not perform remediation.
 
 ## Final Publication Checklist
@@ -100,7 +103,7 @@ Run final clean-machine acceptance with:
 ### Public-safety review
 
 - [ ] README renders correctly and matches the release scope.
-- [ ] Screenshots, reports, console logs, network logs, and paths are manually reviewed.
+- [ ] Playwright logs, reports, generated reports, and recorded paths are manually reviewed.
 - [ ] No credentials, workplace names, customer names, or private local paths are present.
 - [ ] No generated ZIP or local proof artifact is tracked in Git.
 - [ ] Synthetic/local-evidence wording is visible in README and release notes.
@@ -123,8 +126,8 @@ Acceptance ZIP:
 Acceptance ZIP SHA-256:
 Local audit ZIP:
 Local audit ZIP SHA-256:
-UI proof ZIP:
-UI proof ZIP SHA-256:
+Playwright proof status:
+Playwright report included: YES/NO
 Acceptance date:
 Windows version:
 PowerShell version:

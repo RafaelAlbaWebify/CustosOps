@@ -10,11 +10,12 @@ The repository is public. Demonstrations and committed fixtures use synthetic or
 
 CustosOps is approaching its first portfolio-ready `v1.0.0` release.
 
-- Current completion estimate: **88% complete / 12% remaining**
+- Current completion estimate: **90% complete / 10% remaining**
 - Current roadmap: [`docs/PROJECT_ROADMAP.md`](docs/PROJECT_ROADMAP.md)
+- Release preparation: [`docs/release/V1_RELEASE_PREPARATION.md`](docs/release/V1_RELEASE_PREPARATION.md)
 - Current stable baseline: `custosops-v0.31.2-gui-cleanup`
 
-The remaining release work is documentation alignment, clean-machine Windows acceptance, final UI-proof review, and release publication.
+The remaining release work is clean-machine Windows acceptance, final evidence review, and release publication.
 
 ## Product Boundary
 
@@ -72,7 +73,8 @@ The risky sign-in scenario is intentionally backend/API first. It demonstrates t
 - Report archive
 - Evidence run history
 - Redaction preview and report-redaction controls
-- Desktop UI proof artifacts with screenshots, HTML captures, network logs, console logs, and workspace checks
+- Repository-owned Playwright workspace and SOC workflow proof
+- Clean-machine acceptance evidence with SHA-256 inventory
 
 ## Requirements
 
@@ -81,10 +83,10 @@ Recommended for a first run:
 - Windows 10 or Windows 11
 - PowerShell 5.1 or newer
 - Python 3.11 or newer on `PATH`
-- Node.js LTS with npm on `PATH`
+- Node.js LTS with npm/npx on `PATH`
 - Git, when cloning the repository
 
-No Docker, cloud account, production credential, or production environment is required.
+No Docker, cloud account, external UI-proof package, production credential, or production environment is required.
 
 ## Quick Start
 
@@ -140,23 +142,22 @@ Run the full local repository audit:
 .\AUDIT_CUSTOSOPS_FULL.bat
 ```
 
-Run the complete audit plus Desktop UI proof:
+Run final self-contained clean-machine acceptance:
 
 ```powershell
-.\PROVE_CUSTOSOPS_FULL.bat
+.\ACCEPT_CUSTOSOPS_V1.bat
 ```
 
-The proof workflow expects the companion UI tool at:
+The acceptance workflow:
 
-```text
-%USERPROFILE%\Desktop\CustosOps-UI-Tool\Run-CustosOps-UI-Smoke.ps1
-```
-
-Validate an existing UI proof ZIP:
-
-```powershell
-.\scripts\check-ui-proof-artifact.ps1 -ZipPath "$env:USERPROFILE\Downloads\CUSTOSOPS_UI_SMOKE_<timestamp>.zip"
-```
+1. creates a fresh public clone under the Windows temporary directory;
+2. validates the documented launch and stop workflows;
+3. runs backend tests, contract audits, and the frontend build;
+4. installs Playwright Chromium;
+5. executes the repository-owned workspace and SOC browser suite;
+6. packages Playwright logs/reports and an evidence hash inventory;
+7. writes one acceptance ZIP directly to Downloads;
+8. removes the temporary clone by default.
 
 Advanced audit command:
 
@@ -164,10 +165,13 @@ Advanced audit command:
 .\scripts\audit-custosops-local-repo.ps1 -Root . -RunExistingContractAudits -RunBackendTests -RunFrontendBuild
 ```
 
-Advanced proof command:
+Run the browser proof directly while CustosOps is running:
 
 ```powershell
-.\scripts\prove-custosops-full.ps1 -Root . -RequireUiProof
+cd frontend
+npx.cmd playwright install chromium
+$env:CUSTOSOPS_BASE_URL = "http://127.0.0.1:5173"
+npm.cmd run test:e2e
 ```
 
 Generated review ZIPs are written directly to Downloads. The workflows do not automatically open the Downloads folder.
@@ -182,7 +186,7 @@ Use synthetic or local sample evidence only. A useful demonstration should:
 4. Generate a report.
 5. Show Archive and Run History.
 6. Show Redaction controls.
-7. Show or run the ten-workspace Desktop UI proof.
+7. Show the passing ten-workspace Playwright proof from the acceptance package.
 
 For the risky-sign-in scenario, emphasize sample evidence, generated findings, report output, limitations, and safe escalation. Do not present it as live tenant monitoring.
 
@@ -195,13 +199,13 @@ More detail:
 
 ## Public Repository Safety
 
-Before publishing a release or sharing a proof package:
+Before publishing a release or sharing an acceptance package:
 
 - use synthetic or local sample evidence only;
-- review screenshots, reports, console logs, network logs, and paths;
+- review generated reports, Playwright logs/reports, and recorded paths;
 - confirm no generated ZIP or local proof artifact is tracked;
 - confirm no credentials, private local paths, workplace names, or customer names are present;
-- run the full audit and proof workflows;
+- run the full audit and clean-machine acceptance workflows;
 - record the final evidence package names and SHA-256 hashes.
 
 See [`docs/PROJECT_ROADMAP.md`](docs/PROJECT_ROADMAP.md) for the remaining `v1.0.0` acceptance work.
