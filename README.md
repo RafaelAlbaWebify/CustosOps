@@ -1,56 +1,47 @@
 # CustosOps
 
-> My SOC / defensive security operations flagship.
+> Local-first defensive security evidence and reporting console for Windows and Microsoft-oriented support environments.
 
-CustosOps is a local-first cybersecurity evidence, posture and reporting platform for Windows and Microsoft-oriented support environments.
+CustosOps is my SOC / defensive security operations flagship. It is a read-only platform for collecting or importing local evidence, classifying findings, documenting limitations, generating reports, and preparing escalation-ready records for SMB security hygiene reviews and portfolio demonstrations.
 
-I am building it as my **SOC flagship**: a read-only defensive evidence console for SMB security hygiene reviews, local evidence analysis, finding classification, report generation and escalation-ready documentation.
+The repository is public. Demonstrations and committed fixtures use synthetic or local sample evidence only. CustosOps does not connect to a live Microsoft 365 tenant and does not require production credentials.
 
-## Flagship Area
+## Project Status
 
-| Area | Flagship | Target role |
-|---|---|---|
-| SOC - Security Operations | CustosOps | SOC Analyst |
+CustosOps is approaching its first portfolio-ready `v1.0.0` release.
 
-## Current Stable Baseline
+- Current completion estimate: **88% complete / 12% remaining**
+- Current roadmap: [`docs/PROJECT_ROADMAP.md`](docs/PROJECT_ROADMAP.md)
+- Current stable baseline: `custosops-v0.31.2-gui-cleanup`
 
-```text
-custosops-v0.31.2-gui-cleanup
-```
+The remaining release work is documentation alignment, clean-machine Windows acceptance, final UI-proof review, and release publication.
 
-## Who This Is For
+## Product Boundary
 
-CustosOps is designed for:
+CustosOps is a read-only defensive evidence console. It is not:
 
-```text
+- a SIEM;
+- an EDR;
+- a vulnerability scanner;
+- an MDR/MSSP platform;
+- a penetration-testing or exploit framework;
+- an auto-remediation platform;
+- a live tenant-monitoring service.
+
+Findings include confidence, limitations, and safe next steps. The application does not unlock accounts, reset credentials, change DNS or IP configuration, remediate endpoints, or perform tenant-wide scans.
+
+## Intended Users
+
 - IT support engineers
-- application support engineers
-- security operations learners
-- SMB security hygiene reviews
-- portfolio demonstrations
-```
-
-## What CustosOps Is Not
-
-CustosOps is not:
-
-```text
-- a SIEM
-- an EDR
-- a vulnerability scanner
-- an MDR/MSSP platform
-- a penetration-testing tool
-- an exploit framework
-- an auto-remediation platform
-```
-
-It is a read-only defensive evidence console.
+- Application support engineers
+- Security operations learners
+- SMB security hygiene reviewers
+- Portfolio evaluators
 
 ## Workspaces
 
-CustosOps exposes 10 UI workspaces:
+CustosOps exposes ten UI workspaces:
 
-```text
 1. Overview
 2. Endpoint
 3. DNS Hygiene
@@ -61,263 +52,156 @@ CustosOps exposes 10 UI workspaces:
 8. Archive
 9. Run History
 10. Redaction
-```
 
-## Evidence Modules
+## Evidence and Scenario Coverage
 
-```text
 - Endpoint security evidence
-- DNS hygiene evidence
+- DNS and email-domain hygiene evidence
 - Application log evidence
 - Windows Event evidence
-- IIS/Application evidence
-- Risky sign-in evidence review, currently backend/API scenario first
-```
+- IIS/application evidence
+- Synthetic Microsoft 365 / Entra-style risky sign-in investigation
 
-## SOC Scenario Coverage
-
-```text
-- Endpoint baseline issue review
-- DNS/email-domain hygiene evidence review
-- Windows event evidence review
-- IIS/application security-relevant log review
-- Risky sign-in investigation using synthetic Microsoft 365 / Entra-style evidence
-```
-
-The risky sign-in scenario is intentionally backend/API first. It proves the evidence model, analyzer rules, report generation, redaction path, and tests before adding another UI workspace.
+The risky sign-in scenario is intentionally backend/API first. It demonstrates the evidence model, analyzer rules, report generation, redaction path, limitations, and tests without claiming live tenant monitoring.
 
 ## Core Capabilities
 
-```text
 - Read-only local collection and JSON import workflows
 - Finding classification with severity, confidence, limitations, and safe next steps
 - HTML, Markdown, and JSON report generation
 - Report archive
 - Evidence run history
-- Redaction preview and report redaction controls
+- Redaction preview and report-redaction controls
 - Desktop UI proof artifacts with screenshots, HTML captures, network logs, console logs, and workspace checks
-```
 
 ## Requirements
 
 Recommended for a first run:
 
-```text
 - Windows 10 or Windows 11
 - PowerShell 5.1 or newer
-- Python 3.11 or newer on PATH
-- Node.js LTS with npm on PATH
-- Git, if cloning from GitHub
-```
+- Python 3.11 or newer on `PATH`
+- Node.js LTS with npm on `PATH`
+- Git, when cloning the repository
 
-No Docker, cloud account, credentials, or production environment is required.
+No Docker, cloud account, production credential, or production environment is required.
 
-## Quick Start For Non-Expert Users
+## Quick Start
 
-From the repository root, run:
+From the repository root:
 
 ```powershell
 .\LAUNCH_CUSTOSOPS.bat
 ```
 
-On first run, the launcher will:
+On first run, the launcher:
 
-```text
-1. Check and clear stale CustosOps listeners on ports 8000 and 5173.
-2. Start the backend in its own PowerShell window.
-3. Create the backend Python virtual environment if missing.
-4. Install backend dependencies if needed.
-5. Wait for backend health at http://127.0.0.1:8000/api/health.
-6. Start the frontend in its own PowerShell window.
-7. Install frontend npm dependencies if needed.
-8. Wait for frontend port 5173.
-9. Open the browser at http://localhost:5173.
-```
+1. Checks ports `8000` and `5173` and safely handles stale CustosOps listeners.
+2. Creates the backend virtual environment when missing.
+3. Installs backend dependencies when required.
+4. Starts the backend and waits for `http://127.0.0.1:8000/api/health`.
+5. Installs frontend dependencies when required.
+6. Starts the frontend and waits for port `5173`.
+7. Opens `http://localhost:5173`.
 
-Keep the backend and frontend PowerShell windows open while using the app.
+Keep the backend and frontend PowerShell windows open while using the application.
 
-## Stop The App
-
-From the repository root, run:
+## Stop CustosOps
 
 ```powershell
 .\STOP_CUSTOSOPS.bat
 ```
 
-This stops CustosOps processes listening on ports 8000 and 5173.
+The stop workflow targets CustosOps listeners on ports `8000` and `5173`. It warns and stops rather than force-closing an unrelated application using either port.
 
-## Important Port Note
-
-CustosOps uses:
-
-```text
-Backend:  http://127.0.0.1:8000
-Frontend: http://localhost:5173
-```
-
-The launcher is designed to stop stale CustosOps processes on those ports. If another non-CustosOps app is using one of those ports, the launcher will warn and stop instead of force-closing an unrelated process.
-
-## First Thing To Click
+## Guided First Run
 
 After the browser opens:
 
-```text
 1. Start on Overview.
-2. Open Endpoint or DNS Hygiene to inspect evidence-style findings.
-3. Open Reports to generate or review output.
-4. Open Archive to see saved reports.
-5. Open Run History to confirm traceability.
-6. Open Redaction to review public-safe output controls.
-```
+2. Open Endpoint or DNS Hygiene and inspect evidence-style findings.
+3. Open Reports and generate or review output.
+4. Open Archive and Run History to confirm traceability.
+5. Open Redaction and review public-safe output controls.
 
-For a guided first run, see:
+Guides:
 
-```text
-docs/onboarding/GETTING_STARTED.md
-docs/onboarding/FIRST_RUN_CHECKLIST.md
-docs/demo/DEMO_WORKFLOW.md
-```
+- [`docs/onboarding/GETTING_STARTED.md`](docs/onboarding/GETTING_STARTED.md)
+- [`docs/onboarding/FIRST_RUN_CHECKLIST.md`](docs/onboarding/FIRST_RUN_CHECKLIST.md)
+- [`docs/demo/DEMO_WORKFLOW.md`](docs/demo/DEMO_WORKFLOW.md)
+- [`docs/onboarding/TROUBLESHOOTING.md`](docs/onboarding/TROUBLESHOOTING.md)
+- [`docs/launch/LAUNCHER_REFERENCE.md`](docs/launch/LAUNCHER_REFERENCE.md)
 
-## Troubleshooting
+## Validation
 
-If launch fails, read:
-
-```text
-docs/onboarding/TROUBLESHOOTING.md
-docs/launch/LAUNCHER_REFERENCE.md
-```
-
-Common causes:
-
-```text
-- Python is not installed or not on PATH.
-- Node.js/npm is not installed or not on PATH.
-- Another app is using port 8000 or 5173.
-- Dependency installation failed due to network or antivirus blocking.
-- The browser opened before the frontend fully refreshed.
-```
-
-## Validation Commands
-
-Run the full local repository audit from the repository root:
+Run the full local repository audit:
 
 ```powershell
 .\AUDIT_CUSTOSOPS_FULL.bat
 ```
 
-You can also double-click `AUDIT_CUSTOSOPS_FULL.bat` in File Explorer. The launcher automatically uses the CustosOps repository folder, runs the contract audits, backend tests, and frontend build, then writes the audit ZIP package to Downloads.
-
-Run the full demo/public-readiness proof from the repository root:
+Run the complete audit plus Desktop UI proof:
 
 ```powershell
 .\PROVE_CUSTOSOPS_FULL.bat
 ```
 
-This runs the same repository audit, then runs the external Desktop UI proof tool from:
+The proof workflow expects the companion UI tool at:
 
 ```text
 %USERPROFILE%\Desktop\CustosOps-UI-Tool\Run-CustosOps-UI-Smoke.ps1
 ```
 
-After the UI proof ZIP is created, it validates the artifact with `scripts/check-ui-proof-artifact.ps1`. Use this before a demo, release tag, or public-review checkpoint.
-
-Advanced direct audit command:
-
-```powershell
-.\scripts\audit-custosops-local-repo.ps1 -Root . -RunExistingContractAudits -RunBackendTests -RunFrontendBuild
-```
-
-Advanced direct proof command:
-
-```powershell
-.\scripts\prove-custosops-full.ps1 -Root . -RequireUiProof
-```
-
-Run backend tests only:
-
-```powershell
-cd backend
-.\.venv\Scripts\python.exe -m pytest -q
-```
-
-Run frontend build only:
-
-```powershell
-cd frontend
-npm.cmd run build
-```
-
-Run platform contract audit only:
-
-```powershell
-.\scripts\audit-platform-contract.ps1 -Root .
-```
-
-Run evidence module contract audit only:
-
-```powershell
-.\scripts\audit-evidence-module-contract.ps1 -Root . -OutputDir "$env:USERPROFILE\Downloads"
-```
-
-Run Desktop UI proof from the companion UI proof tool:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\Desktop\CustosOps-UI-Tool\Run-CustosOps-UI-Smoke.ps1"
-```
-
-Validate a UI proof ZIP:
+Validate an existing UI proof ZIP:
 
 ```powershell
 .\scripts\check-ui-proof-artifact.ps1 -ZipPath "$env:USERPROFILE\Downloads\CUSTOSOPS_UI_SMOKE_<timestamp>.zip"
 ```
 
+Advanced audit command:
+
+```powershell
+.\scripts\audit-custosops-local-repo.ps1 -Root . -RunExistingContractAudits -RunBackendTests -RunFrontendBuild
+```
+
+Advanced proof command:
+
+```powershell
+.\scripts\prove-custosops-full.ps1 -Root . -RequireUiProof
+```
+
+Generated review ZIPs are written directly to Downloads. The workflows do not automatically open the Downloads folder.
+
 ## Demo Guidance
 
-Use synthetic or local sample evidence only. A good demo should show:
+Use synthetic or local sample evidence only. A useful demonstration should:
 
-```text
-1. Open Overview and explain the local-first positioning.
+1. Explain the local-first and read-only boundary from Overview.
 2. Import or collect one evidence module.
-3. Review findings and limitations.
+3. Review findings, confidence, and limitations.
 4. Generate a report.
-5. Show the Archive and Run History.
+5. Show Archive and Run History.
 6. Show Redaction controls.
-7. Run or show the Desktop UI proof ZIP with 10 checked workspaces.
-```
+7. Show or run the ten-workspace Desktop UI proof.
 
-For the current risky sign-in scenario, the demo should emphasize backend/API evidence flow first: sample evidence, generated findings, report output, limitations, and safe escalation. It should not be presented as live tenant monitoring.
+For the risky-sign-in scenario, emphasize sample evidence, generated findings, report output, limitations, and safe escalation. Do not present it as live tenant monitoring.
 
-More detailed demo guidance is available in:
+More detail:
 
-```text
-docs/demo/CUSTOSOPS_DEMO_SCRIPT.md
-docs/demo/DEMO_WORKFLOW.md
-docs/demo/FINAL_VISUAL_DEMO_NOTES.md
-```
+- [`docs/demo/CUSTOSOPS_DEMO_SCRIPT.md`](docs/demo/CUSTOSOPS_DEMO_SCRIPT.md)
+- [`docs/demo/DEMO_WORKFLOW.md`](docs/demo/DEMO_WORKFLOW.md)
+- [`docs/demo/FINAL_VISUAL_DEMO_NOTES.md`](docs/demo/FINAL_VISUAL_DEMO_NOTES.md)
+- [`docs/portfolio/CUSTOSOPS_SOC_POSITIONING.md`](docs/portfolio/CUSTOSOPS_SOC_POSITIONING.md)
 
-## SOC Positioning
+## Public Repository Safety
 
-CustosOps is positioned as my read-only defensive security evidence console for SMB security hygiene reviews, local evidence analysis and escalation/report generation.
+Before publishing a release or sharing a proof package:
 
-It supports my SOC Analyst development path, but it remains defensive and evidence-focused. I am not positioning it as a SIEM, EDR, MDR/MSSP platform or offensive security tool.
+- use synthetic or local sample evidence only;
+- review screenshots, reports, console logs, network logs, and paths;
+- confirm no generated ZIP or local proof artifact is tracked;
+- confirm no credentials, private local paths, workplace names, or customer names are present;
+- run the full audit and proof workflows;
+- record the final evidence package names and SHA-256 hashes.
 
-See:
-
-```text
-docs/portfolio/CUSTOSOPS_SOC_POSITIONING.md
-```
-
-## GitHub Publication Status
-
-This repository is private-first. I should keep it private until manual review is complete.
-
-Before making it public, verify:
-
-```text
-- README renders correctly.
-- Launcher docs are clear.
-- Local repository audit ZIP has been reviewed.
-- No generated ZIPs or local proof artifacts are tracked.
-- No private local paths or workplace/customer names appear.
-- Latest tag is present.
-```
+See [`docs/PROJECT_ROADMAP.md`](docs/PROJECT_ROADMAP.md) for the remaining `v1.0.0` acceptance work.
