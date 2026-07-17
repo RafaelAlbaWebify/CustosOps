@@ -1,11 +1,11 @@
 <#
 CustosOps v1 Clean-Machine Acceptance Runner
 
-Creates a fresh public clone, validates the documented launch/stop workflow,
-runs the full repository audit and required Desktop UI proof, records evidence
-package hashes, and writes one acceptance ZIP directly to Downloads.
+Creates a fresh public clone, validates launch and stop behavior, runs the full
+repository audit, executes the repository-owned Playwright workspace/SOC suite,
+records evidence hashes, and writes one acceptance ZIP directly to Downloads.
 
-This script does not modify the source checkout or open Downloads.
+This script does not modify the caller's checkout and never opens Downloads.
 #>
 
 [CmdletBinding()]
@@ -13,9 +13,8 @@ param(
     [string]$RepositoryUrl = 'https://github.com/RafaelAlbaWebify/CustosOps.git',
     [string]$Branch = 'master',
     [string]$OutputDir = '',
-    [string]$UiProofScript = '',
     [int]$StartupTimeoutSeconds = 240,
-    [int]$UiProofTimeoutSeconds = 900,
+    [int]$PlaywrightTimeoutSeconds = 900,
     [switch]$KeepFreshClone
 )
 
@@ -24,33 +23,29 @@ $ErrorActionPreference = 'Stop'
 
 $StartLocation = Get-Location
 $Stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
-$AcceptanceOk = $true
-$FailureMessages = New-Object 'System.Collections.Generic.List[string]'
 $FreshRoot = Join-Path $env:TEMP ('CustosOps-v1-acceptance-' + $Stamp)
 $CloneRoot = Join-Path $FreshRoot 'CustosOps'
 $EvidenceRoot = Join-Path $FreshRoot 'evidence'
 $SummaryPath = Join-Path $EvidenceRoot 'ACCEPTANCE_SUMMARY.txt'
 $JsonPath = Join-Path $EvidenceRoot 'ACCEPTANCE_RESULT.json'
 $FinalZip = $null
-
-function Set-AcceptanceFailed {
-    param([string]$Message)
-    $script:AcceptanceOk = $false
-    $script:FailureMessages.Add($Message)
-    Write-Host $Message -ForegroundColor Red
-}
+$HeadSha = ''
+$FailureMessage = ''
 
 function Require-Command {
-    param([string]$Name)
+    param([Parameter(Mandatory = $true)][string]$Name)
+
     $Command = Get-Command $Name -ErrorAction SilentlyContinue
     if (-not $Command) {
         throw ('Required command not found: ' + $Name)
     }
+
     return $Command.Source
 }
 
 function Test-HttpReady {
-    param([string]$Url)
+    param([Parameter(Mandatory = $true)][string]$Url)
+
     try {
         $Response = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop
         return ($Response.StatusCode -ge 200 -and $Response.StatusCode -lt 500)
@@ -61,32 +56,34 @@ function Test-HttpReady {
 }
 
 function Test-PortReady {
-    param([int]$Port)
+    param([Parameter(Mandatory = $true)][int]$Port)
+
     return [bool](Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue)
 }
 
 function Wait-ForCondition {
     param(
-        [scriptblock]$Condition,
-        [int]$TimeoutSeconds,
-        [string]$Description
+        [Parameter(Mandatory = $true)][scriptblock]$Condition,
+        [Parameter(Mandatory = $true)][int]$TimeoutSeconds,
+        [Parameter(Mandatory = $true)][string]$Description
     )
 
     $Deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     while ((Get-Date) -lt $Deadline) {
-        if (& $Condition) { return $true }
+        if (& $Condition) {
+            return $true
+        }
         Start-Sleep -Milliseconds 750
     }
 
-    Set-AcceptanceFailed ($Description + ' did not become ready within ' + $TimeoutSeconds + ' seconds.')
-    return $false
+    throw ($Description + ' did not become ready within ' + $TimeoutSeconds + ' seconds.')
 }
 
 function Invoke-NativeChecked {
     param(
-        [string]$FilePath,
-        [string[]]$Arguments,
-        [string]$Description
+        [Parameter(Mandatory = $true)][string]$FilePath,
+        [Parameter(Mandatory = $true)][string[]]$Arguments,
+        [Parameter(Mandatory = $true)][string]$Description
     )
 
     Write-Host $Description -ForegroundColor Cyan
@@ -98,19 +95,27 @@ function Invoke-NativeChecked {
 }
 
 function Stop-FreshCustosOps {
-    param([string]$RootPath)
+    param([Parameter(Mandatory = $true)][string]$RootPath)
 
     $StopBat = Join-Path $RootPath 'STOP_CUSTOSOPS.bat'
-    if (Test-Path -LiteralPath $StopBat) {
-        try {
-            & cmd.exe /d /c ('"' + $StopBat + '"')
-            if ($LASTEXITCODE -ne 0) {
-                Set-AcceptanceFailed ('STOP_CUSTOSOPS.bat returned exit code ' + $LASTEXITCODE)
-            }
-        }
-        catch {
-            Set-AcceptanceFailed ('STOP_CUSTOSOPS.bat failed: ' + $_.Exception.Message)
-        }
+    if (-not (Test-Path -LiteralPath $StopBat)) {
+        return
+    }
+
+    & cmd.exe /d /c ('"' + $StopBat + '"')
+    if ($LASTEXITCODE -ne 0) {
+        throw ('STOP_CUSTOSOPS.bat returned exit code ' + $LASTEXITCODE)
+    }
+}
+
+function Copy-DirectoryIfPresent {
+    param(
+        [Parameter(Mandatory = $true)][string]$Source,
+        [Parameter(Mandatory = $true)][string]$Destination
+    )
+
+    if (Test-Path -LiteralPath $Source) {
+        Copy-Item -LiteralPath $Source -Destination $Destination -Recurse -Force
     }
 }
 
@@ -118,15 +123,9 @@ try {
     if (-not $OutputDir) {
         $OutputDir = Join-Path ([Environment]::GetFolderPath('UserProfile')) 'Downloads'
     }
-    if (-not $UiProofScript) {
-        $UiProofScript = Join-Path ([Environment]::GetFolderPath('UserProfile')) 'Desktop\CustosOps-UI-Tool\Run-CustosOps-UI-Smoke.ps1'
-    }
 
     if (-not (Test-Path -LiteralPath $OutputDir)) {
         New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
-    }
-    if (-not (Test-Path -LiteralPath $UiProofScript)) {
-        throw ('Desktop UI proof tool not found: ' + $UiProofScript)
     }
 
     $GitExe = Require-Command -Name 'git.exe'
@@ -134,6 +133,7 @@ try {
     [void](Require-Command -Name 'python.exe')
     [void](Require-Command -Name 'node.exe')
     [void](Require-Command -Name 'npm.cmd')
+    [void](Require-Command -Name 'npx.cmd')
 
     New-Item -ItemType Directory -Path $EvidenceRoot -Force | Out-Null
 
@@ -143,7 +143,7 @@ try {
     Write-Host ('Branch:      ' + $Branch)
     Write-Host ('Fresh clone: ' + $CloneRoot)
     Write-Host ('Output:      ' + $OutputDir)
-    Write-Host ('UI proof:    ' + $UiProofScript)
+    Write-Host 'UI proof:    repository-owned Playwright suite'
     Write-Host ''
 
     Invoke-NativeChecked -FilePath $GitExe -Arguments @(
@@ -156,15 +156,26 @@ try {
     }
 
     $DirtyLines = @(& $GitExe -C $CloneRoot status --porcelain)
-    if ($LASTEXITCODE -ne 0) { throw 'Could not inspect fresh-clone status.' }
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Could not inspect fresh-clone status.'
+    }
     if (@($DirtyLines | Where-Object { $_ -and $_.Trim() }).Count -gt 0) {
         throw 'Fresh clone is unexpectedly dirty.'
     }
 
     $LaunchBat = Join-Path $CloneRoot 'LAUNCH_CUSTOSOPS.bat'
-    $ProofScript = Join-Path $CloneRoot 'scripts\prove-custosops-full.ps1'
-    if (-not (Test-Path -LiteralPath $LaunchBat)) { throw ('Launcher not found: ' + $LaunchBat) }
-    if (-not (Test-Path -LiteralPath $ProofScript)) { throw ('Proof runner not found: ' + $ProofScript) }
+    $AuditScript = Join-Path $CloneRoot 'scripts\audit-custosops-local-repo.ps1'
+    $FrontendRoot = Join-Path $CloneRoot 'frontend'
+
+    if (-not (Test-Path -LiteralPath $LaunchBat)) {
+        throw ('Launcher not found: ' + $LaunchBat)
+    }
+    if (-not (Test-Path -LiteralPath $AuditScript)) {
+        throw ('Audit runner not found: ' + $AuditScript)
+    }
+    if (-not (Test-Path -LiteralPath (Join-Path $FrontendRoot 'package.json'))) {
+        throw ('Frontend package not found: ' + $FrontendRoot)
+    }
 
     $BeforeZips = @(
         Get-ChildItem -LiteralPath $OutputDir -Filter 'CUSTOSOPS_*.zip' -File -ErrorAction SilentlyContinue |
@@ -177,40 +188,93 @@ try {
         throw ('LAUNCH_CUSTOSOPS.bat returned exit code ' + $LASTEXITCODE)
     }
 
-    $BackendReady = Wait-ForCondition -TimeoutSeconds $StartupTimeoutSeconds -Description 'Backend health endpoint' -Condition {
+    [void](Wait-ForCondition -TimeoutSeconds $StartupTimeoutSeconds -Description 'Backend health endpoint' -Condition {
         Test-HttpReady -Url 'http://127.0.0.1:8000/api/health'
-    }
-    $FrontendReady = Wait-ForCondition -TimeoutSeconds $StartupTimeoutSeconds -Description 'Frontend listener' -Condition {
+    })
+    [void](Wait-ForCondition -TimeoutSeconds $StartupTimeoutSeconds -Description 'Frontend listener' -Condition {
         Test-PortReady -Port 5173
-    }
-
-    if (-not $BackendReady -or -not $FrontendReady) {
-        throw 'Documented launcher acceptance failed.'
-    }
+    })
 
     Write-Host 'Documented launcher acceptance: OK' -ForegroundColor Green
     Stop-FreshCustosOps -RootPath $CloneRoot
 
     Start-Sleep -Seconds 2
-    if (Test-PortReady -Port 8000) { Set-AcceptanceFailed 'Port 8000 is still listening after STOP_CUSTOSOPS.bat.' }
-    if (Test-PortReady -Port 5173) { Set-AcceptanceFailed 'Port 5173 is still listening after STOP_CUSTOSOPS.bat.' }
-    if (-not $AcceptanceOk) { throw 'Documented stop acceptance failed.' }
+    if (Test-PortReady -Port 8000) {
+        throw 'Port 8000 is still listening after STOP_CUSTOSOPS.bat.'
+    }
+    if (Test-PortReady -Port 5173) {
+        throw 'Port 5173 is still listening after STOP_CUSTOSOPS.bat.'
+    }
 
     Write-Host 'Documented stop acceptance: OK' -ForegroundColor Green
 
-    Write-Host 'Running full audit and required Desktop UI proof...' -ForegroundColor Cyan
-    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $ProofScript `
+    Write-Host 'Running full local repository audit...' -ForegroundColor Cyan
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $AuditScript `
         -Root $CloneRoot `
         -OutputDir $OutputDir `
-        -UiProofScript $UiProofScript `
-        -UiProofTimeoutSeconds $UiProofTimeoutSeconds `
-        -AppStartupTimeoutSeconds $StartupTimeoutSeconds `
-        -RequireUiProof
+        -RunExistingContractAudits `
+        -RunBackendTests `
+        -RunFrontendBuild
 
-    $ProofExit = $LASTEXITCODE
-    if ($ProofExit -ne 0) {
-        throw ('Full proof runner failed with exit code ' + $ProofExit)
+    if ($LASTEXITCODE -ne 0) {
+        throw ('Full local repository audit failed with exit code ' + $LASTEXITCODE)
     }
+
+    Write-Host 'Full local repository audit: OK' -ForegroundColor Green
+
+    Write-Host 'Preparing application for local Playwright proof...' -ForegroundColor Cyan
+    & cmd.exe /d /c ('"' + $LaunchBat + '"')
+    if ($LASTEXITCODE -ne 0) {
+        throw ('LAUNCH_CUSTOSOPS.bat returned exit code ' + $LASTEXITCODE + ' before Playwright proof')
+    }
+
+    [void](Wait-ForCondition -TimeoutSeconds $StartupTimeoutSeconds -Description 'Backend health endpoint for Playwright' -Condition {
+        Test-HttpReady -Url 'http://127.0.0.1:8000/api/health'
+    })
+    [void](Wait-ForCondition -TimeoutSeconds $StartupTimeoutSeconds -Description 'Frontend listener for Playwright' -Condition {
+        Test-PortReady -Port 5173
+    })
+
+    Push-Location $FrontendRoot
+    try {
+        Invoke-NativeChecked -FilePath 'npx.cmd' -Arguments @('playwright', 'install', 'chromium') -Description 'Installing Playwright Chromium...'
+
+        $StdOutPath = Join-Path $EvidenceRoot 'playwright-stdout.log'
+        $StdErrPath = Join-Path $EvidenceRoot 'playwright-stderr.log'
+        $PreviousBaseUrl = $env:CUSTOSOPS_BASE_URL
+        $env:CUSTOSOPS_BASE_URL = 'http://127.0.0.1:5173'
+
+        try {
+            Write-Host 'Running repository-owned Playwright workspace and SOC proof...' -ForegroundColor Cyan
+            $Process = Start-Process -FilePath 'cmd.exe' `
+                -ArgumentList @('/d', '/c', 'npm.cmd run test:e2e') `
+                -WorkingDirectory $FrontendRoot `
+                -RedirectStandardOutput $StdOutPath `
+                -RedirectStandardError $StdErrPath `
+                -PassThru
+
+            if (-not $Process.WaitForExit($PlaywrightTimeoutSeconds * 1000)) {
+                try { $Process.Kill() } catch {}
+                throw ('Playwright proof timed out after ' + $PlaywrightTimeoutSeconds + ' seconds.')
+            }
+
+            if ($Process.ExitCode -ne 0) {
+                throw ('Playwright proof failed with exit code ' + $Process.ExitCode)
+            }
+        }
+        finally {
+            $env:CUSTOSOPS_BASE_URL = $PreviousBaseUrl
+        }
+    }
+    finally {
+        Pop-Location
+    }
+
+    Copy-DirectoryIfPresent -Source (Join-Path $FrontendRoot 'playwright-report') -Destination (Join-Path $EvidenceRoot 'playwright-report')
+    Copy-DirectoryIfPresent -Source (Join-Path $FrontendRoot 'test-results') -Destination (Join-Path $EvidenceRoot 'test-results')
+
+    Write-Host 'Repository-owned Playwright proof: OK' -ForegroundColor Green
+    Stop-FreshCustosOps -RootPath $CloneRoot
 
     $NewZips = @(
         Get-ChildItem -LiteralPath $OutputDir -Filter 'CUSTOSOPS_*.zip' -File -ErrorAction SilentlyContinue |
@@ -219,7 +283,7 @@ try {
     )
 
     if ($NewZips.Count -eq 0) {
-        throw 'No new CustosOps evidence ZIP was created in Downloads.'
+        throw 'No new CustosOps audit ZIP was created in Downloads.'
     }
 
     $EvidenceRecords = @()
@@ -234,8 +298,6 @@ try {
         }
     }
 
-    Stop-FreshCustosOps -RootPath $CloneRoot
-
     $CompletedAt = Get-Date
     $SummaryLines = New-Object 'System.Collections.Generic.List[string]'
     $SummaryLines.Add('CUSTOSOPS V1 CLEAN-MACHINE ACCEPTANCE')
@@ -245,19 +307,22 @@ try {
     $SummaryLines.Add('Fresh-clone HEAD: ' + $HeadSha)
     $SummaryLines.Add('Launcher acceptance: PASS')
     $SummaryLines.Add('Stop acceptance: PASS')
-    $SummaryLines.Add('Full audit and required UI proof: PASS')
+    $SummaryLines.Add('Full local audit: PASS')
+    $SummaryLines.Add('Repository-owned Playwright proof: PASS')
     $SummaryLines.Add('Downloads auto-opened: NO')
     $SummaryLines.Add('')
     $SummaryLines.Add('EVIDENCE PACKAGES')
+
     foreach ($Record in $EvidenceRecords) {
         $SummaryLines.Add($Record.name)
         $SummaryLines.Add('  SHA-256: ' + $Record.sha256)
         $SummaryLines.Add('  Size: ' + $Record.size_bytes + ' bytes')
     }
+
     $SummaryLines | Out-File -LiteralPath $SummaryPath -Encoding utf8
 
     [pscustomobject]@{
-        schema_version = 1
+        schema_version = 2
         generated_at = $CompletedAt.ToString('o')
         status = 'PASS'
         repository_url = $RepositoryUrl
@@ -266,25 +331,29 @@ try {
         fresh_clone_path = $CloneRoot
         launcher_acceptance = $true
         stop_acceptance = $true
-        full_proof = $true
+        full_local_audit = $true
+        playwright_proof = $true
         downloads_auto_opened = $false
         evidence_packages = $EvidenceRecords
     } | ConvertTo-Json -Depth 6 | Out-File -LiteralPath $JsonPath -Encoding utf8
 
     $FinalZip = Join-Path $OutputDir ('CUSTOSOPS_V1_ACCEPTANCE_' + $Stamp + '.zip')
-    if (Test-Path -LiteralPath $FinalZip) { Remove-Item -LiteralPath $FinalZip -Force }
+    if (Test-Path -LiteralPath $FinalZip) {
+        Remove-Item -LiteralPath $FinalZip -Force
+    }
     Compress-Archive -Path (Join-Path $EvidenceRoot '*') -DestinationPath $FinalZip -Force
 
     Write-Host ''
     Write-Host 'CUSTOSOPS V1 CLEAN-MACHINE ACCEPTANCE: PASS' -ForegroundColor Green
     Write-Host ('Fresh-clone HEAD: ' + $HeadSha)
     Write-Host ('Acceptance ZIP: ' + $FinalZip)
+
     foreach ($Record in $EvidenceRecords) {
         Write-Host ($Record.name + '  SHA-256 ' + $Record.sha256)
     }
 }
 catch {
-    Set-AcceptanceFailed $_.Exception.Message
+    $FailureMessage = $_.Exception.Message
 
     if (-not (Test-Path -LiteralPath $EvidenceRoot)) {
         New-Item -ItemType Directory -Path $EvidenceRoot -Force | Out-Null
@@ -296,14 +365,23 @@ catch {
         'Status: FAIL',
         'Repository: ' + $RepositoryUrl,
         'Branch: ' + $Branch,
+        'Fresh-clone HEAD: ' + $HeadSha,
         '',
-        'FAILURES',
-        ($FailureMessages -join [Environment]::NewLine)
+        'FAILURE',
+        $FailureMessage
     ) | Out-File -LiteralPath $SummaryPath -Encoding utf8
 
     if ($OutputDir -and (Test-Path -LiteralPath $OutputDir)) {
         $FinalZip = Join-Path $OutputDir ('CUSTOSOPS_V1_ACCEPTANCE_FAILED_' + $Stamp + '.zip')
+        if (Test-Path -LiteralPath $FinalZip) {
+            Remove-Item -LiteralPath $FinalZip -Force
+        }
         Compress-Archive -Path (Join-Path $EvidenceRoot '*') -DestinationPath $FinalZip -Force
+    }
+
+    Write-Host ''
+    Write-Host ('CUSTOSOPS V1 CLEAN-MACHINE ACCEPTANCE: FAIL - ' + $FailureMessage) -ForegroundColor Red
+    if ($FinalZip) {
         Write-Host ('Failure evidence ZIP: ' + $FinalZip) -ForegroundColor Yellow
     }
 }
@@ -318,9 +396,15 @@ finally {
     Set-Location $StartLocation
 
     if (-not $KeepFreshClone -and (Test-Path -LiteralPath $FreshRoot)) {
-        try { Remove-Item -LiteralPath $FreshRoot -Recurse -Force } catch {}
+        try {
+            Remove-Item -LiteralPath $FreshRoot -Recurse -Force
+        }
+        catch {}
     }
 }
 
-if ($AcceptanceOk) { exit 0 }
-exit 1
+if ($FailureMessage) {
+    exit 1
+}
+
+exit 0
