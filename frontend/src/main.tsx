@@ -7,6 +7,7 @@ import "./mock-dashboard-refresh.css";
 import "./overview-responsive.css";
 import "./trace-visual-foundation.css";
 import "./trace-navigation-polish.css";
+import "./trace-workspace-refinement.css";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
