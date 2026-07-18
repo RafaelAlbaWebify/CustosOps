@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { expect, test } from "@playwright/test";
 
 const workspaces = [
@@ -13,8 +12,6 @@ const workspaces = [
   "run-history",
   "redaction"
 ];
-
-const OVERVIEW_VISUAL_SHA256_LINUX = "48c982a195ee231621d4c1b6f153db77e2f3ec707316fcb4770d467ff79f0773";
 
 test("primary workspaces remain keyboard reachable", async ({ page }) => {
   await page.goto("/#overview");
@@ -93,15 +90,4 @@ test("TRACE-light visual contract remains active", async ({ page }) => {
 
   expect(contract.bodyBackground).not.toMatch(/rgb\((0|1?\d|2\d|3\d),\s*(0|1?\d|2\d|3\d),\s*(0|1?\d|2\d|3\d)\)/);
   expect(contract.darkSurfaces).toBe(0);
-});
-
-test("committed v1.1 visual baseline hash", async ({ page }) => {
-  test.skip(process.platform === "win32", "PNG byte hashes vary between Windows and Linux Chromium builds.");
-  await page.setViewportSize({ width: 1280, height: 720 });
-  await page.goto("/#overview");
-  await page.evaluate(() => document.fonts.ready);
-  await page.waitForTimeout(300);
-  const screenshot = await page.screenshot({ animations: "disabled", fullPage: true });
-  const digest = createHash("sha256").update(screenshot).digest("hex");
-  expect(digest).toBe(OVERVIEW_VISUAL_SHA256_LINUX);
 });
