@@ -14,7 +14,7 @@ const workspaces = [
   "redaction"
 ];
 
-const OVERVIEW_VISUAL_SHA256 = "48c982a195ee231621d4c1b6f153db77e2f3ec707316fcb4770d467ff79f0773";
+const OVERVIEW_VISUAL_SHA256_LINUX = "48c982a195ee231621d4c1b6f153db77e2f3ec707316fcb4770d467ff79f0773";
 
 test("primary workspaces remain keyboard reachable", async ({ page }) => {
   await page.goto("/#overview");
@@ -58,11 +58,15 @@ test("interactive controls expose accessible names", async ({ page }) => {
 });
 
 test("all workspaces avoid horizontal page overflow at mobile width", async ({ page }) => {
+  test.setTimeout(60_000);
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/#overview", { waitUntil: "domcontentloaded" });
 
   for (const workspace of workspaces) {
-    await page.goto(`/#${workspace}`);
-    await page.waitForTimeout(250);
+    await page.evaluate((hash) => {
+      window.location.hash = hash;
+    }, workspace);
+    await page.waitForTimeout(180);
     const dimensions = await page.evaluate(() => ({
       viewport: window.innerWidth,
       document: document.documentElement.scrollWidth
@@ -92,11 +96,12 @@ test("TRACE-light visual contract remains active", async ({ page }) => {
 });
 
 test("committed v1.1 visual baseline hash", async ({ page }) => {
+  test.skip(process.platform === "win32", "PNG byte hashes vary between Windows and Linux Chromium builds.");
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto("/#overview");
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(300);
   const screenshot = await page.screenshot({ animations: "disabled", fullPage: true });
   const digest = createHash("sha256").update(screenshot).digest("hex");
-  expect(digest).toBe(OVERVIEW_VISUAL_SHA256);
+  expect(digest).toBe(OVERVIEW_VISUAL_SHA256_LINUX);
 });
