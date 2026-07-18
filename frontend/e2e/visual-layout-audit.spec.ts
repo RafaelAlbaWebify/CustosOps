@@ -10,13 +10,13 @@ const expectedNavigationLabels = [
   "Overview",
   "Endpoint",
   "DNS Hygiene",
-  "Application Logs",
+  "App Logs",
   "Windows Events",
-  "IIS / Application",
+  "IIS/Application",
   "Reports",
-  "Archive",
+  "Redaction",
   "Run History",
-  "Redaction"
+  "Archive"
 ];
 
 type LayoutProblem = {
