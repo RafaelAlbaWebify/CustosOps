@@ -88,8 +88,7 @@ test("TRACE-light visual contract remains active", async ({ page }) => {
   expect(contract.darkSurfaces).toBe(0);
 });
 
-test("optional committed visual baseline", async ({ page }) => {
-  test.skip(process.env.CUSTOSOPS_VISUAL_REGRESSION !== "1", "Enable after generating the reviewed v1.1 baseline.");
+test("committed v1.1 visual baseline", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto("/#overview");
   await expect(page).toHaveScreenshot("custosops-overview-v1.1.png", {
