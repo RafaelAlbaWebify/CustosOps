@@ -27,6 +27,42 @@
 
 .overview-main-area .professional-card { min-width: 0; overflow: visible !important; }
 
+/* Explicit readable foregrounds: inherited severity/theme rules previously faded these values almost to white. */
+.dashboard-donut-legend > div > :nth-child(2),
+.module-health-list > div > :nth-child(2),
+.topbar-status,
+.topbar-status * {
+  color: var(--custos-text) !important;
+  opacity: 1 !important;
+}
+.dashboard-donut-legend > div > :nth-child(3) {
+  color: var(--custos-muted-strong) !important;
+  opacity: 1 !important;
+  font-weight: 700;
+  text-align: right;
+}
+.dashboard-donut-legend > div > :nth-child(4) {
+  color: var(--custos-text) !important;
+  opacity: 1 !important;
+  font-weight: 800;
+  text-align: right;
+}
+.module-health-list > div > :first-child {
+  color: var(--custos-text) !important;
+  opacity: 1 !important;
+  font-weight: 900 !important;
+}
+.module-health-list > div > :nth-child(2) {
+  font-weight: 750;
+}
+.professional-kpi-grid .visual-kpi-card p,
+.dashboard-run-row span,
+.dashboard-priority-row span,
+.dashboard-priority-row em {
+  color: var(--custos-muted-strong) !important;
+  opacity: 1 !important;
+}
+
 .dashboard-donut-layout {
   grid-template-columns: minmax(138px, 0.8fr) minmax(210px, 1.2fr) !important;
   gap: 22px !important;
@@ -90,6 +126,19 @@
   line-height: 1.25;
 }
 
+/* The status footer must participate in document flow; fixed positioning covered the final priority row. */
+.overview-main-area .footer,
+.main-area > .footer {
+  position: static !important;
+  inset: auto !important;
+  width: auto !important;
+  min-height: 42px;
+  margin: 0 24px 12px !important;
+  padding: 10px 0 0 !important;
+  background: transparent !important;
+  z-index: auto !important;
+}
+
 @media (min-width: 1351px) {
   .professional-dashboard-grid {
     grid-template-columns: minmax(360px, 0.95fr) minmax(360px, 0.95fr) minmax(520px, 1.35fr) !important;
@@ -109,4 +158,6 @@
   .module-health-layout { grid-template-columns: 1fr !important; }
   .dashboard-priority-row { grid-template-columns: 64px minmax(0, 1fr) !important; }
   .dashboard-priority-row em { grid-column: 2; }
+  .overview-main-area .footer,
+  .main-area > .footer { margin-inline: 16px !important; }
 }
