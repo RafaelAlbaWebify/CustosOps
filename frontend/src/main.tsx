@@ -9,6 +9,7 @@ import "./trace-visual-foundation.css";
 import "./trace-navigation-polish.css";
 import "./trace-workspace-refinement.css";
 import "./trace-light-card-cleanup.css";
+import "./gui-regression-fixes.css";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
