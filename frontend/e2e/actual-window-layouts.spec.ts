@@ -78,9 +78,20 @@ async function collectProblems(page: Page) {
       if (color !== "rgb(15, 23, 42)") problems.push(`summary icon is not dark enough: ${color}`);
     }
 
-    const footer = document.querySelector<HTMLElement>(".overview-main-area .footer");
-    if (footer && getComputedStyle(footer).position !== "static") {
-      problems.push(`local-processing footer must remain a passive flow note: position=${getComputedStyle(footer).position}`);
+    for (const footer of document.querySelectorAll<HTMLElement>(".overview-main-area .footer, .overview-main-area .professional-dashboard-footer")) {
+      if (getComputedStyle(footer).display !== "none") {
+        problems.push(`local-processing footer must be hidden, display=${getComputedStyle(footer).display}`);
+      }
+    }
+
+    const headerStatus = document.querySelector<HTMLElement>(".overview-main-area .local-processing-status");
+    if (!headerStatus || !visible(headerStatus)) {
+      problems.push("local-processing header status is missing");
+    } else {
+      const label = headerStatus.textContent?.trim() ?? "";
+      if (label !== "Local processing") problems.push(`unexpected local-processing label: ${label}`);
+      const position = getComputedStyle(headerStatus).position;
+      if (position === "fixed" || position === "sticky") problems.push(`header status must remain in flow: ${position}`);
     }
 
     return problems;

@@ -1,0 +1,17 @@
+/* Keep the local-processing assurance once, in the Overview header. */
+
+.overview-main-area .footer,
+.overview-main-area .professional-dashboard-footer {
+  display: none !important;
+}
+
+.overview-main-area .local-processing-status {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 8px;
+  color: #334155 !important;
+  font-size: 12px !important;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
