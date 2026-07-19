@@ -60,6 +60,29 @@ async function collectProblems(page: Page) {
       }
     }
 
+    const separatedPairs: Array<[string, string]> = [
+      [".dashboard-donut", ".dashboard-donut-legend"],
+      [".health-donut", ".module-health-list"]
+    ];
+    for (const [diagramSelector, detailsSelector] of separatedPairs) {
+      const diagram = document.querySelector<HTMLElement>(diagramSelector);
+      const details = document.querySelector<HTMLElement>(detailsSelector);
+      if (diagram && details && visible(diagram) && visible(details)) {
+        const area = overlapArea(diagram.getBoundingClientRect(), details.getBoundingClientRect());
+        if (area > 2) problems.push(`${diagramSelector} overlaps ${detailsSelector} by ${Math.round(area)}px2`);
+      }
+    }
+
+    for (const icon of document.querySelectorAll<HTMLElement>(".archive-report-summary-stack .doc-icon")) {
+      const color = getComputedStyle(icon).color;
+      if (color !== "rgb(15, 23, 42)") problems.push(`summary icon is not dark enough: ${color}`);
+    }
+
+    const footer = document.querySelector<HTMLElement>(".overview-main-area .footer");
+    if (footer && getComputedStyle(footer).position !== "static") {
+      problems.push(`local-processing footer must remain a passive flow note: position=${getComputedStyle(footer).position}`);
+    }
+
     return problems;
   });
 }
