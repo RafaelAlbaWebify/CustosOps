@@ -12,6 +12,7 @@ import "./trace-light-card-cleanup.css";
 import "./gui-regression-fixes.css";
 import "./overview-window-layout-fixes.css";
 import "./final-overview-polish.css";
+import "./final-trust-status-fix.css";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
