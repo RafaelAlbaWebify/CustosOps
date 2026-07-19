@@ -5,22 +5,13 @@
   display: none !important;
 }
 
-.overview-main-area .professional-header-status {
+.overview-main-area .local-processing-status {
   display: inline-flex !important;
   align-items: center;
   gap: 8px;
   color: #334155 !important;
-  font-size: 0 !important;
+  font-size: 12px !important;
   font-weight: 700;
-  white-space: nowrap;
-}
-
-.overview-main-area .professional-header-status::after {
-  content: "Local processing";
-  font-size: 12px;
   line-height: 1;
-}
-
-.overview-main-area .professional-header-status .status-dot {
-  flex: 0 0 auto;
+  white-space: nowrap;
 }
