@@ -1,3 +1,5 @@
+@import "./overview-window-layout-fixes.css";
+
 /* M32C GUI proof fixes */
 .help-link {
   cursor: pointer;
