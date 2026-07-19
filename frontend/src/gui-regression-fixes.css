@@ -27,42 +27,6 @@
 
 .overview-main-area .professional-card { min-width: 0; overflow: visible !important; }
 
-/* Explicit readable foregrounds: inherited severity/theme rules previously faded these values almost to white. */
-.dashboard-donut-legend > div > :nth-child(2),
-.module-health-list > div > :nth-child(2),
-.topbar-status,
-.topbar-status * {
-  color: var(--custos-text) !important;
-  opacity: 1 !important;
-}
-.dashboard-donut-legend > div > :nth-child(3) {
-  color: var(--custos-muted-strong) !important;
-  opacity: 1 !important;
-  font-weight: 700;
-  text-align: right;
-}
-.dashboard-donut-legend > div > :nth-child(4) {
-  color: var(--custos-text) !important;
-  opacity: 1 !important;
-  font-weight: 800;
-  text-align: right;
-}
-.module-health-list > div > :first-child {
-  color: var(--custos-text) !important;
-  opacity: 1 !important;
-  font-weight: 900 !important;
-}
-.module-health-list > div > :nth-child(2) {
-  font-weight: 750;
-}
-.professional-kpi-grid .visual-kpi-card p,
-.dashboard-run-row span,
-.dashboard-priority-row span,
-.dashboard-priority-row em {
-  color: var(--custos-muted-strong) !important;
-  opacity: 1 !important;
-}
-
 .dashboard-donut-layout {
   grid-template-columns: minmax(138px, 0.8fr) minmax(210px, 1.2fr) !important;
   gap: 22px !important;
@@ -104,6 +68,29 @@
   text-overflow: clip !important;
   line-height: 1.25;
 }
+.module-health-list > div > :first-child {
+  display: grid !important;
+  place-items: center;
+  min-height: 34px;
+  border: 1px solid var(--custos-border) !important;
+  border-radius: 9px;
+  font-weight: 900 !important;
+}
+.module-health-list > div:nth-child(1) > :first-child {
+  color: var(--custos-success) !important;
+  background: var(--custos-success-soft) !important;
+  border-color: #b8e9cf !important;
+}
+.module-health-list > div:nth-child(2) > :first-child {
+  color: var(--custos-warning) !important;
+  background: var(--custos-warning-soft) !important;
+  border-color: #f2d58b !important;
+}
+.module-health-list > div:nth-child(3) > :first-child {
+  color: var(--custos-danger) !important;
+  background: var(--custos-danger-soft) !important;
+  border-color: #f7b8b3 !important;
+}
 
 .professional-lower-grid,
 .professional-dashboard-grid { align-items: start !important; }
@@ -126,17 +113,30 @@
   line-height: 1.25;
 }
 
-/* The status footer must participate in document flow; fixed positioning covered the final priority row. */
-.overview-main-area .footer,
-.main-area > .footer {
+.dashboard-donut-legend > div > :nth-child(2),
+.dashboard-donut-legend > div > :nth-child(3),
+.dashboard-donut-legend > div > :nth-child(4),
+.module-health-list > div > :nth-child(2),
+.topbar-status,
+.dashboard-run-row span,
+.dashboard-priority-row span,
+.dashboard-priority-row em {
+  color: var(--custos-muted-strong) !important;
+}
+.dashboard-donut-legend > div > :nth-child(3),
+.dashboard-donut-legend > div > :nth-child(4),
+.module-health-list > div > :first-child {
+  font-weight: 900 !important;
+}
+
+.footer {
   position: static !important;
   inset: auto !important;
-  width: auto !important;
-  min-height: 42px;
-  margin: 0 24px 12px !important;
-  padding: 10px 0 0 !important;
-  background: transparent !important;
   z-index: auto !important;
+  margin-top: 24px !important;
+  padding: 14px 24px 18px !important;
+  border-top: 1px solid var(--custos-border) !important;
+  background: transparent !important;
 }
 
 @media (min-width: 1351px) {
@@ -158,6 +158,5 @@
   .module-health-layout { grid-template-columns: 1fr !important; }
   .dashboard-priority-row { grid-template-columns: 64px minmax(0, 1fr) !important; }
   .dashboard-priority-row em { grid-column: 2; }
-  .overview-main-area .footer,
-  .main-area > .footer { margin-inline: 16px !important; }
+  .footer { padding-inline: 16px !important; }
 }
