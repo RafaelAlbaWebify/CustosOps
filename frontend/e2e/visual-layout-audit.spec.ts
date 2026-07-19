@@ -26,10 +26,7 @@ type LayoutProblem = {
 };
 
 async function attachFullPageScreenshot(page: Page, testInfo: TestInfo, name: string) {
-  const screenshot = await page.screenshot({
-    animations: "disabled",
-    fullPage: true
-  });
+  const screenshot = await page.screenshot({ animations: "disabled", fullPage: true });
   await testInfo.attach(name, { body: screenshot, contentType: "image/png" });
 }
 
@@ -42,13 +39,11 @@ async function collectLayoutProblems(page: Page): Promise<LayoutProblem[]> {
       const rect = node.getBoundingClientRect();
       return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
     };
-
     const describe = (element: Element) => {
       const node = element as HTMLElement;
       const classes = [...node.classList].join(".");
       return `${node.tagName.toLowerCase()}${classes ? `.${classes}` : ""}`;
     };
-
     const overlapArea = (left: DOMRect, right: DOMRect) => {
       const width = Math.max(0, Math.min(left.right, right.right) - Math.max(left.left, right.left));
       const height = Math.max(0, Math.min(left.bottom, right.bottom) - Math.max(left.top, right.top));
@@ -59,18 +54,10 @@ async function collectLayoutProblems(page: Page): Promise<LayoutProblem[]> {
       if (!visible(label)) continue;
       const style = getComputedStyle(label);
       if (label.scrollWidth > label.clientWidth + 1) {
-        problems.push({
-          selector: describe(label),
-          kind: "truncated-navigation-label",
-          detail: `${label.textContent?.trim() ?? ""}: scrollWidth=${label.scrollWidth}, clientWidth=${label.clientWidth}`
-        });
+        problems.push({ selector: describe(label), kind: "truncated-navigation-label", detail: `${label.textContent?.trim() ?? ""}: scrollWidth=${label.scrollWidth}, clientWidth=${label.clientWidth}` });
       }
       if (style.textOverflow === "ellipsis" || style.whiteSpace === "nowrap") {
-        problems.push({
-          selector: describe(label),
-          kind: "unsafe-navigation-text-style",
-          detail: `${label.textContent?.trim() ?? ""}: textOverflow=${style.textOverflow}, whiteSpace=${style.whiteSpace}`
-        });
+        problems.push({ selector: describe(label), kind: "unsafe-navigation-text-style", detail: `${label.textContent?.trim() ?? ""}: textOverflow=${style.textOverflow}, whiteSpace=${style.whiteSpace}` });
       }
     }
 
@@ -80,22 +67,15 @@ async function collectLayoutProblems(page: Page): Promise<LayoutProblem[]> {
       ".module-score-row",
       ".dashboard-priority-row"
     ];
-
     for (const rowSelector of collisionRows) {
       for (const row of document.querySelectorAll<HTMLElement>(rowSelector)) {
         if (!visible(row)) continue;
         const children = [...row.children].filter(visible);
         for (let leftIndex = 0; leftIndex < children.length; leftIndex += 1) {
           for (let rightIndex = leftIndex + 1; rightIndex < children.length; rightIndex += 1) {
-            const left = children[leftIndex].getBoundingClientRect();
-            const right = children[rightIndex].getBoundingClientRect();
-            const area = overlapArea(left, right);
+            const area = overlapArea(children[leftIndex].getBoundingClientRect(), children[rightIndex].getBoundingClientRect());
             if (area > 2) {
-              problems.push({
-                selector: rowSelector,
-                kind: "child-overlap",
-                detail: `${describe(children[leftIndex])} overlaps ${describe(children[rightIndex])} by ${Math.round(area)}px2`
-              });
+              problems.push({ selector: rowSelector, kind: "child-overlap", detail: `${describe(children[leftIndex])} overlaps ${describe(children[rightIndex])} by ${Math.round(area)}px2` });
             }
           }
         }
@@ -110,18 +90,13 @@ async function collectLayoutProblems(page: Page): Promise<LayoutProblem[]> {
       ".dashboard-donut-legend",
       ".module-health-list"
     ];
-
     for (const selector of clippingSelectors) {
       for (const element of document.querySelectorAll<HTMLElement>(selector)) {
         if (!visible(element)) continue;
         const style = getComputedStyle(element);
         const clipsVertically = ["hidden", "clip"].includes(style.overflowY);
         if (clipsVertically && element.scrollHeight > element.clientHeight + 1) {
-          problems.push({
-            selector,
-            kind: "vertical-content-clipping",
-            detail: `scrollHeight=${element.scrollHeight}, clientHeight=${element.clientHeight}`
-          });
+          problems.push({ selector, kind: "vertical-content-clipping", detail: `scrollHeight=${element.scrollHeight}, clientHeight=${element.clientHeight}` });
         }
       }
     }
@@ -133,41 +108,96 @@ async function collectLayoutProblems(page: Page): Promise<LayoutProblem[]> {
         if (!visible(row)) continue;
         const rowRect = row.getBoundingClientRect();
         if (rowRect.bottom > listRect.bottom + 1 || rowRect.right > listRect.right + 1) {
-          problems.push({
-            selector: ".dashboard-priority-row",
-            kind: "row-outside-priority-panel",
-            detail: `row=${JSON.stringify({ right: rowRect.right, bottom: rowRect.bottom })}, panel=${JSON.stringify({ right: listRect.right, bottom: listRect.bottom })}`
-          });
+          problems.push({ selector: ".dashboard-priority-row", kind: "row-outside-priority-panel", detail: `row=${JSON.stringify({ right: rowRect.right, bottom: rowRect.bottom })}, panel=${JSON.stringify({ right: listRect.right, bottom: listRect.bottom })}` });
         }
       }
     }
 
     const documentWidth = document.documentElement.scrollWidth;
     if (documentWidth > window.innerWidth + 1) {
-      problems.push({
-        selector: "document.documentElement",
-        kind: "horizontal-page-overflow",
-        detail: `scrollWidth=${documentWidth}, viewport=${window.innerWidth}`
+      problems.push({ selector: "document.documentElement", kind: "horizontal-page-overflow", detail: `scrollWidth=${documentWidth}, viewport=${window.innerWidth}` });
+    }
+    return problems;
+  });
+}
+
+async function collectReadabilityProblems(page: Page): Promise<LayoutProblem[]> {
+  return page.evaluate(() => {
+    const problems: LayoutProblem[] = [];
+    const parseRgb = (value: string) => {
+      const numbers = value.match(/[\d.]+/g)?.map(Number) ?? [];
+      return numbers.length >= 3 ? numbers.slice(0, 3) : null;
+    };
+    const luminance = (rgb: number[]) => {
+      const channel = rgb.map((value) => {
+        const normalized = value / 255;
+        return normalized <= 0.03928 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
       });
+      return 0.2126 * channel[0] + 0.7152 * channel[1] + 0.0722 * channel[2];
+    };
+    const contrast = (left: number[], right: number[]) => {
+      const a = luminance(left);
+      const b = luminance(right);
+      return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+    };
+    const selectors = [
+      ".dashboard-donut-legend > div > :nth-child(2)",
+      ".dashboard-donut-legend > div > :nth-child(3)",
+      ".dashboard-donut-legend > div > :nth-child(4)",
+      ".module-health-list > div > :first-child",
+      ".module-health-list > div > :nth-child(2)",
+      ".topbar-status"
+    ];
+    for (const selector of selectors) {
+      for (const element of document.querySelectorAll<HTMLElement>(selector)) {
+        const rect = element.getBoundingClientRect();
+        if (!rect.width || !rect.height || !element.textContent?.trim()) continue;
+        const foreground = parseRgb(getComputedStyle(element).color);
+        let ancestor: HTMLElement | null = element;
+        let background: number[] | null = null;
+        while (ancestor && !background) {
+          const candidate = parseRgb(getComputedStyle(ancestor).backgroundColor);
+          const alpha = Number(getComputedStyle(ancestor).backgroundColor.match(/[\d.]+/g)?.[3] ?? 1);
+          if (candidate && alpha > 0) background = candidate;
+          ancestor = ancestor.parentElement;
+        }
+        background ??= [255, 255, 255];
+        if (foreground && contrast(foreground, background) < 3.5) {
+          problems.push({ selector, kind: "insufficient-text-contrast", detail: `${element.textContent.trim()}: color=${getComputedStyle(element).color}, background=${background.join(",")}` });
+        }
+      }
     }
 
+    const footer = document.querySelector<HTMLElement>(".main-area > .footer, .overview-main-area .footer");
+    const finalRow = [...document.querySelectorAll<HTMLElement>(".dashboard-priority-row")].at(-1);
+    if (footer && finalRow) {
+      const footerStyle = getComputedStyle(footer);
+      if (["fixed", "sticky"].includes(footerStyle.position)) {
+        problems.push({ selector: ".footer", kind: "viewport-obstructing-footer", detail: `position=${footerStyle.position}` });
+      }
+      const footerRect = footer.getBoundingClientRect();
+      const rowRect = finalRow.getBoundingClientRect();
+      const width = Math.max(0, Math.min(footerRect.right, rowRect.right) - Math.max(footerRect.left, rowRect.left));
+      const height = Math.max(0, Math.min(footerRect.bottom, rowRect.bottom) - Math.max(footerRect.top, rowRect.top));
+      if (width * height > 2) {
+        problems.push({ selector: ".footer", kind: "footer-covers-priority-content", detail: `overlap=${Math.round(width * height)}px2` });
+      }
+    }
     return problems;
   });
 }
 
 test.describe("multi-viewport visual layout audit", () => {
   for (const viewport of desktopViewports) {
-    test(`Overview has no truncation, overlap, or clipping at ${viewport.name}`, async ({ page }, testInfo) => {
+    test(`Overview has no truncation, overlap, clipping, or unreadable text at ${viewport.name}`, async ({ page }, testInfo) => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await page.goto("/#overview");
       await expect(page.locator(".professional-dashboard-shell")).toBeVisible();
       await page.evaluate(() => document.fonts.ready);
       await page.waitForTimeout(400);
-
       const labels = await page.locator(".workspace-nav .nav-label").allTextContents();
       expect(labels.map((label) => label.trim())).toEqual(expectedNavigationLabels);
-
-      const problems = await collectLayoutProblems(page);
+      const problems = [...await collectLayoutProblems(page), ...await collectReadabilityProblems(page)];
       await attachFullPageScreenshot(page, testInfo, `overview-${viewport.name}`);
       expect(problems, JSON.stringify(problems, null, 2)).toEqual([]);
     });
@@ -177,22 +207,15 @@ test.describe("multi-viewport visual layout audit", () => {
     await page.setViewportSize({ width: 1920, height: 1080 });
     await page.goto("/#overview");
     await expect(page.locator(".workspace-nav")).toBeVisible();
-
     const buttons = page.locator(".workspace-nav button");
     await expect(buttons).toHaveCount(expectedNavigationLabels.length);
-
     for (let index = 0; index < expectedNavigationLabels.length; index += 1) {
       await buttons.nth(index).click();
       await page.waitForTimeout(150);
-      const label = buttons.nth(index).locator(".nav-label");
-      await expect(label).toHaveText(expectedNavigationLabels[index]);
-      const dimensions = await page.evaluate(() => ({
-        viewport: window.innerWidth,
-        document: document.documentElement.scrollWidth
-      }));
+      await expect(buttons.nth(index).locator(".nav-label")).toHaveText(expectedNavigationLabels[index]);
+      const dimensions = await page.evaluate(() => ({ viewport: window.innerWidth, document: document.documentElement.scrollWidth }));
       expect(dimensions.document, `${expectedNavigationLabels[index]} overflowed horizontally`).toBeLessThanOrEqual(dimensions.viewport + 1);
     }
-
     await attachFullPageScreenshot(page, testInfo, "all-workspaces-final-state-1920x1080");
   });
 });
