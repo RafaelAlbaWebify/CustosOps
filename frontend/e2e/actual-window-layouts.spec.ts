@@ -84,11 +84,11 @@ async function collectProblems(page: Page) {
       }
     }
 
-    const headerStatus = document.querySelector<HTMLElement>(".overview-main-area .professional-header-status");
+    const headerStatus = document.querySelector<HTMLElement>(".overview-main-area .local-processing-status");
     if (!headerStatus || !visible(headerStatus)) {
       problems.push("local-processing header status is missing");
     } else {
-      const label = getComputedStyle(headerStatus, "::after").content.replaceAll('"', "");
+      const label = headerStatus.textContent?.trim() ?? "";
       if (label !== "Local processing") problems.push(`unexpected local-processing label: ${label}`);
       const position = getComputedStyle(headerStatus).position;
       if (position === "fixed" || position === "sticky") problems.push(`header status must remain in flow: ${position}`);
