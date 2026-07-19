@@ -10,7 +10,7 @@ async function attach(page: Page, testInfo: TestInfo, name: string) {
   await testInfo.attach(name, { body: screenshot, contentType: "image/png" });
 }
 
-async function collectCardOverlaps(page: Page) {
+async function collectProblems(page: Page) {
   return page.evaluate(() => {
     const problems: string[] = [];
     const visible = (element: Element) => {
@@ -24,32 +24,39 @@ async function collectCardOverlaps(page: Page) {
       const height = Math.max(0, Math.min(left.bottom, right.bottom) - Math.max(left.top, right.top));
       return width * height;
     };
-    const groups = [
-      ".professional-dashboard-shell",
-      ".professional-dashboard-grid",
-      ".professional-lower-grid",
-      ".professional-kpi-grid"
-    ];
 
-    for (const selector of groups) {
+    for (const selector of [".professional-dashboard-shell", ".professional-dashboard-grid", ".professional-lower-grid", ".professional-kpi-grid"]) {
       for (const group of document.querySelectorAll<HTMLElement>(selector)) {
         const children = [...group.children].filter(visible);
         for (let leftIndex = 0; leftIndex < children.length; leftIndex += 1) {
           for (let rightIndex = leftIndex + 1; rightIndex < children.length; rightIndex += 1) {
             const area = overlapArea(children[leftIndex].getBoundingClientRect(), children[rightIndex].getBoundingClientRect());
-            if (area > 2) {
-              problems.push(`${selector}: child ${leftIndex + 1} overlaps child ${rightIndex + 1} by ${Math.round(area)}px2`);
-            }
+            if (area > 2) problems.push(`${selector}: child ${leftIndex + 1} overlaps child ${rightIndex + 1} by ${Math.round(area)}px2`);
           }
         }
       }
     }
 
-    const shell = document.querySelector<HTMLElement>(".professional-dashboard-shell");
-    if (shell) {
-      const style = getComputedStyle(shell);
-      if (style.gridTemplateRows.split(" ").some((track) => track.endsWith("px"))) {
-        problems.push(`shell uses fixed grid rows: ${style.gridTemplateRows}`);
+    const contentSelectors = [
+      ".dashboard-donut-layout",
+      ".module-health-layout",
+      ".module-score-list",
+      ".dashboard-run-table",
+      ".archive-report-summary-stack",
+      ".dashboard-priority-list",
+      ".professional-card .link-button"
+    ];
+    for (const card of document.querySelectorAll<HTMLElement>(".professional-card")) {
+      if (!visible(card)) continue;
+      const cardRect = card.getBoundingClientRect();
+      for (const selector of contentSelectors) {
+        for (const content of card.querySelectorAll<HTMLElement>(selector)) {
+          if (!visible(content)) continue;
+          const rect = content.getBoundingClientRect();
+          if (rect.bottom > cardRect.bottom + 2 || rect.right > cardRect.right + 2 || rect.left < cardRect.left - 2) {
+            problems.push(`${selector} escapes card bounds: content=${Math.round(rect.left)},${Math.round(rect.top)},${Math.round(rect.right)},${Math.round(rect.bottom)} card=${Math.round(cardRect.left)},${Math.round(cardRect.top)},${Math.round(cardRect.right)},${Math.round(cardRect.bottom)}`);
+          }
+        }
       }
     }
 
@@ -64,8 +71,7 @@ for (const viewport of actualWindows) {
     await expect(page.locator(".professional-dashboard-shell")).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(500);
-
-    const problems = await collectCardOverlaps(page);
+    const problems = await collectProblems(page);
     await attach(page, testInfo, viewport.name);
     expect(problems, problems.join("\n")).toEqual([]);
   });
