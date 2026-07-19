@@ -1,0 +1,61 @@
+/* Final Overview polish from Windows screenshot review. */
+
+.archive-report-summary-stack .doc-icon,
+.archive-report-summary-stack .doc-icon * {
+  color: #0f172a !important;
+  text-shadow: none !important;
+}
+
+/* Let each chart card respond to its own width, not only to the browser width. */
+.overview-main-area .professional-card:has(.dashboard-donut-layout),
+.overview-main-area .professional-card:has(.module-health-layout) {
+  container-type: inline-size;
+}
+
+.overview-main-area .dashboard-donut-layout,
+.overview-main-area .module-health-layout {
+  min-width: 0;
+}
+
+.overview-main-area .dashboard-donut,
+.overview-main-area .health-donut {
+  flex: 0 0 auto;
+  justify-self: center;
+}
+
+@container (max-width: 430px) {
+  .overview-main-area .dashboard-donut-layout,
+  .overview-main-area .module-health-layout {
+    grid-template-columns: 1fr !important;
+    justify-items: stretch !important;
+    gap: 16px !important;
+  }
+
+  .overview-main-area .dashboard-donut,
+  .overview-main-area .health-donut {
+    justify-self: center !important;
+  }
+
+  .overview-main-area .dashboard-donut-legend,
+  .overview-main-area .module-health-list {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* Keep the local-processing message as a low-emphasis trust cue, not a control. */
+.overview-main-area .footer {
+  min-height: 0 !important;
+  margin-top: 18px !important;
+  padding: 8px 20px 10px !important;
+  color: var(--custos-muted-strong) !important;
+  font-size: 11px !important;
+  line-height: 1.3;
+  opacity: 0.78;
+}
+
+.overview-main-area .footer .status-dot {
+  width: 7px !important;
+  height: 7px !important;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.10) !important;
+}
